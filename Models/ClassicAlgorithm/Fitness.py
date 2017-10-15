@@ -1,9 +1,19 @@
 #!/usr/bin/python
 
+from LinearRegression import LinearRegression
+from KMeanImpl import KMeanImpl
 
 
+lr = LinearRegression()
+lr_train = lr.fit("snp500")
+lr_predict = lr.predict()
+print lr_predict
 
+kmi = KMeanImpl()
+kmi_predict = kmi.fit_predict('PCA')
+print kmi_predict
 
+overall_predict = lr_predict.to_frame().join(kmi_predict['label'], how='inner')
 
 
 

@@ -32,7 +32,8 @@ class KMeanImpl:
             return reducedData
         
         
-    def fit_predict(self, df):
+    def fit_predict(self, dimReduction = None):
+        df = self.getData(dimReduction)
         km = KMeans(init='k-means++', n_clusters=self.n_clusters, max_iter = 300, algorithm='full', tol=1e-4, verbose=True)
         print df
         df['label'] = km.fit_predict(df)
@@ -62,15 +63,14 @@ class KMeanImpl:
                     plt.scatter(x, y)
         plt.show()
 
-
+"""
 kmc = KMeanImpl()
-data = kmc.getData(dimReduction='PCA')
-data2 = kmc.fit_predict(data)
+#data = kmc.getData()
+data2 = kmc.fit_predict('PCA')
 #print data2[data2['label'] == 3]
 #print data.shape
-kmc.visualizeCluster(data)
-
-
+kmc.visualizeCluster(data2)
+"""
 #k = KMeans(init='random', n_clusters=50, max_iter = 300, algorithm='full', tol=1e-25, verbose=True)
 #p = k.fit_predict(data.as_matrix())
 #for i in p:

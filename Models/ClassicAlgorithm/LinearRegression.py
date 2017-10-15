@@ -148,7 +148,7 @@ class LinearRegression:
                 coefDf["corrcoef"][column] = r_value
             else:
                 coefDf.drop([column], axis=0, inplace=True)
-                print column, " dropped ---> p value:", p_value
+                print "remove insignificant column:", "%16s"%column," (p value: %f)"%p_value
         self.coefficient = coefDf
         return coefDf
 
@@ -169,7 +169,7 @@ class LinearRegression:
         return newRankDf['score'].sort_values(ascending=False)
         
     
-    def train(self, benchmark):
+    def fit(self, benchmark):
         processed = self.getData()
         groups = self.group(processed)
         ar, gar = self.computeAR(groups, benchmark)
@@ -181,15 +181,16 @@ class LinearRegression:
     def predict(self):
         newdata = self.preprocess.getData(dataType = 'filled', lagged = False)
         if self.coefficient.empty:
-            print "model coefficient not trained!"
+            print "model coefficient not fitted!"
             return
         newGroupDf = self.group(newdata)
         newRankDf = self.computeRank(newdata, newGroupDf)
         return self.computeSymbolScore(self.coefficient, newRankDf)
      
-
+"""
 lr = LinearRegression()
-print "================Training========================"
-print lr.train("snp500")
+print "================fiting========================"
+print lr.fit("snp500")
 print "================Prediction======================"
 print lr.predict()
+"""

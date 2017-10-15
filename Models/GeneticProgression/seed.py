@@ -6,7 +6,7 @@ import random
 from ConfigParser import ConfigParser
 
 chromosome = []
-geneTemplate = "/home/meng/Projects/NeuroTrader/Models/Evolution/geneTemplate.conf"
+geneTemplate = "/home/meng/Projects/NeuroTrader/Models/Evolution/GeneticTemplate.conf"
 
 def loadTemplate():
         config = ConfigParser()

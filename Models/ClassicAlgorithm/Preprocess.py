@@ -56,7 +56,7 @@ class Preprocess:
             density = 1.0-(float(missing)/float(rowsCount))
             if density < self.density:
                 weakColumns.append(column)
-                #print "filter weak column: ", column
+                print "remove sparse column:", "%16s"%column," (density: %f)"%density 
         df.drop(weakColumns, axis=1, inplace=True)
         return df
 
@@ -95,13 +95,11 @@ class Preprocess:
                         df[column][row] = lower
                     else:
                         pass
-            print "remaining outliers:",outlierCounter    
+            print "remaining number of outliers:",outlierCounter    
         return df
     
     
     def _scaleData(self, data):
-        #scaler = RobustScaler()
-        #rscaled_data = scaler.fit_transform(data)
         scaler = MinMaxScaler()
         scaled_data = scaler.fit_transform(data)
         return pd.DataFrame(data = scaled_data ,index = data.index, columns=data.columns)
