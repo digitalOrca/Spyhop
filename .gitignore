@@ -1,0 +1,14 @@
+# directories
+API/
+IBAccount/
+Logs/
+TradeGateway/build/
+TradeGateway/.idea/
+
+# python artifact
+**__pycache__
+
+# compiled file
+*.pyc
+*.class
+*.jar
