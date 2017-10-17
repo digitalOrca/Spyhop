@@ -9,15 +9,15 @@ from PCAImpl import PCAImpl
 
 class KMeanImpl:
     
-    def __init__(self, lag=30, density=0.8, n_clusters=4):
+    def __init__(self, lag=30, density=0.8, init='k-means++', n_clusters=4, max_iter = 300, algorithm='auto', tol=1e-4, verbose=False):
         self.cluster_weight = []
         self.n_clusters = n_clusters
-        self.kmean = KMeans(n_clusters=n_clusters, n_init=10, algorithm='auto')
+        self.kmean = KMeans(init=init, n_clusters=n_clusters, max_iter = max_iter, algorithm=algorithm, tol=tol, verbose=verbose)
         self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, density=density)
         
     
-    def getData(self, dimReduction = None):
-        scaled_data = self.preprocess.getData('scaled')
+    def getData(self, dimReduction = None, lagged = True):
+        scaled_data = self.preprocess.getData('scaled', lagged)
         if dimReduction is None:
             return scaled_data
         if dimReduction == 'PCA':
@@ -32,14 +32,17 @@ class KMeanImpl:
             return reducedData
         
         
-    def fit_predict(self, dimReduction = None):
-        df = self.getData(dimReduction)
-        km = KMeans(init='k-means++', n_clusters=self.n_clusters, max_iter = 300, algorithm='full', tol=1e-4, verbose=True)
-        print df
-        df['label'] = km.fit_predict(df)
-        print df.columns
+    def train(self, dimReduction = None):
+        df = self.getData(dimReduction, True)
+        df['label'] = self.kmean.fit_predict(df)
         return df
         
+        
+    def predict(self, dimReduction = None):
+        df = self.getData(dimReduction, False)
+        df['label'] = self.kmean.predict(df)
+        return df
+    
     
     def visualizeCluster(self, data):
         dim = len(data.columns)-1

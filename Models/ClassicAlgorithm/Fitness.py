@@ -5,16 +5,38 @@ from KMeanImpl import KMeanImpl
 
 
 lr = LinearRegression()
-lr_train = lr.fit("snp500")
+lr_train = lr.train("snp500")
 lr_predict = lr.predict()
 print lr_predict
 
 kmi = KMeanImpl()
-kmi_predict = kmi.fit_predict('PCA')
+kmi_train = kmi.train('PCA')
+kmi_predict = kmi.predict('PCA')
 print kmi_predict
+
+overall_train = lr_train.join(kmi_train['label'], how='inner')
+print overall_train
+
+for cluster in range(kmi.n_clusters):
+    avgRet = overall_train[overall_train["label"]==cluster]["return"].mean(skipna=True)
+    if cluster == 0:
+        bestCluster = cluster
+        bestReturn = avgRet
+    if avgRet > bestReturn:
+        bestCluster = cluster
+        bestReturn = avgRet
+    
+    print "cluster:",cluster," average return:",overall_train[overall_train["label"]==cluster]["return"].mean(skipna=True)
+    
+print overall_train[overall_train["label"]==bestCluster]
 
 overall_predict = lr_predict.to_frame().join(kmi_predict['label'], how='inner')
 
+#TODO: investigate variance difference between cluster_weight
+#TODO: investigate number of negatives in each cluster
+
+#print overall_train
+#print overall_predict
 
 
 #result #Compile score ranking prediction with cluster prediction

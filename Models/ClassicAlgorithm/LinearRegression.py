@@ -169,7 +169,7 @@ class LinearRegression:
         return newRankDf['score'].sort_values(ascending=False)
         
     
-    def fit(self, benchmark):
+    def train(self, benchmark):
         processed = self.getData()
         groups = self.group(processed)
         ar, gar = self.computeAR(groups, benchmark)
