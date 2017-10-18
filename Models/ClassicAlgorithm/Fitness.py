@@ -26,7 +26,9 @@ for cluster in range(kmi.n_clusters):
         bestCluster = cluster
         bestReturn = avgRet
     
-    print "cluster:",cluster," average return:",overall_train[overall_train["label"]==cluster]["return"].mean(skipna=True)
+    c = overall_train[overall_train["label"]==cluster]
+    rate = 1.0 - float((c["return"]<0).sum())/float(len(c["return"]))
+    print "cluster:",cluster," average return:","%6f"%overall_train[overall_train["label"]==cluster]["return"].mean(skipna=True)," rate:",rate
     
 print overall_train[overall_train["label"]==bestCluster]
 
