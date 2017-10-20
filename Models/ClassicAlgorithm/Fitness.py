@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
 from LinearRegression import LinearRegression
-from KMeanImpl import KMeanImpl
+from KMeansImpl import KMeansImpl
 
 lr = LinearRegression()
 lr_train, lr_validate = lr.train_validate("snp500")
 lr_predict = lr.predict()
 print lr_predict
 
-kmi = KMeanImpl(dimReductAlgo='PCA')
+kmi = KMeansImpl(dimReductAlgo='PCA')
 kmi_train, kmi_validate = kmi.train_validate()
 kmi_predict = kmi.predict()
 print kmi_predict

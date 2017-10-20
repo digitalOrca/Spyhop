@@ -12,3 +12,4 @@ TradeGateway/.idea/
 *.pyc
 *.class
 *.jar
+*.prof

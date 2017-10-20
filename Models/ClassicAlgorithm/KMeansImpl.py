@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from Preprocess import Preprocess
 from PCAImpl import PCAImpl
 
-class KMeanImpl:
+class KMeansImpl(KMeans):
     
     def __init__(self, dimReductAlgo=None, lag=30, density=0.8, init='k-means++', n_clusters=4, max_iter = 300, algorithm='auto', tol=1e-4, verbose=False):
         if dimReductAlgo == "PCA":
@@ -15,8 +15,8 @@ class KMeanImpl:
         else:
             self.dimReductImpl = None
         self.cluster_weight = []
-        self.n_clusters = n_clusters
-        self.kmean = KMeans(init=init, n_clusters=n_clusters, max_iter = max_iter, algorithm=algorithm, tol=tol, verbose=verbose)
+        self.n_clusters = n_clusters # necessary for visualizeCluster
+        KMeans.__init__(self, init=init, n_clusters=n_clusters, max_iter = max_iter, algorithm=algorithm, tol=tol, verbose=verbose)
         self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, density=density)
         
     
@@ -66,12 +66,12 @@ class KMeanImpl:
             data = trainset
         else:
             data = self.prepareData(lag=True, dset="train")
-        data['label'] = self.kmean.fit_predict(data)
+        data['label'] = super(KMeansImpl, self).fit_predict(data)
         return data
         
         
     def validate(self, validateset):
-        validateset['label'] = self.kmean.predict(validateset)
+        validateset['label'] = super(KMeansImpl, self).predict(validateset)
         return validateset
         
         
@@ -85,5 +85,5 @@ class KMeanImpl:
         
     def predict(self):
         df = self.prepareData(lag=False)
-        df['label'] = self.kmean.predict(df)
+        df['label'] = super(KMeansImpl, self).predict(df)
         return df
