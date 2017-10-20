@@ -22,8 +22,8 @@ class Preprocess:
         self.frdate = ""
 
 
-    def _retrieveFundamentalRatios(self, lagged=True): #TODO:implement getting current ratios
-        if lagged:
+    def _retrieveFundamentalRatios(self, lag=True): #TODO:implement getting current ratios
+        if lag:
             # get time window
             end = date.today().isoformat()
             start = (date.today() - timedelta(days=self.lag)).isoformat()
@@ -105,9 +105,15 @@ class Preprocess:
         return pd.DataFrame(data = scaled_data ,index = data.index, columns=data.columns)
         
         
-    def getData(self, dataType = 'raw', lagged=True): #raw, filtered, filled, scaled
+    def getData(self, dataType = 'raw', lag=True, dset="all"): #raw, filtered, filled, scaled
+        np.random.seed( long(date.today().strftime("%Y%m%d")) ) #align splits for different models
         if self.data == 'fundamental_ratios':
-            raw_data = self._retrieveFundamentalRatios(lagged = lagged)
+            raw_data = self._retrieveFundamentalRatios(lag = lag)
+            mask = np.random.rand(len(raw_data)) < 0.8 #TODO:READ SPLIT FROM CONF
+            if dset == "train":
+                raw_data = raw_data[mask]
+            elif dset == "validate":
+                raw_data = raw_data[~mask]
             if dataType == 'raw':
                 return raw_data
             filtered_data = self._filterColumn(raw_data)
@@ -118,12 +124,11 @@ class Preprocess:
                 return filled_data
             capped_data = self._capOutlier(filled_data)
             scaled_data = self._scaleData(capped_data)
-            
             return scaled_data
         
 
 #pfr = Preprocess('fundamental_ratios')
-#raw = pfr._retrieveFundamentalRatios(lagged=False)
+#raw = pfr._retrieveFundamentalRatios(lag=False)
 #print raw  
 #data = pfr._filterColumn(raw)
 #fulldata = pfr._fillMissingValue(data)

@@ -21,15 +21,11 @@ class LinearRegression:
                                                              density=density)
         self.groupNum = groupNum
         self.scoreOrder = scoreOrder
-        self.minReturn = retMin
-        self.maxReturn = retMax
+        self.retMin = retMin
+        self.retMax = retMax
         self.p_value = p_value
         self.frdate = ""
         self.coefficient = pd.DataFrame()
-
-
-    def getData(self):
-        return self.preprocess.getData('filled')
 
 
     def group(self, df):
@@ -102,8 +98,12 @@ class LinearRegression:
         # remove legacy columns
         ArDf.drop(['start', 'end'], axis=1, inplace=True)
         # remove outlier returns
-        ArDf.drop(ArDf[ArDf['return'] > self.maxReturn].index, inplace=True)
-        ArDf.drop(ArDf[ArDf['return'] < self.minReturn].index, inplace=True)
+        bull = ArDf[ArDf['return'] > self.retMax]
+        print "Number of stocks exceeding max gain:",len(bull)
+        ArDf.drop(bull.index, inplace=True)
+        bear = ArDf[ArDf['return'] < self.retMin]
+        print "Number of stocks exceeding max loss:",len(bear)
+        ArDf.drop(bear.index, inplace=True)
         # compute group return
         groupAR = pd.DataFrame(index=groupDf.index)
         for column in groupDf:
@@ -169,28 +169,38 @@ class LinearRegression:
         return newRankDf['score'].sort_values(ascending=False)
         
     
-    def train(self, benchmark):
-        processed = self.getData()
-        groups = self.group(processed)
+    def train(self, benchmark, trainset=None):
+        if trainset is not None:
+            data = trainset
+        else:
+            data = self.preprocess.getData(dataType = 'filled', lag = True)
+        groups = self.group(data)
         ar, gar = self.computeAR(groups, benchmark)
         coefDf = self.computeCorrCoef(gar)
-        rankDf = self.computeRank(processed, groups)
+        rankDf = self.computeRank(data, groups)
         return self.computeSymbolScore(coefDf, rankDf, ar)
 
 
+    def validate(self, benchmark, validateset):
+        testGroups = self.group(validateset)
+        ar, gar = self.computeAR(testGroups, benchmark)
+        testRankDf = self.computeRank(validateset, testGroups)
+        return self.computeSymbolScore(self.coefficient, testRankDf, ar)
+        
+
+    def train_validate(self, benchmark):
+        trainSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train")
+        validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="validate")
+        t = self.train(benchmark, trainset=trainSet)
+        v = self.validate(benchmark, validateset = validateSet)
+        return t,v
+        
+
     def predict(self):
-        newdata = self.preprocess.getData(dataType = 'filled', lagged = False)
+        newdata = self.preprocess.getData(dataType = 'filled', lag = False)
         if self.coefficient.empty:
             print "model coefficient not fitted!"
             return
         newGroupDf = self.group(newdata)
         newRankDf = self.computeRank(newdata, newGroupDf)
         return self.computeSymbolScore(self.coefficient, newRankDf)
-     
-"""
-lr = LinearRegression()
-print "================fiting========================"
-print lr.fit("snp500")
-print "================Prediction======================"
-print lr.predict()
-"""

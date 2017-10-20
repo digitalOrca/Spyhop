@@ -3,15 +3,14 @@
 from LinearRegression import LinearRegression
 from KMeanImpl import KMeanImpl
 
-
 lr = LinearRegression()
-lr_train = lr.train("snp500")
+lr_train, lr_validate = lr.train_validate("snp500")
 lr_predict = lr.predict()
 print lr_predict
 
-kmi = KMeanImpl()
-kmi_train = kmi.train('PCA')
-kmi_predict = kmi.predict('PCA')
+kmi = KMeanImpl(dimReductAlgo='PCA')
+kmi_train, kmi_validate = kmi.train_validate()
+kmi_predict = kmi.predict()
 print kmi_predict
 
 overall_train = lr_train.join(kmi_train['label'], how='inner')
@@ -33,6 +32,14 @@ for cluster in range(kmi.n_clusters):
 print overall_train[overall_train["label"]==bestCluster]
 
 overall_predict = lr_predict.to_frame().join(kmi_predict['label'], how='inner')
+
+print "=============================================="
+print lr_validate
+print kmi_validate
+
+
+
+
 
 #TODO: investigate variance difference between cluster_weight
 #TODO: investigate number of negatives in each cluster

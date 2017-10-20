@@ -15,27 +15,13 @@ class PCAImpl:
         self.preprocess = Preprocess(data='fundamental_ratios', density=density)
         self.numPC = 0
 
-    def getData(self):
-        return self.preprocess.getData('scaled')
-
 
     def fit(self, data):
         return self.pca.fit(data)
         
 
-    def getComponents(self, threshold):
-        varRatio = self.pca.explained_variance_ratio_
-        self.numPC = sum(i > threshold for i in varRatio)
+    def getComponents(self, retention=None):
+        if retention is not None:
+            varRatio = self.pca.explained_variance_ratio_
+            self.numPC = sum(i > (1.0-retention) for i in varRatio)
         return self.pca.components_[:self.numPC]
-
-"""        
-pca = PCAImpl()
-data = pca.getData()
-print data.shape
-p = pca.fit(data)
-print p.explained_variance_
-print p.explained_variance_ratio_
-print p.components_
-print "================================================"
-print pca.getComponents(0.025)
-"""
