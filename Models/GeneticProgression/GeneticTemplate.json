@@ -1,0 +1,62 @@
+{
+    "Constant" : {},
+    "PCA" : [
+        {
+            "parameter" : "density",
+            "mutable" : "True",
+            "type" : "float",
+            "min" : "0.0",
+            "max" : "1.0"
+        },
+        {
+            "parameter" : "n_components",
+            "mutable" : "False",
+            "type" : "int",
+            "min" : "None",
+            "max" : "None"
+        },
+        {
+            "parameter" : "copy",
+            "mutable" : "False",
+            "type" : "bool"
+        },
+        {
+            "parameter" : "whiten",
+            "mutable" : "True",
+            "type" : "bool",
+        },
+        {
+            "parameter" : "svd_solver",
+            "mutable" : "True",
+            "type" : "str",
+            "option" : ["auto", "full", "arpack", "randomized"]
+        },
+        {
+            "parameter" : "tol",
+            "mutable" : "True",
+            "type" : "int",
+            "min" : "",
+            "max" : ""
+        },
+        {
+            "parameter" : "iterated_power",
+            "mutable" : "False",
+            "type" : "str",
+            "option" : ["auto"]
+        },
+        {
+            "parameter" : "random_state",
+            "mutable" : "False",
+            "type" : "int",
+            "min" : "None",
+            "max" : "None"
+        }
+    ],
+    "KMeans" : [
+        {
+            
+        }
+    ],
+    "LinearRegression" : {
+    }
+}
