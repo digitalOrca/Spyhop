@@ -3,66 +3,64 @@
 import ast
 import names
 import random
-from ConfigParser import ConfigParser
-
-chromosome = []
-geneTemplate = "/home/meng/Projects/NeuroTrader/Models/Evolution/GeneticTemplate.conf"
+import json
+from collections import OrderedDict
 
 def loadTemplate():
-        config = ConfigParser()
-        config.read(geneTemplate)
-        for section in config.sections():
-            for option in config.options(section):
-                value = config.get(section, option)
-                try:
-                    value = float(value)
-                except ValueError:
-                    if value == 'True' or value == 'False':
-                        value = bool(value)
-                    elif value == 'None':
-                        value = None
-                chromosome.append(value)
-        
-        
-def shuffle(stdfrac):
-    chrom = []
-    for i in range(len(chromosome)):
-        chromType = type(chromosome[i])
-        if chromType == int:
-            change = round(random.gauss(0, stdfrac * float(chromosome[i])))
-            chrom.append(max(1, chrom[i]+change))
-        elif chromType == float:
-            change = random.gauss(0, stdfrac * float(chromosome[i]))
-            chrom.append(min(max(0, chromosome[i]+change), 1))
-        elif chromType == bool:
-            chrom.append(abs(chromosome[i]-1))
-        elif chromosome[i] is None:
-            chrom.append(None)
-        elif chromType == str:
-            parts = chromosome[i].split('|')
-            if len(parts) == 1:
-                chrom.append(chromosome[i])
-            else:
-                options = ast.literal_eval(parts[1])
-                selected = options[random.randint(0,len(options)-1)] 
-                chrom.append(selected + "|" + str(options))
-        else:
-            pass
-    return chrom
+    template = open("/home/meng/Projects/NeuroTrader/Models/GeneticProgression/GeneticTemplate.json", 'r')
+    ancestor = json.load(template, object_pairs_hook=OrderedDict)
+    template.close()
+    return ancestor
+
+def mutBool():
+    rand = random.uniform(0, 1)
+    return (rand>0.5)
     
+def mutInt(minVal, maxVal):
+    newInt = random.randint(minVal, maxVal)
+    return newInt
+    
+def mutFloat(minVal, maxVal):
+    newFloat = random.uniform(minVal, maxVal)
+    return newFloat
+    
+def mutStr(option):
+    l = len(option)
+    index = random.randint(0,l-1)
+    return option[index]
+    
+def mutate(ancestor, mutationRate):
+    for model in ancestor:
+        if model == "Constant":
+            continue
+        else:
+            for parameter in ancestor[model]:
+                mutable = parameter["mutable"]
+                if mutable == "True":
+                    if random.uniform(0,1) < mutationRate:
+                        datatype = parameter["type"]
+                        if datatype == "int":
+                            parameter["value"] = mutInt(int(parameter["min"]), int(parameter["max"]))
+                        elif datatype == "float":
+                            parameter["value"] = mutFloat(float(parameter["min"]), float(parameter["max"]))
+                        elif datatype == "bool":
+                            parameter["value"] = mutBool()
+                        elif datatype == "str":
+                            parameter["value"] = mutStr(parameter["option"])
+                        else:
+                            pass
+    return ancestor                
 
-def save(chrom, name):
-    config = ConfigParser()
-    config.read(geneTemplate)
-    for section in config.sections():
-            for option in config.options(section):
-                config.set(section, option, str(chrom.pop(0)))
-    newConfig = open(name, 'w')
-    config.write(newConfig)
+def save(traits):
+    name = names.get_full_name().replace(' ','_')
+    path = "/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive/"
+    f = open(path+name+".json", "w")
+    json.dump(traits, f, indent=4)
+    f.close()
 
 
-loadTemplate()
-print chromosome
-for i in range(100):
-    save(shuffle(0.25), "/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive/"+names.get_full_name().replace(' ','_')+".conf")
-
+if __name__ == "__main__":
+    ancestor = loadTemplate()
+    for i in range(100):
+        newTraits = mutate(ancestor, 1.0)
+        save(newTraits)

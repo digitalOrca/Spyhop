@@ -1,40 +1,54 @@
 {
-    "Constant" : {},
+    "Constant" : "",
     "PCA" : [
         {
             "parameter" : "density",
             "mutable" : "True",
             "type" : "float",
+            "value" : "0.8",
             "min" : "0.0",
             "max" : "1.0"
+        },
+        {
+            "parameter" : "retention",
+            "mutable" : "True",
+            "type" : "float",
+            "value" : "0.95",
+            "min" : "0.9",
+            "max" : "0.99"
         },
         {
             "parameter" : "n_components",
             "mutable" : "False",
             "type" : "int",
-            "min" : "None",
-            "max" : "None"
+            "value" : "None",
+            "min" : "",
+            "max" : ""
         },
         {
             "parameter" : "copy",
             "mutable" : "False",
-            "type" : "bool"
+            "type" : "bool",
+            "value" : ""
         },
         {
             "parameter" : "whiten",
             "mutable" : "True",
             "type" : "bool",
+            "value" : "False"
         },
         {
             "parameter" : "svd_solver",
             "mutable" : "True",
             "type" : "str",
+            "value" : "auto",
             "option" : ["auto", "full", "arpack", "randomized"]
         },
         {
             "parameter" : "tol",
-            "mutable" : "True",
+            "mutable" : "False",
             "type" : "int",
+            "value" : "1e-6",
             "min" : "",
             "max" : ""
         },
@@ -42,21 +56,111 @@
             "parameter" : "iterated_power",
             "mutable" : "False",
             "type" : "str",
+            "value" : "auto",
             "option" : ["auto"]
         },
         {
             "parameter" : "random_state",
             "mutable" : "False",
             "type" : "int",
-            "min" : "None",
-            "max" : "None"
+            "value" : "None",
+            "min" : "",
+            "max" : ""
         }
     ],
     "KMeans" : [
         {
-            
+            "parameter" : "n_clusters",
+            "mutable" : "True",
+            "type" : "int",
+            "value" : "4",
+            "min" : "2",
+            "max" : "12"
+        },
+        {
+            "parameter" : "n_init",
+            "mutable" : "True",
+            "type" : "int",
+            "value" : "10",
+            "min" : "5",
+            "max" : "20"
+        },
+        {
+            "parameter" : "max_iter",
+            "mutable" : "True",
+            "type" : "int",
+            "value" : "300",
+            "min" : "100",
+            "max" : "1000"
+        },
+        {
+            "parameter" : "tol",
+            "mutable" : "False",
+            "type" : "float",
+            "value" : "1e-6",
+            "min" : "",
+            "max" : ""
+        },
+        {
+            "parameter" : "precompute_distance",
+            "mutable" : "True",
+            "type" : "bool",
+            "value" : "True"
+        },
+        {
+            "parameter" : "random_state",
+            "mutable" : "False",
+            "type" : "obj",
+            "value" : "None"
+        },
+        {
+            "parameter" : "algorithm",
+            "mutable" : "True",
+            "type" : "str",
+            "value" : "auto",
+            "option" : ["auto", "full", "elkan"]
         }
     ],
-    "LinearRegression" : {
-    }
+    "LinearRegression" : [
+        {
+            "parameter" : "groupNum",
+            "mutable" : "True",
+            "type" : "int",
+            "value" : "20",
+            "min" : "10",
+            "max" : "30"
+        },
+        {
+            "parameter" : "scoreOrder",
+            "mutable" : "True",
+            "type" : "int",
+            "value" : "4",
+            "min" : "1",
+            "max" : "8"
+        },
+        {
+            "parameter" : "retLowerBound",
+            "mutable" : "True",
+            "type" : "float",
+            "value" : "-0.25",
+            "min" : "-0.5",
+            "max" : "-0.1"
+        },
+        {
+            "parameter" : "retUpperBound",
+            "mutable" : "True",
+            "type" : "float",
+            "value" : "0.25",
+            "min" : "0.1",
+            "max" : "0.5"
+        },
+        {
+            "parameter" : "p_value",
+            "mutable" : "True",
+            "type" : "float",
+            "value" : "0.05",
+            "min" : "0.001",
+            "max" : "0.1"
+        }
+    ]
 }
