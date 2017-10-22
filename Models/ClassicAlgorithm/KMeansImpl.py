@@ -9,30 +9,27 @@ from PCAImpl import PCAImpl
 
 class KMeansImpl(KMeans):
     
-    def __init__(self, dimReductAlgo=None, lag=30, density=0.8, init='k-means++', n_clusters=4, max_iter = 300, algorithm='auto', tol=1e-4, verbose=False):
-        if dimReductAlgo == "PCA":
-            self.dimReductImpl = PCAImpl()
-        else:
-            self.dimReductImpl = None
+    def __init__(self, lag=30, density=0.8, dimReductAlgo=None, n_clusters=4, init='k-means++', n_init=10, max_iter=300, tol=0.0001, precompute_distances="auto", verbose=0, random_state=None, copy_x=True, n_jobs=1, algorithm="auto"):
+        self.dimReductAlgo = dimReductAlgo
         self.cluster_weight = []
         self.n_clusters = n_clusters # necessary for visualizeCluster
-        KMeans.__init__(self, init=init, n_clusters=n_clusters, max_iter = max_iter, algorithm=algorithm, tol=tol, verbose=verbose)
+        KMeans.__init__(self, n_clusters=n_clusters, init=init, n_init=n_init, max_iter=max_iter, tol=tol, precompute_distances=precompute_distances, verbose=verbose, random_state=random_state, copy_x=copy_x, n_jobs=n_jobs, algorithm=algorithm)
         self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, density=density)
         
     
     def prepareData(self, lag = True, dset = "all"):
         scaled_data = self.preprocess.getData('scaled', lag=lag, dset=dset)
-        if self.dimReductImpl is None:
+        if self.dimReductAlgo is None:
             return scaled_data
-        if isinstance(self.dimReductImpl, PCAImpl):
-            self.dimReductImpl.fit(scaled_data)
+        if isinstance(self.dimReductAlgo, PCAImpl):
+            self.dimReductAlgo.fit(scaled_data)
             f = scaled_data.as_matrix()
             if dset == "validate":
-                c = np.transpose(np.array(self.dimReductImpl.getComponents()))
+                c = np.transpose(np.array(self.dimReductAlgo.getComponents()))
             else:
-                c = np.transpose(np.array(self.dimReductImpl.getComponents(0.95)))
+                c = np.transpose(np.array(self.dimReductAlgo.getComponents(0.95)))
             pc = np.matmul(f, c)
-            cols = range(self.dimReductImpl.numPC)
+            cols = range(self.dimReductAlgo.numPC)
             reducedData = pd.DataFrame(data=pc, index=scaled_data.index, columns=cols)
             print reducedData
             return reducedData

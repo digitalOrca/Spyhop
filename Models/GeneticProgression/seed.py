@@ -36,13 +36,13 @@ def mutate(ancestor, mutationRate):
         else:
             for parameter in ancestor[model]:
                 mutable = parameter["mutable"]
-                if mutable == "True":
+                if mutable == True:
                     if random.uniform(0,1) < mutationRate:
                         datatype = parameter["type"]
                         if datatype == "int":
-                            parameter["value"] = mutInt(int(parameter["min"]), int(parameter["max"]))
+                            parameter["value"] = mutInt(parameter["min"], parameter["max"])
                         elif datatype == "float":
-                            parameter["value"] = mutFloat(float(parameter["min"]), float(parameter["max"]))
+                            parameter["value"] = mutFloat(parameter["min"], parameter["max"])
                         elif datatype == "bool":
                             parameter["value"] = mutBool()
                         elif datatype == "str":
