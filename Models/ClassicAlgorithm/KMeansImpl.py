@@ -11,7 +11,6 @@ class KMeansImpl(KMeans):
     
     def __init__(self, lag=30, density=0.8, dimReductAlgo=None, n_clusters=4, init='k-means++', n_init=10, max_iter=300, tol=0.0001, precompute_distances="auto", verbose=0, random_state=None, copy_x=True, n_jobs=1, algorithm="auto"):
         self.dimReductAlgo = dimReductAlgo
-        self.cluster_weight = []
         self.n_clusters = n_clusters # necessary for visualizeCluster
         KMeans.__init__(self, n_clusters=n_clusters, init=init, n_init=n_init, max_iter=max_iter, tol=tol, precompute_distances=precompute_distances, verbose=verbose, random_state=random_state, copy_x=copy_x, n_jobs=n_jobs, algorithm=algorithm)
         self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, density=density)
@@ -24,7 +23,7 @@ class KMeansImpl(KMeans):
         if isinstance(self.dimReductAlgo, PCAImpl):
             self.dimReductAlgo.fit(scaled_data)
             f = scaled_data.as_matrix()
-            if dset == "validate":
+            if dset == "validate" or dset == "all":
                 c = np.transpose(np.array(self.dimReductAlgo.getComponents()))
             else:
                 c = np.transpose(np.array(self.dimReductAlgo.getComponents(0.95)))

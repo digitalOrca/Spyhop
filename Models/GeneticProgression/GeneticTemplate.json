@@ -1,4 +1,12 @@
 {
+    "Result" : {
+        "data_start_date" : null,
+        "data_end_date" : null,
+        "predict_start_date" : null,
+        "training_accuracy" : null,
+        "validation_accuracy" : null,
+        "application_accuracy" : null
+    },
     "Constant" : [
         {
             "parameter" : "lag",

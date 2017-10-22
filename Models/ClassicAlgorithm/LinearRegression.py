@@ -24,28 +24,24 @@ class LinearRegression:
         self.retMin = retMin
         self.retMax = retMax
         self.p_value = p_value
-        self.frdate = ""
         self.coefficient = pd.DataFrame()
 
-
+        
     def group(self, df):
         dfGroup = []
         rowsCount = len(df)
         groupSize = np.ceil(float(rowsCount)/float(self.groupNum))
         for column in df:
             sortedColumn = df[column].sort_values(ascending=True) # sort based on ratio values
-            currGroup, currStock = 1, 1
-            fGroup, subGroup = [], []
+            currGroup, currStock = 0, 0
+            fGroup_temp = [[] for i in range(self.groupNum)] #I have hiddent information here
             for row, entry in sortedColumn.iteritems():
-                if currStock <= currGroup * groupSize:
-                    subGroup.append(row)
-                else:
-                    fGroup.append(str(subGroup)) # store string representation
-                    subGroup = []
-                    subGroup.append(row)
+                fGroup_temp[currGroup].append(row)
+                if currGroup < self.groupNum - 1:
                     currGroup += 1
-                currStock += 1
-            fGroup.append(str(subGroup)) # append for the final group
+                else:
+                    currGroup = 1 
+            fGroup = [str(i) for i in fGroup_temp]    
             dfGroup.append(fGroup)
         npGroup = np.transpose(np.asarray(dfGroup))
         groupIndex = [i for i in range(self.groupNum)]

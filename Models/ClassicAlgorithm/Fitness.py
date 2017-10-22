@@ -31,15 +31,15 @@ def getBestCluster(aggregateTrainDf):
     return bestCluster, highest_probability
 
 
-def computeFitness():
-    lr = LinearRegression()
+def computeFitness(lr, kmi):
+    #lr = LinearRegression()
     lr_train, lr_validate = lr.train_validate("snp500")
     lr_predict = lr.predict()
     
-    
-    kmi = KMeansImpl(dimReductAlgo=PCAImpl())
+    #kmi = KMeansImpl(dimReductAlgo=PCAImpl())
     kmi_train, kmi_validate = kmi.train_validate()
     kmi_predict = kmi.predict()
+    
     print "==========Train=========="
     aggregateTrainDf = lr_train.join(kmi_train['label'], how='inner')
     trainCluster, trainProbability = getBestCluster(aggregateTrainDf)
@@ -52,10 +52,10 @@ def computeFitness():
     print "validateProbability", validateProbability
     if trainCluster != validateCluster:
         print "Inconsistent KMeans clustering!"
-        return -1.0
+        return -1.0, -1.0
     else:
-        return validateProbability
+        return trainProbability, validateProbability
 
 
-vp = computeFitness()
-print "Fitness score:",vp
+#vp = computeFitness()
+#print "Fitness score:",vp

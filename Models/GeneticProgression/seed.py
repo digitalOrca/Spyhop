@@ -31,7 +31,7 @@ def mutStr(option):
     
 def mutate(ancestor, mutationRate):
     for model in ancestor:
-        if model == "Constant":
+        if model == "Constant" or model == "Result":
             continue
         else:
             for parameter in ancestor[model]:

@@ -20,9 +20,10 @@ class Preprocess:
         self.limit = limit
         self.outlier = outlier
         self.frdate = ""
+        self.prdate = ""
 
 
-    def _retrieveFundamentalRatios(self, lag=True): #TODO:implement getting current ratios
+    def _retrieveFundamentalRatios(self, lag=True):
         if lag:
             # get time window
             end = date.today().isoformat()
@@ -34,7 +35,8 @@ class Preprocess:
                     ORDER BY date ASC LIMIT 1)"\
                     %(start, end)
             df = self.db.query(query)
-            self.frdate = df.date[0] 
+            self.frdate = df.date[0]
+            self.prdate = end 
         else:
             query = "SELECT * FROM fundamental_ratios WHERE date = \
                     (SELECT DISTINCT date FROM fundamental_ratios \

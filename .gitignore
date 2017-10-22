@@ -4,6 +4,8 @@ IBAccount/
 Logs/
 TradeGateway/build/
 TradeGateway/.idea/
+Models/GeneticProgression/Alive
+Models/GeneticProgression/Deceased
 
 # python artifact
 **__pycache__
