@@ -3,8 +3,12 @@
         "data_start_date" : null,
         "data_end_date" : null,
         "predict_start_date" : null,
-        "training_accuracy" : null,
-        "validation_accuracy" : null,
+        "fitness" : null,
+        "details" : {
+            "kmeans_accuracy" : null,
+            "lingres_accuracy" : null,
+            "combined_accuracy" : null
+        },
         "application_accuracy" : null
     },
     "Constant" : [

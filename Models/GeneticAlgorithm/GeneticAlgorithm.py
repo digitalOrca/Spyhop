@@ -2,136 +2,79 @@
 
 import os
 import random
-import subprocess
-from ConfigParser import ConfigParser
-
-class Individual:
-
-
-    def __init__(self, generation):
-        self.model = ""
-        self.chromosome = [] # list of hyper parameters
-        self.sore = 0;
-        self.generation = generation
-        self.longevity = 0
+import traceback
+import math
+import EvolutionCore as ec
+import ModelRunner as mr
 
 
-    def loadConfig(self, conf):
-        config = ConfigParser()
-        config.read(conf)
-        for section in config.sections():
-            for option in config.options(section):
-                value = config.get(section, option)
-                try:
-                    value = float(value)
-                except ValueError:
-                    if value == 'True' or value == 'False':
-                        value = bool(value)
-                    elif value == 'None':
-                        value = None
-                self.chromosome.append(value)
-        print self.chromosome
-        
-
-    def run(self):
-        root = "DIR"
-        #args = self.chromosome
-        #command = args.insert(0, root+self.model)
-        #ps = subprocess.Popen(command, stdout=subprocess.PIPE, \
-        #                               stderr=subprocess.PIPE)
-        #output, error = ps.communicate()
-        #TODO: update score based on the output
-        self.score = random.uniform(0,1)
-        
-        
-class Population:
-
-
-    def __init__(self, popSize=100, mutRate=0.02, mutDist=0.1):
-        self.popSize = popSize
-        self.mutRate = mutRate
-        self.mutDist = mutDist
-        self.currGen = 0
-        self.members = []
-        for i in range(self.popSize):
-            #TODO: TESTING
-            c = []
-            for x in range(4):
-                c.append(random.uniform(1,10))
-            self.members.append(Individual(c, 0))
-
-
-    def evalAll(self):
-        for s in self.members:
-            s.run()
-        self.members.sort(key=lambda x: x.score, reverse=True)
-        
-        
-    def crossover(self, chrom1, chrom2): #uniform crossover
-        if len(chrom1) != len(chrom2):
-            raise Exception("Unmatched chromosome size")
-        newChrom = []
-        for i in range(len(chrom1)):
-            if random.uniform(0,1) < 0.5:
-                newChrom.append(chrom1[i])
-            else:
-                newChrom.append(chrom2[i])
-        return newChrom
-
-
-    def mutation(self, chrom, stdfrac): #TODO: IMCOMPLETE
-        for i in range(len(chrom)):
-            if random.uniform(0,1) < self.mutRate:
-                chromType = type(chrom[i])
-                if chromType == int:
-                    change = round(random.gauss(0, stdfrac * float(chrom[i])))
-                    chrom[i] = max(1, chrom[i]+change)
-                elif chromType == float:
-                    change = random.gauss(0, stdfrac * float(chrom[i]))
-                    chrom[i] = min(max(0, chrom[i]+change), 1)
-                elif chromType == bool:
-                    chrom[i] = abs(chrom[i]-1)
-                elif chromType == str:
-                    pass
+def pairing(survivers):
+    pair = []
+    population = len(survivers)
+    while len(pair) < 2:
+        for i in range(population):
+            remain = float(population-i)
+            prob = 2.0/(pow(remain,2)-remain)
+            if random.uniform(0,1) <= prob:
+                if len(pair) == 0:
+                    pair.append(survivers[i])
+                    p1 = i
+                    break;
+                elif i != p1:
+                    pair.append(survivers[i])
+                    break;
                 else:
-                    pass
-        return chrom
+                    break;
+    return pair[0], pair[1]
 
 
-    def reproduce(self):
-        self.evalAll()
-        nextGen = []
-        self.currGen += 1
-        while len(nextGen) < len(self.members):
-            pair = []
-            p1 = -1
-            while len(pair) < 2:
-                for i in range(self.popSize):
-                    remain = float(self.popSize-i)
-                    prob = 2.0/(pow(remain,2)-remain)
-                    if random.uniform(0,1) < prob:
-                        if len(pair) == 0:
-                            pair.append(self.members[i])
-                            p1 = i
-                            break;
-                        elif i != p1:
-                            pair.append(self.members[i])
-                            break;
-                        else:
-                            break;
-            crossedChrom = self.crossover(pair[0].chromosome, pair[1].chromosome)
-            newChromosome = self.mutation(crossedChrom, self.mutDist)
-            nextGen.append(Individual(newChromosome, self.currGen))
-        self.members = nextGen
-        
-"""        
-if __name__ == "__main__":
-    population = Population(popSize=4, metachrom=["f","f","f","f"])
-    print population.members[0].chromosome," ",population.members[1].chromosome," ",population.members[2].chromosome," ",population.members[3].chromosome
-    for i in range(50):
-        population.reproduce()
-        print population.members[0].chromosome," ",population.members[1].chromosome," ",population.members[2].chromosome," ",population.members[3].chromosome
-    """
+def replenish(survivers, bodyCount):
+    for i in range(bodyCount):
+        mother, father = pairing(survivers)
+        newName = ec.birth(mother, father)
+        print(newName)
+
+
+def fitnessTest():
+    population = [ f.split(".")[0] for f in os.listdir("/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive")]
+    malformed = []
+    fitnessTracker = {}
+    for name in population:
+        traits = ec.getTraits(name)
+        result = traits["Result"]
+        if None in [result["data_start_date"], result["data_end_date"], \
+                    result["predict_start_date"], result["fitness"], \
+                    result["details"]["kmeans_accuracy"], result["details"]["lingres_accuracy"], \
+                    result["details"]["combined_accuracy"]]:
+            try:
+                fitness = mr.computeAccuracy(name)
+            except:
+                traceback.print_exc()
+                malformed.append(name)
+                continue
+        else:
+            fitness = result["fitness"]
+        if math.isnan(fitness):
+            malformed.append(name)
+        else:
+            fitnessTracker[name] = fitness
+    print("======MALFORMED======")
+    ec.eliminate(malformed)
+    print("======GRADEBOOK======")
+    rankedPairs =sorted(fitnessTracker.items(), key=lambda x:x[1])
+    for key, value in rankedPairs:
+        print("%s: %s"%(key, value))
+    print("======WEAK======")
+    eliminated = [pair[0] for pair in rankedPairs[:10]]
+    ec.eliminate(eliminated)
+    for name in eliminated:
+        fitnessTracker.pop(name)
+    print("======NEW GENERATION======")
+    bodyCount = len(eliminated) + len(malformed)
+    survivers = list(fitnessTracker.keys())
+    replenish(survivers, bodyCount)
     
-i = Individual(0)
-i.loadConfig("/home/meng/Projects/NeuroTrader/Models/Evolution/geneTemplate.conf")
+
+for i in range(5):
+    print("GENERATION ", i, "==========================================\n\n")
+    fitnessTest()

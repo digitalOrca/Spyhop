@@ -30,14 +30,13 @@ class KMeansImpl(KMeans):
             pc = np.matmul(f, c)
             cols = range(self.dimReductAlgo.numPC)
             reducedData = pd.DataFrame(data=pc, index=scaled_data.index, columns=cols)
-            print reducedData
+            #print(reducedData)
             return reducedData
             
             
     def visualizeCluster(self, data):
         dim = len(data.columns)-1
         pltIndex = 1
-        print data
         for colx in data.columns:
             if colx == 'label':
                 continue

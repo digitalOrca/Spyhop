@@ -7,25 +7,8 @@ from LinearRegression import LinearRegression
 from PCAImpl import PCAImpl
 from KMeansImpl import KMeansImpl
 from Fitness import computeFitness
-
-def getTraits():
-    filename = sys.argv[1] + ".json"
-    path = "/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive/"
-    f = open(path+filename, "r")
-    traits = json.load(f, object_pairs_hook=OrderedDict)
-    f.close()
-    return traits
-
-
-def updateTraits(newTraits, name):
-    filename = name + ".json"
-    path = "/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive/"
-    f = open(path+filename, "w")
-    f.seek(0)
-    json.dump(newTraits, f, indent=4)
-    f.truncate()
-    f.close()
-    
+import EvolutionCore as ec
+from Fitness import computeCorrelation
 
 def extractParameter(traits, model, order) :
     parameterPairs = {}
@@ -44,9 +27,9 @@ def extractParameter(traits, model, order) :
     return parameterTuple
 
  
-def loadParameters():
+def loadParameters(name):
     
-    traits = getTraits()
+    traits = ec.getTraits(name)
     lr_paramList = ["lag", "density", "groupNum", "scoreOrder", "retMin", "retMax", "p_value"]
     lag, density, groupNum, scoreOrder, retMin, retMax, p_value = extractParameter(traits, "LinearRegression", lr_paramList)
     lr = LinearRegression(lag, density, groupNum, scoreOrder, retMin, retMax, p_value)
@@ -62,18 +45,22 @@ def loadParameters():
     return lr, kmi
     
 
-def computeAccuracy():
-    traits = getTraits()
-    lr, kmi = loadParameters()
-    training_accuracy, validation_accuracy = computeFitness(lr, kmi)
+def computeAccuracy(name):
+    traits = ec.getTraits(name)
+    lr, kmi = loadParameters(name)
+    fitness, (kmeans_accuracy, lingres_accuracy, combined_accuracy) = computeFitness(lr, kmi)
     data_start_date = lr.preprocess.frdate
     data_end_date = lr.preprocess.prdate
     traits["Result"]["data_start_date"] = str(data_start_date)
     traits["Result"]["data_end_date"] = str(data_end_date)
-    traits["Result"]["training_accuracy"] = training_accuracy
-    traits["Result"]["validation_accuracy"] = validation_accuracy
-    updateTraits(traits, sys.argv[1])
+    traits["Result"]["predict_start_date"] = lr.preprocess.prdate
+    traits["Result"]["fitness"] = fitness
+    traits["Result"]["details"]["kmeans_accuracy"] = kmeans_accuracy
+    traits["Result"]["details"]["lingres_accuracy"] = lingres_accuracy
+    traits["Result"]["details"]["combined_accuracy"] = combined_accuracy
+    ec.save(traits, name)
+    return fitness
     
 #t = getTraits()
 #print extractParameter(t, "PCA", ["lag", "density", "retention", "n_components"])
-computeAccuracy()
+#computeAccuracy("Jackie_Lewis")

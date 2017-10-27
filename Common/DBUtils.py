@@ -29,5 +29,5 @@ class DBConnect:
             cur = self.connection.cursor()
             cur.execute(query)
         except:
-            print "Database update operation failed on query:"%query
+            print("Database update operation failed on query:"%query)
             #TODO: USE LOG CAPTURING LATER

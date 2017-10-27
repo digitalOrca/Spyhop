@@ -42,41 +42,37 @@ class Preprocess:
                     (SELECT DISTINCT date FROM fundamental_ratios \
                     ORDER BY date DESC LIMIT 1)"
             df = self.db.query(query)
-        return df
-
-
+        return df.fillna(value=np.nan) # replace None with np.nan
+        
+        
     def _filterColumn(self, df):
         df.drop(['index','date','currency','latestadate'], \
                 axis=1, inplace=True)
         rowsCount = len(df)
         weakColumns = []
         for column in df:
-            missing = 0
-            for entry in df[column]:
-                if entry == None or np.isnan(entry):
-                    missing += 1
+            missing = df[column].isnull().sum()
             density = 1.0-(float(missing)/float(rowsCount))
             if density < self.density:
                 weakColumns.append(column)
-                print "remove sparse column:", "%16s"%column," (density: %f)"%density 
+                #print "remove sparse column:", "%16s"%column," (density: %f)"%density 
         df.drop(weakColumns, axis=1, inplace=True)
         return df
-
-
+        
+        
     def _fillMissingValue(self, df):	
         for column in df:
             median = df[column].median()
-            for row, entry in df[column].iteritems():
-                if entry == None or np.isnan(entry):
-                    df[column][row] = median
+            df[column].fillna(value=median, inplace=True)
         return df
     
     
     def _capOutlier(self, df):
         rowsCount = len(df)
         outlierCounter = -1
-        while outlierCounter != 0:
-            outlierCounter = 0
+        iterCount = 0
+        while outlierCounter != 0 and iterCount < 50:
+            iterCount += 1
             for column in df:
                 mean = df[column].mean()
                 stdev = df[column].std()
@@ -84,20 +80,11 @@ class Preprocess:
                 lower = mean - self.limit * stdev
                 outlierUpper = mean + self.outlier * stdev
                 outlierLower = mean - self.outlier * stdev
-                for row, entry in df[column].iteritems():
-                    if entry == None or np.isnan(entry):
-                        pass
-                    elif entry > upper:
-                        if entry > outlierUpper:
-                            outlierCounter += 1
-                        df[column][row] = upper
-                    elif entry < lower:
-                        if entry < outlierLower:
-                            outlierCounter += 1
-                        df[column][row] = lower
-                    else:
-                        pass
-            print "remaining number of outliers:",outlierCounter    
+                outlierCounter = ((df[column] > outlierUpper) | \
+                                  (df[column] < outlierLower)).sum()
+                df[column][df[column] > outlierUpper] = upper
+                df[column][df[column] < outlierLower] = lower
+            #print "remaining number of outliers:",outlierCounter 
         return df
     
     
@@ -108,7 +95,7 @@ class Preprocess:
         
         
     def getData(self, dataType = 'raw', lag=True, dset="all"): #raw, filtered, filled, scaled
-        np.random.seed( long(date.today().strftime("%Y%m%d")) ) #align splits for different models
+        np.random.seed(int(date.today().strftime("%Y%m%d"))) #align splits for different models
         if self.data == 'fundamental_ratios':
             raw_data = self._retrieveFundamentalRatios(lag = lag)
             mask = np.random.rand(len(raw_data)) < 0.8 #TODO:READ SPLIT FROM CONF
@@ -128,11 +115,16 @@ class Preprocess:
             scaled_data = self._scaleData(capped_data)
             return scaled_data
         
-
-#pfr = Preprocess('fundamental_ratios')
-#raw = pfr._retrieveFundamentalRatios(lag=False)
-#print raw  
-#data = pfr._filterColumn(raw)
-#fulldata = pfr._fillMissingValue(data)
-#print pfr._scaleData(fulldata)
-#print pfr.getData('filled')
+"""
+pfr = Preprocess('fundamental_ratios')
+raw = pfr._retrieveFundamentalRatios(lag=False)
+import timeit
+start_time = timeit.default_timer()
+data = pfr._filterColumn(raw)
+fulldata = pfr._fillMissingValue(data)
+capped_data = pfr._capOutlier(fulldata)
+pfr._scaleData(capped_data)
+elapsed = timeit.default_timer() - start_time
+print elapsed
+#pfr.getData('filled')
+"""

@@ -1,6 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-import ast
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -34,18 +33,18 @@ class LinearRegression:
         for column in df:
             sortedColumn = df[column].sort_values(ascending=True) # sort based on ratio values
             currGroup, currStock = 0, 0
-            fGroup_temp = [[] for i in range(self.groupNum)] #I have hiddent information here
-            for row, entry in sortedColumn.iteritems():
-                fGroup_temp[currGroup].append(row)
-                if currGroup < self.groupNum - 1:
-                    currGroup += 1
-                else:
-                    currGroup = 1 
+            fGroup_temp = [[] for i in range(self.groupNum)]
+            symbols = list(sortedColumn.index)
+            for i, val in enumerate(fGroup_temp):
+                increment = (len(symbols) - currStock) / (self.groupNum - currGroup)
+                fGroup_temp[i] = symbols[int(currStock):int(currStock+increment)]
+                currStock += increment
+                currGroup += 1     
             fGroup = [str(i) for i in fGroup_temp]    
             dfGroup.append(fGroup)
         npGroup = np.transpose(np.asarray(dfGroup))
         groupIndex = [i for i in range(self.groupNum)]
-        columns = list(df.columns.values)
+        columns = df.columns.values
         groupDf = pd.DataFrame(data=npGroup, index=groupIndex, columns=columns)
         return groupDf
 
@@ -53,12 +52,12 @@ class LinearRegression:
     def computeRank(self, df, groupDf):
         rankDf = pd.DataFrame(index=df.index)
         for column in groupDf:
-            rankDf[column] = 0.0
+            col = pd.Series(index=df.index)
             for index, group in groupDf[column].iteritems():
-                symbols = ast.literal_eval(group)
+                symbols = eval(group)
                 for symbol in symbols:
-                    if symbol in df.index:
-                        rankDf[column][symbol] += index
+                    col[symbol] = index
+            rankDf[column] = col
         return rankDf
 
 
@@ -95,17 +94,17 @@ class LinearRegression:
         ArDf.drop(['start', 'end'], axis=1, inplace=True)
         # remove outlier returns
         bull = ArDf[ArDf['return'] > self.retMax]
-        print "Number of stocks exceeding max gain:",len(bull)
+        #print("Number of stocks exceeding max gain:",len(bull))
         ArDf.drop(bull.index, inplace=True)
         bear = ArDf[ArDf['return'] < self.retMin]
-        print "Number of stocks exceeding max loss:",len(bear)
+        #print("Number of stocks exceeding max loss:",len(bear))
         ArDf.drop(bear.index, inplace=True)
         # compute group return
         groupAR = pd.DataFrame(index=groupDf.index)
         for column in groupDf:
             groupAR[column] = 0.0 # initialize empty column
             for groupIndex, groupStr in groupDf[column].iteritems():
-                group = ast.literal_eval(groupStr)
+                group = eval(groupStr)
                 sumAR, count, avgAR = 0, 0, 0
                 for symbol in group:
                     if symbol in ArDf.index:
@@ -144,12 +143,12 @@ class LinearRegression:
                 coefDf["corrcoef"][column] = r_value
             else:
                 coefDf.drop([column], axis=0, inplace=True)
-                print "remove insignificant column:", "%16s"%column," (p value: %f)"%p_value
+                #print("remove insignificant column:", "%16s"%column," (p value: %f)"%p_value)
         self.coefficient = coefDf
         return coefDf
 
 
-    def computeSymbolScore(self, coefDf, rankDf, Ar=None):
+    def __computeSymbolScore(self, coefDf, rankDf, Ar=None):
         newRankDf = pd.DataFrame(0.0, index=rankDf.index, columns=rankDf.columns)
         for factor in coefDf.index:
             correlation = coefDf['corrcoef'][factor]
@@ -164,6 +163,22 @@ class LinearRegression:
             return scoreDf.sort_values('score', ascending=False)
         return newRankDf['score'].sort_values(ascending=False)
         
+        
+    def computeSymbolScore(self, coefDf, rankDf, Ar=None):
+        newRankDf = pd.DataFrame(0.0, index=rankDf.index, columns=rankDf.columns)
+        dropList1 = [col for col in rankDf.columns if col not in coefDf.index]
+        dropList2 = [ind for ind in coefDf.index if ind not in rankDf.columns]
+        rankDf.drop(dropList1, axis=1, inplace=True)
+        coefDf.drop(dropList2, inplace=True)
+        coefDf = np.sign(coefDf) * coefDf.pow(self.scoreOrder).abs()
+        offset = (float(self.groupNum) - 1.0)/2.0
+        rankDf = rankDf - offset
+        newRankDf["score"] = rankDf.dot(coefDf)
+        if Ar is not None:
+            scoreDf = newRankDf['score'].to_frame().join(100*Ar['return'], how='left')
+            return scoreDf.sort_values('score', ascending=False)
+        return newRankDf['score'].sort_values(ascending=False)
+        
     
     def train(self, benchmark, trainset=None):
         if trainset is not None:
@@ -172,6 +187,7 @@ class LinearRegression:
             data = self.preprocess.getData(dataType = 'filled', lag = True)
         groups = self.group(data)
         ar, gar = self.computeAR(groups, benchmark)
+        #self.visualizeGroupAR(gar)
         coefDf = self.computeCorrCoef(gar)
         rankDf = self.computeRank(data, groups)
         return self.computeSymbolScore(coefDf, rankDf, ar)
@@ -195,8 +211,23 @@ class LinearRegression:
     def predict(self):
         newdata = self.preprocess.getData(dataType = 'filled', lag = False)
         if self.coefficient.empty:
-            print "model coefficient not fitted!"
+            print("model coefficient not fitted!")
             return
         newGroupDf = self.group(newdata)
         newRankDf = self.computeRank(newdata, newGroupDf)
         return self.computeSymbolScore(self.coefficient, newRankDf)
+        
+       
+#lr = LinearRegression()
+#print(lr.train("snp500")))
+#import timeit
+#start_time = timeit.default_timer()
+#data = lr.preprocess.getData(dataType = 'filled', lag = True)
+#groups = lr.group(data)
+#ar, gar = lr.computeAR(groups, "snp500")
+#coefDf = lr.computeCorrCoef(gar)
+#rankDf = lr.computeRank(data, groups)
+#lr.computeSymbolScore(coefDf, rankDf, ar)
+#elapsed = timeit.default_timer() - start_time
+#self.visualizeGroupAR(gar)
+#print(elapsed)
