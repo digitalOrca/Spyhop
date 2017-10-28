@@ -1,8 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import MinMaxScaler
 from DBUtils import DBConnect
 from datetime import date
@@ -57,6 +56,8 @@ class Preprocess:
                 weakColumns.append(column)
                 #print "remove sparse column:", "%16s"%column," (density: %f)"%density 
         df.drop(weakColumns, axis=1, inplace=True)
+        if df.empty:
+            raise Exception("model density requirement too high!")
         return df
         
         
@@ -98,7 +99,7 @@ class Preprocess:
         np.random.seed(int(date.today().strftime("%Y%m%d"))) #align splits for different models
         if self.data == 'fundamental_ratios':
             raw_data = self._retrieveFundamentalRatios(lag = lag)
-            mask = np.random.rand(len(raw_data)) < 0.8 #TODO:READ SPLIT FROM CONF
+            mask = np.random.rand(len(raw_data)) < 0.8 #TODO:PUT IT IN CONF
             if dset == "train":
                 raw_data = raw_data[mask]
             elif dset == "validate":

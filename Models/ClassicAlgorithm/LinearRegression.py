@@ -146,22 +146,6 @@ class LinearRegression:
                 #print("remove insignificant column:", "%16s"%column," (p value: %f)"%p_value)
         self.coefficient = coefDf
         return coefDf
-
-
-    def __computeSymbolScore(self, coefDf, rankDf, Ar=None):
-        newRankDf = pd.DataFrame(0.0, index=rankDf.index, columns=rankDf.columns)
-        for factor in coefDf.index:
-            correlation = coefDf['corrcoef'][factor]
-            confidence = np.sign(correlation) * abs(pow(correlation, self.scoreOrder))
-            for symbol in rankDf.index:
-                rank = rankDf[factor][symbol]
-                weight = float(rank) - (float(self.groupNum) - 1.0)/2.0
-                newRankDf[factor][symbol] = confidence * weight
-        newRankDf['score'] = newRankDf.sum(axis=1, numeric_only=True)
-        if Ar is not None:
-            scoreDf = newRankDf['score'].to_frame().join(100*Ar['return'], how='left')
-            return scoreDf.sort_values('score', ascending=False)
-        return newRankDf['score'].sort_values(ascending=False)
         
         
     def computeSymbolScore(self, coefDf, rankDf, Ar=None):

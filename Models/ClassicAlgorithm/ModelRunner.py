@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import json
@@ -8,7 +8,6 @@ from PCAImpl import PCAImpl
 from KMeansImpl import KMeansImpl
 from Fitness import computeFitness
 import EvolutionCore as ec
-from Fitness import computeCorrelation
 
 def extractParameter(traits, model, order) :
     parameterPairs = {}
