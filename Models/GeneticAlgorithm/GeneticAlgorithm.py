@@ -47,7 +47,8 @@ def fitnessTest():
         result = traits["Result"]
         if None in [result["data_start_date"], result["data_end_date"], \
                     result["predict_start_date"], result["fitness"], \
-                    result["details"]["kmeans_accuracy"], result["details"]["lingres_accuracy"], \
+                    result["details"]["kmeans_accuracy"], \
+                    result["details"]["lingres_accuracy"], \
                     result["details"]["combined_accuracy"]]:
             try:
                 fitness = mr.computeAccuracy(name)
@@ -64,23 +65,23 @@ def fitnessTest():
         else:
             fitnessTracker[name] = fitness
         
-    print("======[MALFORMED]======")
+    print("==========[MALFORMED]==========")
     ec.eliminate(malformed)
-    print("======[GRADEBOOK]======")
+    print("==========[GRADEBOOK]==========")
     rankedPairs =sorted(fitnessTracker.items(), key=lambda x:x[1])
     for key, value in rankedPairs:
         print("%s: %s"%(key, value))
-    print("========[WEAK]=========")
+    print("============[WEAK]=============")
     eliminated = [pair[0] for pair in rankedPairs[:10]]
     ec.eliminate(eliminated)
     for name in eliminated:
         fitnessTracker.pop(name)
-    print("===[NEW GENERATION]====")
+    print("=======[NEW GENERATION]========")
     bodyCount = len(eliminated) + len(malformed)
     survivers = list(fitnessTracker.keys())
     replenish(survivers, bodyCount)
     
 
 for i in range(50):
-    print("\n\n%s%s====================GENERATION "%(fg("green"),attr("bold")), i+1, "====================%s"%(attr("reset")))
+    print("\n\n%s%s======================== GENERATION"%(fg("green"),attr("bold")), i+1, "=======================%s"%(attr("reset")))
     fitnessTest()

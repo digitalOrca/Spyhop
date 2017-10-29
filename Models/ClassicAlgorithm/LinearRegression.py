@@ -71,23 +71,10 @@ class LinearRegression:
                                                 %benchmark
         endIndex = float(self.db.query(query2, index='date')[benchmark][0])
         return endIndex/startIndex
-               
+        
 
     def computeAR(self, groupDf, benchmark):
-        # get the date of fundamental ratio data
-        query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'"%self.preprocess.frdate     
-        startDf = self.db.query(query1)
-        startDf['start'] = startDf.mean(axis=1, numeric_only=True)
-        # get the nearest date
-        query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-            (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-        endDf = self.db.query(query2)
-        endDf['end'] = endDf.mean(axis=1, numeric_only=True)
-        # concatnate two tables and compute stock return
-        startDf.drop(["lastclose", "open"], axis=1, inplace=True)
-        endDf.drop(["lastclose", "open"], axis=1, inplace=True)
-        ArDf = pd.concat([startDf, endDf], axis=1, join="inner")
-        ArDf = ArDf.dropna(axis=0, how='any') # prevent arithmetic error
+        ArDf = self.preprocess.retrieveAR()
         benchmarkAR = self.computeBenchmarkAR(benchmark)
         ArDf["return"] = (ArDf["end"]/ArDf["start"])/benchmarkAR -1.0
         # remove legacy columns

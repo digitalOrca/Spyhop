@@ -5,6 +5,7 @@ from scipy import stats
 from LinearRegression import LinearRegression
 from PCAImpl import PCAImpl
 from KMeansImpl import KMeansImpl
+from SectorNorm import SectorNorm
 from colored import fg, bg, attr
 
 def eval_KMeansImpl(aggregateDf):
@@ -43,6 +44,11 @@ def eval_LinearRegression(aggregateDf):
     tail_probability = stats.norm.cdf(z_value)    
     return tail_probability
     
+    
+def eval_SectorNorm():
+    # This statistical model does not require validation
+    pass
+    
 
 def eval_Combination(aggregateDf):
     leaders = aggregateDf.head(n=20)["return"]
@@ -59,6 +65,8 @@ def computeFitness(lr, kmi):
     print("Fitting KMeans Model ...")
     kmi_train, kmi_validate = kmi.train_validate()
     kmi_predict = kmi.predict()
+    #print("Fitting SectorNorm Model ...")
+    #sn = SectorNorm().computeSectorReturnProbability()
     
     # evaluate KMeans model
     aggregateTrainDf = lr_train.join(kmi_train['label'], how='inner')
@@ -67,7 +75,7 @@ def computeFitness(lr, kmi):
     validateCluster, validateProbability = eval_KMeansImpl(aggregateValidateDf)
     kmeans_accuracy = min(trainProbability, validateProbability)-abs(trainProbability-validateProbability)
     if trainCluster != validateCluster:
-        print("Inconsistent KMeans clustering!")
+        print("%s%sInconsistent KMeans clustering!%s"%(fg("red"), attr("bold"), attr("reset")))
         kmeans_accuracy = -1.0
     # evaluate LinearRegression model    
     train_head_probability = eval_LinearRegression(aggregateTrainDf)
@@ -81,17 +89,15 @@ def computeFitness(lr, kmi):
     # compute fitness score
     fitness = kmeans_accuracy + lingres_accuracy + 2.0 * combined_accuracy
     
-    print("%s--------------------[KMeansImpl]--------------------"%(fg("yellow")))
-    print("train(cluster):   ", trainCluster)
-    print("validate(cluster):", validateCluster)
+    print("%s------------------------[KMeansImpl]-------------------------"%(fg("yellow")))
     print("train:   ", trainProbability)
     print("validate:", validateProbability)
-    print("-----------------[LinearRegression]------------------")
+    print("---------------------[LinearRegression]----------------------")
     print("train:   ", train_head_probability)
     print("validate:", validate_head_probability)
-    print("----------------------[Overall]----------------------")
+    print("--------------------------[Overall]--------------------------")
     print("train:   ", train_top)
     print("validate:", validate_top)
-    print("-----------------------------------------------------%s"%(attr("reset")))
+    print("-------------------------------------------------------------%s"%(attr("reset")))
     
     return fitness, (kmeans_accuracy, lingres_accuracy, combined_accuracy)

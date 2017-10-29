@@ -34,6 +34,7 @@ class Preprocess:
                     ORDER BY date ASC LIMIT 1)"\
                     %(start, end)
             df = self.db.query(query)
+            
             self.frdate = df.date[0]
             self.prdate = end 
         else:
@@ -42,6 +43,23 @@ class Preprocess:
                     ORDER BY date DESC LIMIT 1)"
             df = self.db.query(query)
         return df.fillna(value=np.nan) # replace None with np.nan
+        
+    
+    def retrieveAR(self):
+        if self.frdate == "" or self.prdate == "":
+            self._retrieveFundamentalRatios(lag=True)
+        query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'"%self.frdate
+        startDf = self.db.query(query1)
+        startDf['start'] = startDf.mean(axis=1, numeric_only=True)
+        
+        query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
+            (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+        endDf = self.db.query(query2)
+        endDf['end'] = endDf.mean(axis=1, numeric_only=True)
+        startDf.drop(["lastclose", "open"], axis=1, inplace=True)
+        endDf.drop(["lastclose", "open"], axis=1, inplace=True)
+        ArDf = pd.concat([startDf, endDf], axis=1, join="inner")
+        return ArDf
         
         
     def _filterColumn(self, df):
@@ -95,9 +113,9 @@ class Preprocess:
         return pd.DataFrame(data = scaled_data ,index = data.index, columns=data.columns)
         
         
-    def getData(self, dataType = 'raw', lag=True, dset="all"): #raw, filtered, filled, scaled
+    def getData(self, dataType = "raw", lag=True, dset="all"): #raw, filtered, filled, scaled
         np.random.seed(int(date.today().strftime("%Y%m%d"))) #align splits for different models
-        if self.data == 'fundamental_ratios':
+        if self.data == "fundamental_ratios":
             raw_data = self._retrieveFundamentalRatios(lag = lag)
             mask = np.random.rand(len(raw_data)) < 0.8 #TODO:PUT IT IN CONF
             if dset == "train":
@@ -116,9 +134,12 @@ class Preprocess:
             scaled_data = self._scaleData(capped_data)
             return scaled_data
         
+
+
 """
 pfr = Preprocess('fundamental_ratios')
-raw = pfr._retrieveFundamentalRatios(lag=False)
+raw = pfr._retrieveFundamentalRatios(lag=True)
+pfr.retrieveAR()
 import timeit
 start_time = timeit.default_timer()
 data = pfr._filterColumn(raw)

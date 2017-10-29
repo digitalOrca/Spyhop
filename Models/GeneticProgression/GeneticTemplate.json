@@ -1,5 +1,7 @@
 {
     "Result" : {
+        "update_count" : 0,
+        "latest_update" : null,
         "data_start_date" : null,
         "data_end_date" : null,
         "predict_start_date" : null,
