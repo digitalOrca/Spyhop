@@ -1,20 +1,23 @@
 #!/usr/bin/python3
 
 import os
+import math
 import random
 import traceback
-import math
+from datetime import date
 import EvolutionCore as ec
 import ModelRunner as mr
 from colored import fg, bg, attr
 
 def pairing(survivers):
+    if len(survivers) < 2:
+        raise Exception("not enough survivers for pairing")
     pair = []
     population = len(survivers)
     while len(pair) < 2:
         for i in range(population):
-            remain = float(population-i)
-            prob = 2.0/(pow(remain,2)-remain)
+            remain = population-i
+            prob = remain/(sum(range(remain+1)))
             if random.uniform(0,1) <= prob:
                 if len(pair) == 0:
                     pair.append(survivers[i])
@@ -34,7 +37,6 @@ def replenish(survivers, bodyCount):
         newName = ec.birth(mother, father)
         print(newName)
 
-
 def fitnessTest():
     population = [ f.split(".")[0] for f in os.listdir("/home/meng/Projects/NeuroTrader/Models/GeneticProgression/Alive")]
     malformed = []
@@ -45,11 +47,7 @@ def fitnessTest():
         print("Evaluating %s in progress[%s/%s]..."%(name, index+1, popSize))
         traits = ec.getTraits(name)
         result = traits["Result"]
-        if None in [result["data_start_date"], result["data_end_date"], \
-                    result["predict_start_date"], result["fitness"], \
-                    result["details"]["kmeans_accuracy"], \
-                    result["details"]["lingres_accuracy"], \
-                    result["details"]["combined_accuracy"]]:
+        if result["latest_update"] != date.today().strftime("%Y-%m-%d"):
             try:
                 fitness = mr.computeAccuracy(name)
             except Exception as e:
@@ -58,30 +56,32 @@ def fitnessTest():
                 malformed.append(name)
                 continue
         else:
-            print("get results from records...")
+            print("models fitness score recorded...")
             fitness = result["fitness"]
+            
         if math.isnan(fitness):
             malformed.append(name)
         else:
             fitnessTracker[name] = fitness
-        
-    print("==========[MALFORMED]==========")
-    ec.eliminate(malformed)
     print("==========[GRADEBOOK]==========")
-    rankedPairs =sorted(fitnessTracker.items(), key=lambda x:x[1])
+    rankedPairs =sorted(fitnessTracker.items(), key=lambda x:x[1], reverse=True)
     for key, value in rankedPairs:
         print("%s: %s"%(key, value))
     print("============[WEAK]=============")
-    eliminated = [pair[0] for pair in rankedPairs[:10]]
+    eliminated = [pair[0] for pair in rankedPairs[-10:]]
     ec.eliminate(eliminated)
     for name in eliminated:
         fitnessTracker.pop(name)
+    print("==========[MALFORMED]==========")
+    ec.eliminate(malformed)
     print("=======[NEW GENERATION]========")
     bodyCount = len(eliminated) + len(malformed)
     survivers = list(fitnessTracker.keys())
     replenish(survivers, bodyCount)
+    return malformed + eliminated
     
 
-for i in range(50):
-    print("\n\n%s%s======================== GENERATION"%(fg("green"),attr("bold")), i+1, "=======================%s"%(attr("reset")))
-    fitnessTest()
+if __name__=="__main__":
+    for i in range(50):
+        print("\n\n%s%s======================== GENERATION"%(fg("green"),attr("bold")), i+1, "=======================%s"%(attr("reset")))
+        population = fitnessTest()

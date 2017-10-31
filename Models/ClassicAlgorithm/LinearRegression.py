@@ -7,11 +7,10 @@ from scipy import stats
 from DBUtils import DBConnect
 from datetime import date
 from datetime import timedelta
+from sklearn import preprocessing
 from Preprocess import Preprocess
 
-
 class LinearRegression:
-
 
     def __init__(self, lag=30, density=0.8, groupNum=21, scoreOrder=4, \
                                     retMin=-0.25, retMax=0.25, p_value = 0.05):
@@ -144,7 +143,9 @@ class LinearRegression:
         coefDf = np.sign(coefDf) * coefDf.pow(self.scoreOrder).abs()
         offset = (float(self.groupNum) - 1.0)/2.0
         rankDf = rankDf - offset
-        newRankDf["score"] = rankDf.dot(coefDf)
+        # normalize scores
+        scaler = preprocessing.MinMaxScaler()
+        newRankDf["score"] = scaler.fit_transform(rankDf.dot(coefDf))
         if Ar is not None:
             scoreDf = newRankDf['score'].to_frame().join(100*Ar['return'], how='left')
             return scoreDf.sort_values('score', ascending=False)

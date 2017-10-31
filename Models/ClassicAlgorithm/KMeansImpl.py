@@ -58,11 +58,11 @@ class KMeansImpl(KMeans):
         
     def train(self, trainset=None):
         if trainset is not None:
-            data = trainset
+            traindata = trainset
         else:
-            data = self.prepareData(lag=True, dset="train")
-        data['label'] = super(KMeansImpl, self).fit_predict(data)
-        return data
+            traindata = self.prepareData(lag=True, dset="train")
+        traindata['label'] = super(KMeansImpl, self).fit_predict(traindata)
+        return traindata
         
         
     def validate(self, validateset):

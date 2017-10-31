@@ -8,30 +8,40 @@ from KMeansImpl import KMeansImpl
 from SectorNorm import SectorNorm
 from colored import fg, bg, attr
 
+def aggregateResults(results):
+    iterResults = iter(results)
+    df = next(iterResults).to_frame()
+    for result in iterResults:
+        df = df.join(result, how="inner")
+    return df
+    
+
 def eval_KMeansImpl(aggregateDf):
+    aggregateDf.dropna(axis=0, how="any", inplace=True)
+    aggregateDf["cluster"] = 0.0
     for cluster in range(aggregateDf["label"].max()+1):
-        cRet = aggregateDf[aggregateDf["label"]==cluster]["return"]
+        mask = aggregateDf["label"]==cluster
+        cRet = aggregateDf[mask]["return"]
+        if cRet.empty:
+            raise Exception("validation set does not include all clusters")
         avgRet = cRet.mean(skipna=True)
         stdevRet = cRet.std(skipna=True)
         z_value = avgRet/stdevRet
         probablity = stats.norm.cdf(z_value)
-        
-        #print("cluster:",cluster,\
-        #      "average return:{: 6f}".format(avgRet),\
-        #      "standard deviation:{: 2.6f}".format(stdevRet),\
-        #      "z-value:{: 6f}".format(z_value), \
-        #      "probablity:{: 6f}".format(probablity)) #TODO: fix alignment
-              
+        aggregateDf.loc[mask, "cluster"] = probablity
         if cluster == 0:
             bestCluster = cluster
-            highest_z_value = z_value
+            worstCluster = cluster
             highest_probability = probablity
-        if z_value > highest_z_value:
+            lowest_probability = probablity
+        elif probablity > highest_probability:
             bestCluster = cluster
-            highest_z_value = z_value
             highest_probability = probablity
-              
-    return bestCluster, highest_probability
+        elif probablity < lowest_probability:
+            worstCluster = cluster
+            lowest_probability = probablity
+    diff = highest_probability - lowest_probability
+    return (bestCluster, worstCluster), diff, aggregateDf
 
 
 def eval_LinearRegression(aggregateDf):
@@ -51,36 +61,46 @@ def eval_SectorNorm():
     
 
 def eval_Combination(aggregateDf):
-    leaders = aggregateDf.head(n=20)["return"]
+    aggregateDf["overall"] = aggregateDf["score"] + aggregateDf["cluster"]
+    sortedOverall = aggregateDf.sort_values("overall", ascending=False)
+    leaders = sortedOverall.head(n=20)["return"]
     mean = leaders.mean(skipna=True)
     stdev = leaders.std(skipna=True)
     z_value = mean/stdev
     return stats.norm.cdf(z_value)
 
   
-def computeFitness(lr, kmi):
-    print("Fitting LinearRegression Model ...")
-    lr_train, lr_validate = lr.train_validate("snp500")
-    lr_predict = lr.predict()
+def computeFitness(lr, kmi): 
     print("Fitting KMeans Model ...")
     kmi_train, kmi_validate = kmi.train_validate()
     kmi_predict = kmi.predict()
-    #print("Fitting SectorNorm Model ...")
-    #sn = SectorNorm().computeSectorReturnProbability()
+    print("Fitting LinearRegression Model ...")
+    lr_train, lr_validate = lr.train_validate("snp500")
+    lr_predict = lr.predict()
+    print("Fitting SectorNorm Model ...")
+    sn = SectorNorm().computeSectorReturnProbability()
     
+    print("Aggregating results ...")
+    aggregateTrainDf = aggregateResults([lr_train["score"], lr_train["return"], \
+                                         kmi_train["label"], sn["sector"]])
+    aggregateValidateDf = aggregateResults([lr_validate["score"], lr_validate["return"],\
+                                            kmi_validate["label"], sn["sector"]])
+                                            
     # evaluate KMeans model
-    aggregateTrainDf = lr_train.join(kmi_train['label'], how='inner')
-    trainCluster, trainProbability = eval_KMeansImpl(aggregateTrainDf)
-    aggregateValidateDf = lr_validate.join(kmi_validate['label'], how='inner')
-    validateCluster, validateProbability = eval_KMeansImpl(aggregateValidateDf)
-    kmeans_accuracy = min(trainProbability, validateProbability)-abs(trainProbability-validateProbability)
-    if trainCluster != validateCluster:
-        print("%s%sInconsistent KMeans clustering!%s"%(fg("red"), attr("bold"), attr("reset")))
-        kmeans_accuracy = -1.0
+    (trainBestCluster, trainWorstCluster), trainDiff, aggregateTrainDf = eval_KMeansImpl(aggregateTrainDf)
+    (validateBestCluster, validateWorstCluster), validateDiff, aggregateValidateDf = eval_KMeansImpl(aggregateValidateDf)
+    kmeans_accuracy = min(trainDiff, validateDiff)-abs(trainDiff-validateDiff)
+    if trainBestCluster != validateBestCluster:
+        raise Exception("inconsistent best cluster")
+    if trainWorstCluster != validateWorstCluster:
+        print("%s%sWarning: inconsistent worst cluster%s"%(fg("red"),attr("bold"),attr("reset")))
+        #kmeans_accuracy = -1.0
+        
     # evaluate LinearRegression model    
     train_head_probability = eval_LinearRegression(aggregateTrainDf)
     validate_head_probability = eval_LinearRegression(aggregateValidateDf)
     lingres_accuracy = min(train_head_probability, validate_head_probability)-abs(train_head_probability-validate_head_probability)
+    
     # evaluate overall
     train_top = eval_Combination(aggregateTrainDf)
     validate_top = eval_Combination(aggregateValidateDf)
@@ -90,8 +110,8 @@ def computeFitness(lr, kmi):
     fitness = kmeans_accuracy + lingres_accuracy + 2.0 * combined_accuracy
     
     print("%s------------------------[KMeansImpl]-------------------------"%(fg("yellow")))
-    print("train:   ", trainProbability)
-    print("validate:", validateProbability)
+    print("train:   ", trainDiff)
+    print("validate:", validateDiff)
     print("---------------------[LinearRegression]----------------------")
     print("train:   ", train_head_probability)
     print("validate:", validate_head_probability)

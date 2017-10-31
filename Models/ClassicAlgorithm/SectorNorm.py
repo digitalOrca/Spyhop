@@ -42,10 +42,10 @@ class SectorNorm():
             z_value = mean / stdev
             probablity = stats.norm.cdf(z_value)
             sector_probability[mask] = probablity
-            
+        sector_probability = sector_probability.to_frame("sector")
         return sector_probability
 
-"""       
+"""
 s = SectorNorm()
 print(s.computeSectorReturnProbability())
 """

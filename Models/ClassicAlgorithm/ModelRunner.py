@@ -2,12 +2,14 @@
 
 import sys
 import json
+from datetime import date
 from collections import OrderedDict
 from LinearRegression import LinearRegression
 from PCAImpl import PCAImpl
 from KMeansImpl import KMeansImpl
 from Fitness import computeFitness
 import EvolutionCore as ec
+from colored import fg, bg, attr
 
 def extractParameter(traits, model, order) :
     parameterPairs = {}
@@ -50,13 +52,32 @@ def computeAccuracy(name):
     fitness, (kmeans_accuracy, lingres_accuracy, combined_accuracy) = computeFitness(lr, kmi)
     data_start_date = lr.preprocess.frdate
     data_end_date = lr.preprocess.prdate
-    traits["Result"]["data_start_date"] = str(data_start_date)
-    traits["Result"]["data_end_date"] = str(data_end_date)
-    traits["Result"]["predict_start_date"] = lr.preprocess.prdate
-    traits["Result"]["fitness"] = fitness
-    traits["Result"]["details"]["kmeans_accuracy"] = kmeans_accuracy
-    traits["Result"]["details"]["lingres_accuracy"] = lingres_accuracy
-    traits["Result"]["details"]["combined_accuracy"] = combined_accuracy
+    
+    result = traits["Result"]
+    prev_count = result["update_count"]
+    print("%s%slevel: %s"%(fg("cyan"),attr("bold"),prev_count+1),attr("reset"))
+    w1 = 1.0 / (prev_count + 1.0)
+    w2 = 1.0 - w1
+    today = date.today().strftime("%Y-%m-%d")
+    prev_fitness = result["fitness"]
+    prev_kmeans_accuracy = result["details"]["kmeans_accuracy"]
+    prev_lingres_accuracy = result["details"]["lingres_accuracy"]
+    prev_combined_accuracy = result["details"]["combined_accuracy"]
+    
+    traits["Result"]["update_count"] = prev_count + 1
+    traits["Result"]["latest_update"] = today
+    if traits["Result"]["data_start_date"] is None:
+        traits["Result"]["data_start_date"] = str(data_start_date)
+    if traits["Result"]["data_end_date"] is None:
+        traits["Result"]["data_end_date"] = str(data_end_date)
+    if traits["Result"]["predict_start_date"] is None:
+        traits["Result"]["predict_start_date"] = lr.preprocess.prdate
+    
+    traits["Result"]["fitness"] = w1*fitness + w2*prev_fitness
+    traits["Result"]["details"]["kmeans_accuracy"] = w1*kmeans_accuracy + w2*prev_kmeans_accuracy
+    traits["Result"]["details"]["lingres_accuracy"] = w1*lingres_accuracy + w2*prev_lingres_accuracy
+    traits["Result"]["details"]["combined_accuracy"] = w1*combined_accuracy + w2*prev_combined_accuracy
+    
     ec.save(traits, name)
     return fitness
     

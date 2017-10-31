@@ -5,11 +5,11 @@
         "data_start_date" : null,
         "data_end_date" : null,
         "predict_start_date" : null,
-        "fitness" : null,
+        "fitness" : 0.0,
         "details" : {
-            "kmeans_accuracy" : null,
-            "lingres_accuracy" : null,
-            "combined_accuracy" : null
+            "kmeans_accuracy" : 0.0,
+            "lingres_accuracy" : 0.0,
+            "combined_accuracy" : 0.0
         },
         "application_accuracy" : null
     },

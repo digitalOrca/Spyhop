@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn import preprocessing
 from DBUtils import DBConnect
 from datetime import date
 from datetime import timedelta
@@ -108,7 +108,7 @@ class Preprocess:
     
     
     def _scaleData(self, data):
-        scaler = MinMaxScaler()
+        scaler = preprocessing.MinMaxScaler()
         scaled_data = scaler.fit_transform(data)
         return pd.DataFrame(data = scaled_data ,index = data.index, columns=data.columns)
         
