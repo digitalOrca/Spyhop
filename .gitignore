@@ -4,8 +4,15 @@ IBAccount/
 Logs/
 TradeGateway/build/
 TradeGateway/.idea/
-Models/GeneticProgression/Alive
-Models/GeneticProgression/Deceased
+
+Models/LinearRegression/progression/*
+!Models/LinearRegression/progression/DNA.json
+Models/NeuralNetwork/progression/*
+!Models/NeuralNetwork/progression/DNA.json
+Models/PCA_KMeans/progression/*
+!Models/PCA_KMeans/progression/DNA.json
+Models/SGDRegression/progression/*
+!Models/SGDRegression/progression/DNA.json
 
 # python artifact
 **__pycache__
