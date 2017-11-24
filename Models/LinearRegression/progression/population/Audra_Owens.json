@@ -1,0 +1,68 @@
+{
+    "Result": {
+        "level": 0,
+        "latest_update": null,
+        "data_start_date": null,
+        "data_end_date": null,
+        "predict_start_date": null,
+        "fitness": 0.0,
+        "application": null
+    },
+    "Constant": [
+        {
+            "parameter": "lag",
+            "type": "int",
+            "value": 30
+        }
+    ],
+    "LinearRegression": [
+        {
+            "parameter": "density",
+            "mutable": true,
+            "type": "float",
+            "value": 0.8530027594780865,
+            "min": 0.0,
+            "max": 1.0
+        },
+        {
+            "parameter": "groupNum",
+            "mutable": true,
+            "type": "int",
+            "value": 24,
+            "min": 10,
+            "max": 30
+        },
+        {
+            "parameter": "scoreOrder",
+            "mutable": true,
+            "type": "int",
+            "value": 3,
+            "min": 1,
+            "max": 8
+        },
+        {
+            "parameter": "retMin",
+            "mutable": true,
+            "type": "float",
+            "value": -0.143752924048421,
+            "min": -0.5,
+            "max": -0.1
+        },
+        {
+            "parameter": "retMax",
+            "mutable": true,
+            "type": "float",
+            "value": 0.10735310647209043,
+            "min": 0.1,
+            "max": 0.5
+        },
+        {
+            "parameter": "p_value",
+            "mutable": true,
+            "type": "float",
+            "value": 0.011080674792231189,
+            "min": 0.001,
+            "max": 0.1
+        }
+    ]
+}

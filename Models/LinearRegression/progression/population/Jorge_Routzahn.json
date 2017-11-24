@@ -1,0 +1,68 @@
+{
+    "Result": {
+        "level": 1,
+        "latest_update": "2017-11-22",
+        "data_start_date": "2017-10-23",
+        "data_end_date": "2017-11-22",
+        "predict_start_date": "2017-11-22",
+        "fitness": 0.9939669477284493,
+        "application": null
+    },
+    "Constant": [
+        {
+            "parameter": "lag",
+            "type": "int",
+            "value": 30
+        }
+    ],
+    "LinearRegression": [
+        {
+            "parameter": "density",
+            "mutable": true,
+            "type": "float",
+            "value": 0.7193257249304876,
+            "min": 0.0,
+            "max": 1.0
+        },
+        {
+            "parameter": "groupNum",
+            "mutable": true,
+            "type": "int",
+            "value": 24,
+            "min": 10,
+            "max": 30
+        },
+        {
+            "parameter": "scoreOrder",
+            "mutable": true,
+            "type": "int",
+            "value": 1,
+            "min": 1,
+            "max": 8
+        },
+        {
+            "parameter": "retMin",
+            "mutable": true,
+            "type": "float",
+            "value": -0.143752924048421,
+            "min": -0.5,
+            "max": -0.1
+        },
+        {
+            "parameter": "retMax",
+            "mutable": true,
+            "type": "float",
+            "value": 0.44371599001979734,
+            "min": 0.1,
+            "max": 0.5
+        },
+        {
+            "parameter": "p_value",
+            "mutable": true,
+            "type": "float",
+            "value": 0.09235405303548255,
+            "min": 0.001,
+            "max": 0.1
+        }
+    ]
+}

@@ -14,6 +14,8 @@ class CallbackAction {
 
     private static Map<Integer, String> tickTypes = new HashMap<>();
 
+    private static HashMap<String, String[]> register = new HashMap<>();
+
     static { // static initialization of tickTypes
         for (int tickId : EWrapperImpl.validTicks) {
             String TickQuery = "SELECT name FROM tick_type WHERE id=%d";
@@ -100,7 +102,7 @@ class CallbackAction {
         DatabaseConn.getInstance().execUpdate(query);
     }
 
-    static void updateTickPrice(String symbol, int field, double price) {
+    static void updateTickPrice_backup(String symbol, int field, double price) {
         if (price == -1) return;
         String type = tickTypes.get(field);
         String event = type.split("_")[0];
@@ -144,7 +146,45 @@ class CallbackAction {
         DatabaseConn.getInstance().execUpdate(query2);
     }
 
-    static void updateTickSize(String symbol, int field, int size) {
+    static void updateTickPrice(String symbol, int field, double price) { //TODO: THIS IS NOT TESTED
+        if (price == -1) return;
+        String type = tickTypes.get(field);
+        String event = type.split("_")[0];
+        String eventSize = event + "_size";
+        String timestamp = Helper.timestampNow();
+
+        // update register
+        if (register.containsKey(symbol)) {
+            String[] r = register.get(symbol);
+            r[field] = String.valueOf(price);
+            register.put(symbol, r);
+        } else {
+            String[] r = {"NULL", "NULL", "NULL", "NULL", "NULL", "NULL"};
+            r[field] = String.valueOf(price);
+            register.put(symbol, r);
+        }
+
+        // prepare insertion statement
+        String[] s = register.get(symbol);
+        String values;
+        switch (type) {
+            case "bid_price":
+                values = String.format("NULL, %s, %s, %s, %s, %s", s[1], s[2], s[3], s[4], s[5]);
+                break;
+            case "ask_price":
+                values = String.format("%s, %s, %s, NULL, %s, %s", s[0], s[1], s[2], s[4], s[5]);
+                break;
+            default: // "last_price"
+                values = String.format("%s, %s, %s, %s, %s, NULL", s[0], s[1], s[2], s[3], s[4]);
+        }
+
+        String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
+                           "ask_price, ask_size, last_price, last_size) VALUE ('%s', '%s', '%s', %s)";
+        String statement = String.format(insertion, timestamp, symbol, event, values);
+        DatabaseConn.getInstance().execUpdate(statement);
+    }
+
+    static void updateTickSize_backup(String symbol, int field, int size) {
         if (size == -1) return;
         String timestamp = Helper.timestampNow();
         String type = tickTypes.get(field);
@@ -194,15 +234,38 @@ class CallbackAction {
         } // Otherwise, it is a duplicated size tick
     }
 
-    static void updateTickExchange(String symbol, String column, String exchange) {
+    static void updateTickSize(String symbol, int field, int size) { //TODO: THIS IS NOT TESTED
+        if (size == -1) return;
+        String timestamp = Helper.timestampNow();
+        String type = tickTypes.get(field);
+        String event = type.split("_")[0];
 
-        String template = "WITH lastRow AS (SELECT * FROM tick WHERE symbol = '%s' ORDER BY index DESC LIMIT 1) " +
-                          "UPDATE tick SET %s='%s' FROM lastRow ";
-        String query = String.format(template, symbol, column, exchange);
-        DatabaseConn.getInstance().execUpdate(query);
+        String[] r = register.get(symbol);
+        if (r[field] == "NULL") { // size tick after price tick
+            r[field] = Integer.toString(size);
+            register.put(symbol, r);
+            String update = "UPDATE tick SET %s=%d WHERE symbol='%s' ORDER BY index DESC LIMIT 1";
+            String statement = String.format(update, type, size, symbol);
+            DatabaseConn.getInstance().execUpdate(statement);
+        } else if (size != Integer.parseInt(r[field])) { // not a duplicate size tick
+            // update register
+            r[field] = Integer.toString(size);
+            register.put(symbol, r);
+            String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
+                    "ask_price, ask_size, last_price, last_size) VALUE ('%s', '%s', '%s', %s, %s, %s, %s, %s, %s)";
+            String statement = String.format(insertion, timestamp, symbol, event, r[0], r[1], r[2], r[3], r[4], r[5]);
+            DatabaseConn.getInstance().execUpdate(statement);
+        } // otherwise, duplicate size tick
     }
 
-    static void updateTickLastTime(String symbol, String time) {
+    static void updateTickExchange(String symbol, String column, String exchange) { //TODO: IGNORE EXCHANGE FOR SPEED
+        //String template = "WITH lastRow AS (SELECT * FROM tick WHERE symbol = '%s' ORDER BY index DESC LIMIT 1) " +
+        //                  "UPDATE tick SET %s='%s' FROM lastRow ";
+        //String query = String.format(template, symbol, column, exchange);
+        //DatabaseConn.getInstance().execUpdate(query);
+    }
+
+    static void updateTickLastTime(String symbol, String time) { //TODO: BYPASS IF NOT USED LATER
         long unixTime = Long.parseLong(time);
         Timestamp timestamp = new Timestamp(unixTime * 1000);
         String template = "WITH lastRow AS (SELECT * FROM tick WHERE symbol = '%s' ORDER BY index DESC LIMIT 1) " +
