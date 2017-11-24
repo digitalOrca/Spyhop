@@ -1,11 +1,11 @@
 {
     "Result": {
-        "level": 1,
-        "latest_update": "2017-11-22",
+        "level": 2,
+        "latest_update": "2017-11-24",
         "data_start_date": "2017-10-23",
         "data_end_date": "2017-11-22",
         "predict_start_date": "2017-11-22",
-        "fitness": 0.9907513457001066,
+        "fitness": 0.9796658051904121,
         "application": null
     },
     "Constant": [

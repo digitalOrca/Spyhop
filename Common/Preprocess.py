@@ -45,6 +45,36 @@ class Preprocess:
         return df.fillna(value=np.nan) # replace None with np.nan
         
     
+    def _retrieveTicks(self, lag=True):
+        if lag:
+            # get time window
+            end = date.today().isoformat() + ""
+            start = (date.today() - timedelta(days=self.lag)).isoformat()
+            query = "SELECT * from tick_history WHERE timestamp > \
+                     (SELECT timestamp FROM tick_history \
+                         WHERE timestamp > '%s' \
+                         AND timestamp < '%s' \
+                         ORDER BY timestamp ASC LIMIT 1) \
+                     AND timestamp < \
+                     (SELECT timestamp FROM tick_history \
+                        WHERE timestamp > '%s' \
+                        AND timestamp < '%s' \
+                        ORDER BY timestamp ASC LIMIT 1) \
+                        + INTERVAL '8 hours' \
+                        ORDER BY timestamp ASC" \
+                        %(start, end, start, end)
+            df = self.db.query(query)
+            return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
+        else:
+            query = "SELECT * FROM tick_history WHERE timestamp > \
+                     (SELECT timestamp FROM tick_history \
+                     ORDER BY timestamp DESC LIMIT 1) \
+                     - INTERVAL '8 hours' \
+                     ORDER BY timestamp ASC"
+            df = self.db.query(query)
+            return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
+    
+    
     def retrieveAR(self):
         if self.frdate == "" or self.prdate == "":
             self._retrieveFundamentalRatios(lag=True)
@@ -147,26 +177,13 @@ class Preprocess:
                     return filled_data
                 capped_data = self._capOutlier(filled_data)
                 scaled_data = self._scaleData(capped_data)
-                return scaled_data  
-            """
-            if dset == "train":
-                raw_data = raw_data[mask]
-            elif dset == "validate":
-                raw_data = raw_data[~mask]
-            if dataType == 'raw':
-                return raw_data
-            filtered_data = self._filterColumn(raw_data)
-            if dataType == 'filtered':
-                return filtered_data
-            filled_data = self._fillMissingValue(filtered_data)
-            if dataType == 'filled':
-                return filled_data
-            capped_data = self._capOutlier(filled_data)
-            scaled_data = self._scaleData(capped_data)
-            return scaled_data
-            """
+                return scaled_data
+        elif self.data == "ticks":
+            raw_data = self._retrieveTicks(lag)
+            return raw_data
 
 
+#TODO: MOVE THIS TO UNITTEST
 """
 pfr = Preprocess('fundamental_ratios')
 raw = pfr._retrieveFundamentalRatios(lag=True)
@@ -180,4 +197,6 @@ pfr._scaleData(capped_data)
 elapsed = timeit.default_timer() - start_time
 print elapsed
 #pfr.getData('filled')
+pfr = Preprocess(data="tick")
+print(pfr._retrieveTicks(lag=False))
 """
