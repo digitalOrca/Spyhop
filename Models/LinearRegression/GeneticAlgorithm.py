@@ -43,6 +43,9 @@ def fitnessTest():
     malformed = []
     fitnessTracker = {}
     popSize = len(population)
+    champion = ""
+    championScore = 0
+    championLevel = 0
     for index, name in enumerate(population):
         print("\n-------------------------------------------------------------")
         print("Evaluating %s in progress[%s/%s]..."%(name, index+1, popSize))
@@ -54,7 +57,7 @@ def fitnessTest():
                 level = result["level"] + 1
             except Exception as e:
                 print("%s%sError:"%(fg("red"),attr("bold")),str(e),"%s"%(attr("reset")))
-                #traceback.print_exc()
+                traceback.print_exc()
                 malformed.append(name)
                 continue
         else:
@@ -65,6 +68,16 @@ def fitnessTest():
             malformed.append(name)
         else:
             fitnessTracker[name] = (fitness, level)
+            if level > championLevel:
+                champion = name
+                championLevel = level
+                championScore = fitness
+            elif level == championLevel:
+                if fitness >= championScore:
+                    champion = name
+                    championLevel = level
+                    championScore = fitness
+                    
     print("====================[GRADEBOOK]====================")
     rankedPairs =sorted(fitnessTracker.items(), key=lambda x:x[1][0], reverse=True)
     for name, (fitness, level) in rankedPairs:
@@ -83,7 +96,13 @@ def fitnessTest():
     bodyCount = len(eliminated) + len(malformed)
     survivers = list(fitnessTracker.keys())
     replenish(survivers, bodyCount)
-    return malformed + eliminated
+    return champion
+    
+    
+def promoteChampion(champion):
+    os.system("rm -f ./progression/champions/*")
+    os.system("cp ./progression/population/%s.json ./progression/champions/"\
+               %champion)
     
 
 if __name__=="__main__":
@@ -93,4 +112,7 @@ if __name__=="__main__":
         iteration = 1
     for i in range(iteration):
         print("\n\n%s%s======================== GENERATION"%(fg("green"),attr("bold")), i+1, "=======================%s"%(attr("reset")))
-        population = fitnessTest()
+        champion = fitnessTest()
+        print("====================[CHAMPION]=====================")
+        print(champion)
+        promoteChampion(champion)

@@ -6,6 +6,7 @@ class MoneyFlow:
     
     def __init__(self, lag=30):
         self.preprocess = Preprocess(data='ticks', lag=lag)
+    
         
     def prepareData(self):
         df = self.preprocess.getData()
@@ -13,6 +14,7 @@ class MoneyFlow:
         for symbol in df.index.unique().values:
             sequences[symbol] = df[df.index == symbol]
         return sequences
+    
         
     def computeMoneyFlow(self, sequences):
         flow = {}
@@ -45,6 +47,10 @@ class MoneyFlow:
                 continue
             normalizedFlow[symbol] = flow[symbol] / (mktcap[symbol] * 1000000)
         return normalizedFlow
+        
+        
+    def train(self):
+        pass
         
         
     def predict(self):

@@ -171,8 +171,6 @@ class LinearRegression:
         
 
     def train_validate(self, benchmark):
-        #trainSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train")
-        #validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="validate")
         trainSet, validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
         v = self.validate(benchmark, validateset = validateSet)

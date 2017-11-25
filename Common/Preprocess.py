@@ -26,6 +26,7 @@ class Preprocess:
         if lag:
             # get time window
             start = (date.today() - timedelta(days=self.lag)).isoformat()
+            end = date.today().isoformat()
             # select the earliest fundamental ratio data within one month
             query = "SELECT * FROM fundamental_ratios WHERE date = \
                     (SELECT DISTINCT date FROM fundamental_ratios \
