@@ -25,14 +25,13 @@ class Preprocess:
     def _retrieveFundamentalRatios(self, lag=True):
         if lag:
             # get time window
-            end = date.today().isoformat()
             start = (date.today() - timedelta(days=self.lag)).isoformat()
             # select the earliest fundamental ratio data within one month
             query = "SELECT * FROM fundamental_ratios WHERE date = \
                     (SELECT DISTINCT date FROM fundamental_ratios \
-                    WHERE date BETWEEN '%s' AND '%s' \
+                    WHERE date > '%s'\
                     ORDER BY date ASC LIMIT 1)"\
-                    %(start, end)
+                    %(start)
             df = self.db.query(query)
             
             self.frdate = df.date[0]
@@ -48,31 +47,47 @@ class Preprocess:
     def _retrieveTicks(self, lag=True):
         if lag:
             # get time window
-            end = date.today().isoformat() + ""
             start = (date.today() - timedelta(days=self.lag)).isoformat()
             query = "SELECT * from tick_history WHERE timestamp > \
                      (SELECT timestamp FROM tick_history \
                          WHERE timestamp > '%s' \
-                         AND timestamp < '%s' \
                          ORDER BY timestamp ASC LIMIT 1) \
                      AND timestamp < \
                      (SELECT timestamp FROM tick_history \
                         WHERE timestamp > '%s' \
-                        AND timestamp < '%s' \
                         ORDER BY timestamp ASC LIMIT 1) \
-                        + INTERVAL '8 hours' \
-                        ORDER BY timestamp ASC" \
-                        %(start, end, start, end)
+                        + INTERVAL '%s days' \
+                     ORDER BY timestamp ASC" \
+                     %(start, start, self.lag/2)
             df = self.db.query(query)
             return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
         else:
             query = "SELECT * FROM tick_history WHERE timestamp > \
                      (SELECT timestamp FROM tick_history \
                      ORDER BY timestamp DESC LIMIT 1) \
-                     - INTERVAL '8 hours' \
-                     ORDER BY timestamp ASC"
+                     - INTERVAL '%s days' \
+                     ORDER BY timestamp ASC" \
+                     %(self.lag/2)
             df = self.db.query(query)
             return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
+    
+    
+    def retrieveMktCaps(self, symbols):
+        start = (date.today() - timedelta(days=self.lag)).isoformat()
+        end = (date.today() - timedelta(days=self.lag/2)).isoformat()
+        mktcap = {}
+        for symbol in symbols:
+            query = "SELECT AVG(mktcap) FROM fundamental_ratios WHERE symbol='%s' \
+                     AND date BETWEEN '%s' AND '%s'" \
+                     %(symbol, start, end)
+            avgMktCaps = self.db.query(query, index=None)["avg"].values[0]
+            # proximate mktcap using any data available
+            if avgMktCaps is None:
+                query2 = "SELECT AVG(mktcap) FROM fundamental_ratios WHERE symbol='%s'" \
+                          %(symbol)
+                avgMktCaps = self.db.query(query2, index=None)["avg"].values[0]
+            mktcap[symbol] = avgMktCaps
+        return mktcap
     
     
     def retrieveAR(self):
@@ -197,6 +212,7 @@ pfr._scaleData(capped_data)
 elapsed = timeit.default_timer() - start_time
 print elapsed
 #pfr.getData('filled')
-pfr = Preprocess(data="tick")
-print(pfr._retrieveTicks(lag=False))
 """
+pfr = Preprocess(data="tick")
+#print(pfr._retrieveTicks(lag=False))
+pfr.retrieveMktCaps(["NVDA"])

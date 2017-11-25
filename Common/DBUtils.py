@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import psycopg2 as pg
 import pandas.io.sql as psql
@@ -18,7 +18,8 @@ class DBConnect:
         dataframe = None
         try:
             dataframe = psql.read_sql(query, self.connection)
-            dataframe.set_index(index, inplace=True)
+            if index is not None:
+                dataframe.set_index(index, inplace=True)
         except:
             traceback.print_exc()
         return dataframe

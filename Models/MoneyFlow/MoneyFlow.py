@@ -20,7 +20,9 @@ class MoneyFlow:
             prev_price = None
             balance = 0
             for index, row in sequences[symbol].iterrows():
-                vote = row["last_price"] * row["last_size"]
+                # https://interactivebrokers.github.io/tws-api/interfaceIBApi_1_1EWrapper.html#a1844eb442fb657c0f2cc0a63e4e74eba
+                # tick size has multiplier of 100
+                vote = row["last_price"] * row["last_size"] * 100
                 if prev_price is None:
                     pass
                 elif row["last_price"] > prev_price:
@@ -34,18 +36,27 @@ class MoneyFlow:
         return flow
                 
         
-    def normalizeMoneyFlow(self):
-        pass
+    def normalizeMoneyFlow(self, flow):
+        mktcap = self.preprocess.retrieveMktCaps(flow.keys())
+        normalizedFlow = {}
+        for symbol in flow.keys():
+            if mktcap[symbol] is None:
+                print("market caps data not available for %s"%symbol)
+                continue
+            normalizedFlow[symbol] = flow[symbol] / (mktcap[symbol] * 1000000)
+        return normalizedFlow
+        
         
     def predict(self):
         pass
-        
+
+
 mf = MoneyFlow()
 seq = mf.prepareData()
 f = mf.computeMoneyFlow(seq)
+nf = mf.normalizeMoneyFlow(f)
 
-for k in f.keys():
-    print(k,":",f[k])
-#TODO: USE PROPER INPUT PERIOD, NOT JUST ONE DAY
-# IMPLEMENT MARKET_CAP NORMALIZATION
+for k in nf.keys():
+    print(k,":",nf[k])
+
 # IMPLEMENT EVALUATION OF MODEL
