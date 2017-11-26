@@ -214,6 +214,6 @@ elapsed = timeit.default_timer() - start_time
 print elapsed
 #pfr.getData('filled')
 """
-pfr = Preprocess(data="tick")
+#pfr = Preprocess(data="ticks")
 #print(pfr._retrieveTicks(lag=False))
-pfr.retrieveMktCaps(["NVDA"])
+#pfr.retrieveMktCaps(["NVDA"])
