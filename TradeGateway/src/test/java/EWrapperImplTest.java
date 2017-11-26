@@ -71,7 +71,43 @@ class EWrapperImplTest {
     }
 
     @Test
-    void tickSize() {
+    void tickPriceSize() {
+        EWrapperImpl client = new EWrapperImpl();
+        SocketComm.getInstance().registerSymbol(1, "TEST");
+        client.tickPrice(1, 1, 0.1, null);
+        client.tickSize(1, 0, 1);
+        client.tickPrice(1, 2, 0.2, null);
+        client.tickSize(1, 3, 2);
+        client.tickPrice(1, 4, 0.3, null);
+        client.tickSize(1, 5, 3);
+        client.tickSize(1, 5, 4);
+        String validate_query_1 = "SELECT COUNT(*) FROM tick";
+        String validate_query_2 = "SELECT bid_size, bid_price, ask_price, ask_size, last_price, last_size FROM tick " +
+                                  "ORDER BY timestamp DESC LIMIT 1";
+        ResultSet resultSet1 = DatabaseConn.getInstance().execQuery(validate_query_1);
+        ResultSet resultSet2 = DatabaseConn.getInstance().execQuery(validate_query_2);
+        try {
+            resultSet1.next();
+            resultSet2.next();
+            int count = resultSet1.getInt("count");
+            int bid_size = resultSet2.getInt("bid_size");
+            float bid_price = resultSet2.getFloat("bid_price");
+            int ask_size = resultSet2.getInt("ask_size");
+            float ask_price = resultSet2.getFloat("ask_price");
+            int last_size = resultSet2.getInt("last_size");
+            float last_price = resultSet2.getFloat("last_price");
+            assertEquals(4, count);
+            assertEquals(1, bid_size);
+            assertEquals((float)0.1, bid_price);
+            assertEquals((float)0.2, ask_price);
+            assertEquals(2, ask_size);
+            assertEquals((float)0.3, last_price);
+            assertEquals(4, last_size);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseConn.getInstance().execUpdate("DELETE FROM tick");
+        }
     }
 
 }

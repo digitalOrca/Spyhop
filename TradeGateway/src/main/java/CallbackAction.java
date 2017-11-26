@@ -179,7 +179,7 @@ class CallbackAction {
         }
 
         String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
-                           "ask_price, ask_size, last_price, last_size) VALUE ('%s', '%s', '%s', %s)";
+                           "ask_price, ask_size, last_price, last_size) VALUES ('%s', '%s', '%s', %s)";
         String statement = String.format(insertion, timestamp, symbol, event, values);
         DatabaseConn.getInstance().execUpdate(statement);
     }
@@ -244,15 +244,16 @@ class CallbackAction {
         if (r[field] == "NULL") { // size tick after price tick
             r[field] = Integer.toString(size);
             register.put(symbol, r);
-            String update = "UPDATE tick SET %s=%d WHERE symbol='%s' ORDER BY index DESC LIMIT 1";
-            String statement = String.format(update, type, size, symbol);
+            String update = "WITH latest AS (SELECT * FROM tick WHERE symbol='%s' ORDER BY index DESC LIMIT 1) " +
+                            "UPDATE tick SET %s=%d FROM latest WHERE tick.index=latest.index;";
+            String statement = String.format(update, symbol, type, size);
             DatabaseConn.getInstance().execUpdate(statement);
         } else if (size != Integer.parseInt(r[field])) { // not a duplicate size tick
             // update register
             r[field] = Integer.toString(size);
             register.put(symbol, r);
             String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
-                    "ask_price, ask_size, last_price, last_size) VALUE ('%s', '%s', '%s', %s, %s, %s, %s, %s, %s)";
+                    "ask_price, ask_size, last_price, last_size) VALUES ('%s', '%s', '%s', %s, %s, %s, %s, %s, %s)";
             String statement = String.format(insertion, timestamp, symbol, event, r[0], r[1], r[2], r[3], r[4], r[5]);
             DatabaseConn.getInstance().execUpdate(statement);
         } // otherwise, duplicate size tick
