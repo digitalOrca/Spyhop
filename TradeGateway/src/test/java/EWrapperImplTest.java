@@ -5,6 +5,7 @@ import utils.Helper;
 import utils.SocketComm;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,6 +39,8 @@ class EWrapperImplTest {
             String restore_query_template = "UPDATE open_close SET date='%s' WHERE date='1990-10-03'";
             String restore_query = String.format(restore_query_template, today);
             DatabaseConn.getInstance().execUpdate(restore_query);
+            String clear_test = "DELETE FROM open_close WHERE symbol='TEST'";
+            DatabaseConn.getInstance().execUpdate(clear_test);
         }
     }
 
@@ -67,6 +70,8 @@ class EWrapperImplTest {
             String restore_query_template = "UPDATE open_close SET date='%s' WHERE date='1990-10-03'";
             String restore_query = String.format(restore_query_template, today);
             DatabaseConn.getInstance().execUpdate(restore_query);
+            String clear_test = "DELETE FROM open_close WHERE symbol='TEST'";
+            DatabaseConn.getInstance().execUpdate(clear_test);
         }
     }
 
@@ -103,7 +108,28 @@ class EWrapperImplTest {
             assertEquals(2, ask_size);
             assertEquals((float)0.3, last_price);
             assertEquals(4, last_size);
-        } catch (Exception e) {
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DatabaseConn.getInstance().execUpdate("DELETE FROM tick");
+        }
+    }
+
+    @Test
+    void lastTime() {
+        EWrapperImpl client = new EWrapperImpl();
+        SocketComm.getInstance().registerSymbol(1, "TEST");
+        client.tickPrice(1, 4, 0.1, null);
+        client.tickString(1, 45, "654912000");
+        client.tickPrice(1, 4, 0.2, null);
+        client.tickString(1, 45, "686448000");
+        String validate_query = "SELECT COUNT(DISTINCT last_time) FROM tick";
+        ResultSet resultSet = DatabaseConn.getInstance().execQuery(validate_query);
+        try {
+            resultSet.next();
+            int count = resultSet.getInt("count");
+            assertEquals(count, 2);
+        } catch ( SQLException e) {
             e.printStackTrace();
         } finally {
             DatabaseConn.getInstance().execUpdate("DELETE FROM tick");

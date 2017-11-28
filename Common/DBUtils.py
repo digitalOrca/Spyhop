@@ -9,6 +9,7 @@ class DBConnect:
 	
     def __init__(self):
         self.connection = pg.connect("""dbname='interactive_brokers'
+                                        host='/run/postgresql/'
                                         user='neurotrader'
                                         password='profit'""")
         self.connection.autocommit = True

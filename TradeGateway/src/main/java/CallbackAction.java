@@ -14,7 +14,9 @@ class CallbackAction {
 
     private static Map<Integer, String> tickTypes = new HashMap<>();
 
-    private static HashMap<String, String[]> register = new HashMap<>();
+    private static HashMap<String, String[]> register = new HashMap<>(); //tick value cache
+
+    private static HashMap<String, Integer> lastPtr = new HashMap<>();
 
     static { // static initialization of tickTypes
         for (int tickId : EWrapperImpl.validTicks) {
@@ -102,139 +104,62 @@ class CallbackAction {
         DatabaseConn.getInstance().execUpdate(query);
     }
 
-    static void updateTickPrice_backup(String symbol, int field, double price) {
+    static void updateTickPrice(String symbol, int field, double price) {
         if (price == -1) return;
         String type = tickTypes.get(field);
         String event = type.split("_")[0];
-        String eventSize = event + "_size";
-        String timestamp = Helper.timestampNow();
-        // Duplicating the latest row
-        String copyLatest = "INSERT INTO tick " +
-                            "(timestamp, symbol, event,  bid_price, bid_size, bid_exchange, ask_price, ask_size, " +
-                                "ask_exchange, last_price, last_size, last_exchange, last_time) " +
-                            "SELECT timestamp, symbol, event, bid_price, bid_size, bid_exchange, ask_price, " +
-                                "ask_size, ask_exchange, last_price, last_size, last_exchange, last_time " +
-                            "FROM tick WHERE symbol = '%s' ORDER BY index DESC LIMIT 1 RETURNING index";
-        String query1 = String.format(copyLatest, symbol);
-        ResultSet resultSet1 = DatabaseConn.getInstance().execQuery(query1);
-        int lastIndex = 0;
-        boolean wasNull = true;
-        try {
-            if (resultSet1 != null && resultSet1.next()) {
-                lastIndex = resultSet1.getInt("index");
-                wasNull = resultSet1.wasNull();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        // Insert new row if not duplicated
-        if (wasNull) {
-            String firstRow = "INSERT INTO tick (symbol) VALUES ('%s') RETURNING index";
-            String query0 = String.format(firstRow, symbol);
-            ResultSet resultSet2 = DatabaseConn.getInstance().execQuery(query0);
-            try {
-                if (resultSet2 != null && resultSet2.next()) {
-                    lastIndex = resultSet2.getInt("index");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        // Update price tick and prepare NULL for size tick
-        String updatePrice = "UPDATE tick SET timestamp='%s', event='%s', %s=%f, %s=NULL WHERE index=%d";
-        String query2 = String.format(updatePrice, timestamp, event, type, price, eventSize, lastIndex);
-        DatabaseConn.getInstance().execUpdate(query2);
-    }
-
-    static void updateTickPrice(String symbol, int field, double price) { //TODO: THIS IS NOT TESTED
-        if (price == -1) return;
-        String type = tickTypes.get(field);
-        String event = type.split("_")[0];
-        String eventSize = event + "_size";
         String timestamp = Helper.timestampNow();
 
-        // update register
+        // prepare register
+        String[] s = {"NULL", "NULL", "NULL", "NULL", "NULL", "NULL"};
         if (register.containsKey(symbol)) {
-            String[] r = register.get(symbol);
-            r[field] = String.valueOf(price);
-            register.put(symbol, r);
+            s = register.get(symbol);
+            s[field] = String.valueOf(price);
         } else {
-            String[] r = {"NULL", "NULL", "NULL", "NULL", "NULL", "NULL"};
-            r[field] = String.valueOf(price);
-            register.put(symbol, r);
+            s[field] = String.valueOf(price);
+            register.put(symbol, s);
         }
 
         // prepare insertion statement
-        String[] s = register.get(symbol);
-        String values;
-        switch (type) {
-            case "bid_price":
+        String values = "";
+        switch (field) {
+            case 1: //bid_price
+                s[0] = "NULL";
                 values = String.format("NULL, %s, %s, %s, %s, %s", s[1], s[2], s[3], s[4], s[5]);
                 break;
-            case "ask_price":
+            case 2: //ask_price
+                s[3] = "NULL";
                 values = String.format("%s, %s, %s, NULL, %s, %s", s[0], s[1], s[2], s[4], s[5]);
                 break;
-            default: // "last_price"
+            case 4: // "last_price"
+                s[5] = "NULL";
                 values = String.format("%s, %s, %s, %s, %s, NULL", s[0], s[1], s[2], s[3], s[4]);
+                break;
+            default:
+                // nothing
         }
-
+        // update register
+        register.put(symbol, s);
         String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
                            "ask_price, ask_size, last_price, last_size) VALUES ('%s', '%s', '%s', %s)";
-        String statement = String.format(insertion, timestamp, symbol, event, values);
-        DatabaseConn.getInstance().execUpdate(statement);
-    }
-
-    static void updateTickSize_backup(String symbol, int field, int size) {
-        if (size == -1) return;
-        String timestamp = Helper.timestampNow();
-        String type = tickTypes.get(field);
-        String event = type.split("_")[0];
-        // Get previous size
-        String lastRow = "SELECT index, %s from tick WHERE symbol='%s' ORDER BY index DESC LIMIT 1";
-        String queryLastRow = String.format(lastRow, type, symbol);
-        ResultSet resultSet1 = DatabaseConn.getInstance().execQuery(queryLastRow);
-        int lastSize = 0;
-        int lastIndex = 0;
-        try {
-            if (resultSet1 != null && resultSet1.next()) {
-                lastSize = resultSet1.getInt(type);
-                lastIndex = resultSet1.getInt("index");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (lastSize == 0) {
-            // Update size after price tick
-            String template = "UPDATE tick SET %s=%d, event='%s' WHERE index=%d";
-            String query = String.format(template, type, size, event, lastIndex);
-            DatabaseConn.getInstance().execUpdate(query);
-        } else if (lastSize != size) {
-            // Insert price update
-            // Duplicate the last row
-            String duplication = "INSERT INTO tick " +
-                                 "(timestamp, symbol, event, bid_price, bid_size, bid_exchange, ask_price, ask_size, " +
-                                     "ask_exchange, last_price, last_size, last_exchange, last_time) " +
-                                 "SELECT timestamp, symbol, event, bid_price, bid_size, bid_exchange, ask_price, " +
-                                     "ask_size, ask_exchange, last_price, last_size, last_exchange, last_time " +
-                                 "FROM tick WHERE index=%d RETURNING index";
-            String query1 = String.format(duplication, lastIndex);
-            ResultSet resultSet2 = DatabaseConn.getInstance().execQuery(query1);
-            int newIndex = 0;
+        if (field == 4) {
+            insertion += " RETURNING index";
+            String statement = String.format(insertion, timestamp, symbol, event, values);
+            ResultSet resultSet = DatabaseConn.getInstance().execQuery(statement);
             try {
-                if (resultSet2 != null && resultSet2.next()) {
-                    newIndex = resultSet2.getInt("index");
-                }
+                resultSet.next();
+                int index = resultSet.getInt("index");
+                lastPtr.put(symbol, new Integer(index));
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-            // Update the duplicate row
-            String updatePrice = "UPDATE tick SET event='%s', timestamp='%s', %s=%d WHERE index=%d";
-            String query2 = String.format(updatePrice, event, timestamp, type, size, newIndex);
-            DatabaseConn.getInstance().execUpdate(query2);
-        } // Otherwise, it is a duplicated size tick
+        } else {
+            String statement = String.format(insertion, timestamp, symbol, event, values);
+            DatabaseConn.getInstance().execUpdate(statement);
+        }
     }
 
-    static void updateTickSize(String symbol, int field, int size) { //TODO: THIS IS NOT TESTED
+    static void updateTickSize(String symbol, int field, int size) {
         if (size == -1) return;
         String timestamp = Helper.timestampNow();
         String type = tickTypes.get(field);
@@ -266,13 +191,12 @@ class CallbackAction {
         //DatabaseConn.getInstance().execUpdate(query);
     }
 
-    static void updateTickLastTime(String symbol, String time) { //TODO: BYPASS IF NOT USED LATER
+    static void updateTickLastTime(String symbol, String time) {
         long unixTime = Long.parseLong(time);
         Timestamp timestamp = new Timestamp(unixTime * 1000);
-        String template = "WITH lastRow AS (SELECT * FROM tick WHERE symbol = '%s' ORDER BY index DESC LIMIT 1) " +
-                          "UPDATE tick SET %s='%s' FROM lastRow ";
-        String column = "last_time";
-        String query = String.format(template, symbol, column, timestamp.toString());
+        int lastIndex = (int)lastPtr.get(symbol);
+        String template = "UPDATE tick SET last_time='%s' WHERE index=%s";
+        String query = String.format(template, timestamp.toString(), lastIndex);
         DatabaseConn.getInstance().execUpdate(query);
     }
 
