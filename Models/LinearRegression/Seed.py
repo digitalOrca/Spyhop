@@ -8,7 +8,7 @@ import EvolutionCore as ec
               
 def save(traits):
     name = names.get_full_name().replace(' ','_')
-    path = "./population/"
+    path = "./progression/population/"
     f = open(path+name+".json", "w")
     json.dump(traits, f, indent=4)
     f.close()

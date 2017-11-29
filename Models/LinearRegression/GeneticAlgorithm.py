@@ -57,7 +57,7 @@ def fitnessTest():
                 level = result["level"] + 1
             except Exception as e:
                 print("%s%sError:"%(fg("red"),attr("bold")),str(e),"%s"%(attr("reset")))
-                traceback.print_exc()
+                #traceback.print_exc()
                 malformed.append(name)
                 continue
         else:
