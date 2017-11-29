@@ -116,6 +116,18 @@ class LinearRegression:
         plt.show()
         
         
+    def visualizeTrainValidate(self, train, validate):
+        plt.close()
+        x_1 = train["score"]
+        y_1 = train["return"]
+        x_2 = validate["score"]
+        y_2 = validate["return"]
+        plt.plot(x_1, y_1, 'b.', label="train")
+        plt.plot(x_2, y_2, 'r.', label="validate")
+        plt.draw()
+        plt.show(block=False)
+        
+        
     def computeCorrCoef(self, groupAR):
         coefDf = pd.DataFrame(index=groupAR.columns)
         coefDf["corrcoef"] = 0.0
@@ -174,6 +186,7 @@ class LinearRegression:
         trainSet, validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
         v = self.validate(benchmark, validateset = validateSet)
+        self.visualizeTrainValidate(t, v)
         return t,v
         
 
