@@ -9,7 +9,7 @@ from colored import fg, bg, attr
 def eval_LinearRegression(aggregateDf):
     aggregateDf = aggregateDf.dropna(how="any")
     slope, intercept, r_value, p_value, std_err = stats.linregress(aggregateDf["score"], aggregateDf["return"])
-    variance = aggregateDf["score"].apply(lambda x: np.square(x-(x*slope+intercept)))
+    variance = aggregateDf["return"].apply(lambda x: np.square(x-(x*slope+intercept)))
     std_err_est = np.sqrt(variance.sum()/len(aggregateDf))
     head = aggregateDf["score"].max() * slope + intercept
     tail = aggregateDf["score"].min() * slope + intercept
@@ -20,20 +20,9 @@ def eval_LinearRegression(aggregateDf):
     #probability of tail smaller than 0
     tail_probability = 1.0 - stats.norm.cdf(z_value_tail)
     return head_probability, tail_probability
-    
-
-def eval_Combination(aggregateDf):
-    aggregateDf["overall"] = aggregateDf["score"] + aggregateDf["cluster"]
-    sortedOverall = aggregateDf.sort_values("overall", ascending=False)
-    leaders = sortedOverall.head(n=20)["return"]
-    mean = leaders.mean(skipna=True)
-    stdev = leaders.std(skipna=True)
-    z_value = mean/stdev
-    return stats.norm.cdf(z_value)
 
   
 def computeFitness(lr):
-    print("Fitting LinearRegression Model ...")
     lr_train, lr_validate = lr.train_validate("snp500")
     lr_predict = lr.predict()
     
