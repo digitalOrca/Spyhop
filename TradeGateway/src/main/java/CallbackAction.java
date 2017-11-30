@@ -43,7 +43,7 @@ class CallbackAction {
     }
 
     static LinkedList<String> selectActiveStocks() {
-        String query = "SELECT symbol FROM stocks WHERE active=TRUE ORDER BY symbol DESC";
+        String query = "SELECT symbol FROM security WHERE status=1 ORDER BY symbol ASC";
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(query);
         return Helper.resultToList(resultSet, "symbol");
     }

@@ -89,8 +89,6 @@ def fitnessTest():
     for name in eliminated:
         fitnessTracker.pop(name)
     print("====================[MALFORMED]====================")
-    for m in malformed:
-        print(m)
     ec.eliminate(malformed)
     print("=================[NEW GENERATION]==================")
     bodyCount = len(eliminated) + len(malformed)
