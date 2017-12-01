@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from Preprocess import Preprocess
 
 class MoneyFlow:
@@ -17,7 +20,8 @@ class MoneyFlow:
     
         
     def computeMoneyFlow(self, sequences):
-        flow = {}
+        #flow = {}
+        flow = pd.DataFrame(columns=["flow"])
         for symbol in sequences.keys():
             prev_price = None
             balance = 0
@@ -34,20 +38,30 @@ class MoneyFlow:
                 else:
                     pass
                 prev_price = row["last_price"]
-            flow[symbol] = balance
+            flow.loc[symbol] = balance
         return flow
                 
         
     def normalizeMoneyFlow(self, flow):
-        mktcap = self.preprocess.retrieveMktCaps(flow.keys())
-        normalizedFlow = {}
-        for symbol in flow.keys():
+        mktcap = self.preprocess.retrieveMktCaps(flow.index)
+        normalizedFlow = pd.DataFrame(columns=["flow"])
+        for symbol in flow.index:
             if mktcap[symbol] is None:
                 print("market caps data not available for %s"%symbol)
                 continue
-            normalizedFlow[symbol] = flow[symbol] / (mktcap[symbol] * 1000000)
+            normalizedFlow.loc[symbol] = flow.loc[symbol]["flow"] / (mktcap[symbol] * 1000000)
         return normalizedFlow
         
+    
+    def visualizeFlowReturn(self, normalizedFlow):
+        ar = self.preprocess.retrieveAR()
+        flowReturn = pd.concat([normalizedFlow, ar], axis=1, join='inner')
+        #print(flowReturn)
+        x = flowReturn["flow"]
+        y = flowReturn["return"]
+        plt.plot(x, y, 'r.')
+        plt.show()
+    
         
     def train(self):
         pass
@@ -61,8 +75,7 @@ mf = MoneyFlow()
 seq = mf.prepareData()
 f = mf.computeMoneyFlow(seq)
 nf = mf.normalizeMoneyFlow(f)
+mf.visualizeFlowReturn(nf)
 
-for k in nf.keys():
-    print(k,":",nf[k])
 
 # IMPLEMENT EVALUATION OF MODEL
