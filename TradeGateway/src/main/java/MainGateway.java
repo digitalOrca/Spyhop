@@ -161,7 +161,7 @@ public class MainGateway{
             ZonedDateTime now = ZonedDateTime.now();
             String date = now.toString().split("T")[0];
             ZonedDateTime open = ZonedDateTime.parse(date+"T09:30:00.000-04:00[America/New_York]");
-            ZonedDateTime close = ZonedDateTime.parse(date+"T16:00:00.000-04:00[America/New_York]");
+            ZonedDateTime close = ZonedDateTime.parse(date+"T16:05:00.000-04:00[America/New_York]"); //ADD 5 min for lag
             if (now.isAfter(open) && now.isBefore(close)) {
                 return 0;
             } else if (now.isBefore(open)) {
