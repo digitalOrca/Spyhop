@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+"""GeneticAlgorithm.py
+Description:
+    run genetic algorithm to optimize LinearRegression model parameters
+"""
+
 import os
 import sys
 import math
@@ -10,6 +15,15 @@ import EvolutionCore as ec
 import ModelRunner as mr
 from colored import fg, bg, attr
 
+"""pairing
+Description:
+    pairing two from surviving population to create new individuals
+Input:
+    survivers: list of survivers
+Output:
+    pair[0], pair[1]: selected pair for mating
+
+"""
 def pairing(survivers):
     if len(survivers) < 2:
         raise Exception("not enough survivers for pairing")
@@ -31,13 +45,27 @@ def pairing(survivers):
                     break;
     return pair[0], pair[1]
 
-
+"""replenish
+Description:
+    replenish lost individuals through mating between survivers
+Input:
+    survivers: list of survivers
+Output:
+    bodyCount: number of dead inviduals from previous generation
+"""
 def replenish(survivers, bodyCount):
     for i in range(bodyCount):
         mother, father = pairing(survivers)
         newName = ec.birth(mother, father)
         print(newName)
 
+"""fitnessTest
+Description: 
+    run model for entire population, eliminate lowest performer, malformed and
+    return the invidual with highest fitness score
+Output:
+    champion: the best long-term performer
+"""
 def fitnessTest():
     population = [ f.split(".")[0] for f in os.listdir("./progression/population")]
     malformed = []
@@ -96,13 +124,20 @@ def fitnessTest():
     replenish(survivers, bodyCount)
     return champion
     
-    
+"""promoteChampion
+Description:
+    copy the champion to Champion directory
+Input:
+    champion: the name of the champion
+"""    
 def promoteChampion(champion):
     os.system("rm -f ./progression/champions/*")
     os.system("cp ./progression/population/%s.json ./progression/champions/"\
                %champion)
     
-
+"""
+MAIN
+"""
 if __name__=="__main__":
     try:
         iteration = int(sys.argv[1])

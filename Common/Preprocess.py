@@ -109,6 +109,18 @@ class Preprocess:
         ArDf.drop(['start', 'end'], axis=1, inplace=True)
         return ArDf
         
+    
+    def computeBenchmarkAR(self, benchmark):
+        # get the date of fundamental ratio data
+        query1 = "SELECT date, %s FROM benchmark WHERE date='%s'"\
+                                                %(benchmark, self.frdate)
+        startIndex = float(self.db.query(query1, index='date')[benchmark][0])
+        query2 = "SELECT date, %s FROM benchmark WHERE date=\
+            (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
+                                                %benchmark
+        endIndex = float(self.db.query(query2, index='date')[benchmark][0])
+        return endIndex/startIndex
+    
         
     def _filterColumn(self, df):
         df = df.drop(['index','date','currency','latestadate'], axis=1)

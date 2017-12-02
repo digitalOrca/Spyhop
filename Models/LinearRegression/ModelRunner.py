@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+"""ModelRunner.py
+Description:
+    build LinearRegression model from a json profile and run it
+"""
+
 import sys
 import json
 from datetime import date
@@ -9,7 +14,17 @@ from Fitness import computeFitness
 import EvolutionCore as ec
 from colored import fg, bg, attr
 
-def extractParameter(traits, model, order) :
+"""extractParameter
+Description:
+    extract parameters from json profile and return as a tuple
+Input:
+    traits: json parameter profile
+    model: json section name, the model name
+    paramList: list of parameters to be retrieved
+Output:
+    parameterTuple: parameter tuple
+"""
+def extractParameter(traits, model, paramList) :
     parameterPairs = {}
     parameterTuple = ()
     
@@ -19,13 +34,20 @@ def extractParameter(traits, model, order) :
     for parameter in traits[model]:
         parameterPairs[parameter["parameter"]] = parameter["value"]
      
-    for parameter in order:
+    for parameter in paramList:
         value = parameterPairs[parameter]
         parameterTuple += (value,)
     
     return parameterTuple
 
- 
+"""loadParameters
+Description:
+    load parameters into a LinearRegression instance
+Input:
+    name: the name of the json profile
+Output:
+    lr: an instance of LinearRegression model
+""" 
 def loadParameters(name):
     traits = ec.getTraits(name)
     lr_paramList = ["lag", "density", "groupNum", "scoreOrder", "retMin", "retMax", "p_value"]
@@ -33,7 +55,14 @@ def loadParameters(name):
     lr = LinearRegression(lag, density, groupNum, scoreOrder, retMin, retMax, p_value)
     return lr
     
-
+"""computeAccuracy
+Description:
+    pass through the fitness score and update the json profile
+Input:
+    name: the name of the json profile
+Output:
+    fitness: fitness score
+"""
 def computeAccuracy(name):
     traits = ec.getTraits(name)
     lr = loadParameters(name)

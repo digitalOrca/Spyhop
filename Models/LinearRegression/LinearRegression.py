@@ -1,5 +1,14 @@
 #!/usr/bin/python3
 
+"""LinearRegression
+Description:
+    multi-variable linear regression. Variables are all the fundamental ratios. 
+    All symbols are divided into group, averaging their fundamental_ratios and 
+    the average ratios are regressed with the return over a period of time to 
+    determine the effectiveness of each variable. Then each symbol is rated by
+    the sum of the variable scores.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,6 +21,15 @@ from Preprocess import Preprocess
 
 class LinearRegression:
 
+    """constructor
+    lag: length of the period for calculating return
+    density: data density requirement for each fundamental ratios columns
+    groupNum: the number of groups
+    scoreOrder: the amount of bias for variable with different confidence
+    retMin: minimum return example to be included in the model
+    retMax: maximum return example to be included in the model
+    p_value: p-value requirement for each variable columns
+    """
     def __init__(self, lag=30, density=0.8, groupNum=21, scoreOrder=4, \
                                     retMin=-0.25, retMax=0.25, p_value = 0.05):
         self.db = DBConnect()
@@ -24,7 +42,14 @@ class LinearRegression:
         self.p_value = p_value
         self.coefficient = pd.DataFrame()
 
-        
+    """group
+    Description:
+        create symbol groups for each variables
+    Input:
+        df: processed dataframe with fundamental ratios
+    Output:
+        groupDf: symbol groups for each ratio
+    """    
     def group(self, df):
         dfGroup = []
         rowsCount = len(df)
@@ -47,7 +72,15 @@ class LinearRegression:
         groupDf = pd.DataFrame(data=npGroup, index=groupIndex, columns=columns)
         return groupDf
 
-    
+    """computeRank
+    Description: 
+        compute the ranking score of each symbol on each ratio
+    Input:
+        df: processed dataframe with fundamental ratios
+        groupDf: symbol groups for each ratio
+    Output:
+        rankDf: dataframe of ranking scores for each symbol on each ratio
+    """
     def computeRank(self, df, groupDf):
         rankDf = pd.DataFrame(index=df.index)
         for column in groupDf:
@@ -60,21 +93,30 @@ class LinearRegression:
         return rankDf
 
 
-    def computeBenchmarkAR(self, benchmark):
-        # get the date of fundamental ratio data
-        query1 = "SELECT date, %s FROM benchmark WHERE date='%s'"\
-                                                %(benchmark, self.preprocess.frdate)
-        startIndex = float(self.db.query(query1, index='date')[benchmark][0])
-        query2 = "SELECT date, %s FROM benchmark WHERE date=\
-            (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
-                                                %benchmark
-        endIndex = float(self.db.query(query2, index='date')[benchmark][0])
-        return endIndex/startIndex
+    #def computeBenchmarkAR(self, benchmark):
+    #    # get the date of fundamental ratio data
+    #    query1 = "SELECT date, %s FROM benchmark WHERE date='%s'"\
+    #                                            %(benchmark, self.preprocess.frdate)
+    #    startIndex = float(self.db.query(query1, index='date')[benchmark][0])
+    #    query2 = "SELECT date, %s FROM benchmark WHERE date=\
+    #        (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
+    #                                            %benchmark
+    #    endIndex = float(self.db.query(query2, index='date')[benchmark][0])
+    #    return endIndex/startIndex
         
-
+    """computeAR
+    Description:
+        compute the individuals returns and group average returns
+    Input:
+        groupDf: symbol groups for each ratio
+        benchmark: benchmark for evaluating return
+    Output:
+        ArDf: individuals returns
+        groupAR: group average returns
+    """
     def computeAR(self, groupDf, benchmark):
         ArDf = self.preprocess.retrieveAR()
-        benchmarkAR = self.computeBenchmarkAR(benchmark)
+        benchmarkAR = self.preprocess.computeBenchmarkAR(benchmark)
         ArDf["return"] = ArDf["return"]/benchmarkAR -1.0
         # remove outlier returns
         bull = ArDf[ArDf['return'] > self.retMax]
@@ -99,7 +141,13 @@ class LinearRegression:
                 groupAR[column][groupIndex] = avgAR
         return ArDf, groupAR
         
-        
+    """visualizeGroupAR
+    Description:
+        plot the correlation between group average return and ratios
+    Input:
+        groupAR:
+            group average return for each ratio
+    """    
     def visualizeGroupAR(self, groupAR):
         x = np.arange(self.groupNum)
         plotSize = float(len(groupAR.columns))
@@ -115,7 +163,10 @@ class LinearRegression:
             axes.set_ylim([-0.05,0.05]) 
         plt.show()
         
-        
+    """visualizeTrainValidate
+    Description: 
+        visualize the effectiveness of the model
+    """    
     def visualizeTrainValidate(self, train, validate):
         plt.close()
         x_1 = train["score"]
@@ -127,7 +178,14 @@ class LinearRegression:
         plt.draw()
         plt.show(block=False)
         
-        
+    """computeCorrCoef
+    Description:
+        compute correlation coefficient for each ratios and drop the ratios 
+        with p_value higher than the model requirement
+    Input:
+        groupAR: group average return for each ratio
+        coefDf: remaining ratios slope z-score
+    """    
     def computeCorrCoef(self, groupAR):
         coefDf = pd.DataFrame(index=groupAR.columns)
         coefDf["corrcoef"] = 0.0
@@ -136,14 +194,21 @@ class LinearRegression:
             y = groupAR[column].astype(float)
             slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
             if p_value < self.p_value:
-                coefDf["corrcoef"][column] = r_value
+                # looking for definitive strong slope
+                coefDf["corrcoef"][column] = slope/std_err
             else:
                 coefDf.drop([column], axis=0, inplace=True)
                 #print("remove insignificant column:", "%16s"%column," (p value: %f)"%p_value)
         self.coefficient = coefDf
         return coefDf
         
-        
+    """computeSymbolScore
+    Description: compute overall score from all ratio regression and rank symbol
+    Input:
+        coefDf: dataframe of slope strength
+        rankDf: dataframe of ranking scores for each symbol on each ratio
+        Ar: return of each symbol
+    """    
     def computeSymbolScore(self, coefDf, rankDf, Ar=None):
         newRankDf = pd.DataFrame(0.0, index=rankDf.index, columns=rankDf.columns)
         dropList1 = [col for col in rankDf.columns if col not in coefDf.index]
@@ -151,8 +216,6 @@ class LinearRegression:
         rankDf.drop(dropList1, axis=1, inplace=True)
         coefDf.drop(dropList2, inplace=True)
         coefDf = np.sign(coefDf) * coefDf.pow(self.scoreOrder).abs()
-        offset = (float(self.groupNum) - 1.0)/2.0
-        rankDf = rankDf - offset
         # normalize scores
         scaler = preprocessing.MinMaxScaler()
         newRankDf["score"] = scaler.fit_transform(rankDf.dot(coefDf))
@@ -161,7 +224,9 @@ class LinearRegression:
             return scoreDf.sort_values('score', ascending=False)
         return newRankDf['score'].sort_values(ascending=False)
         
-    
+    """
+    TRAIN
+    """
     def train(self, benchmark, trainset=None):
         if trainset is not None:
             data = trainset
@@ -174,14 +239,18 @@ class LinearRegression:
         rankDf = self.computeRank(data, groups)
         return self.computeSymbolScore(coefDf, rankDf, ar)
 
-
+    """
+    VALIDATE
+    """
     def validate(self, benchmark, validateset):
         testGroups = self.group(validateset)
         ar, gar = self.computeAR(testGroups, benchmark)
         testRankDf = self.computeRank(validateset, testGroups)
         return self.computeSymbolScore(self.coefficient, testRankDf, ar)
         
-
+    """
+    TRAIN AND VALIDATE
+    """
     def train_validate(self, benchmark):
         trainSet, validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
@@ -189,7 +258,9 @@ class LinearRegression:
         self.visualizeTrainValidate(t, v)
         return t,v
         
-
+    """
+    PREDICT
+    """
     def predict(self):
         newdata = self.preprocess.getData(dataType = 'filled', lag = False)
         if self.coefficient.empty:

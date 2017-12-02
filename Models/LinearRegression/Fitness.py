@@ -1,11 +1,25 @@
 #!/usr/bin/python3
 
+"""Fitness.py
+Description:
+    compute fitness score for a given LinearRegression Model
+"""
+
 import numpy as np
 from scipy import stats
 from LinearRegression import LinearRegression
 from colored import fg, bg, attr
 
-
+"""eval_LinearRegression
+Description:
+    evaluate the probability of regression line head to out-perform the market
+    and the regression line tail to lose to market
+Input:
+    aggregateDf: dataframe with regression score and return for each symbols
+Output:
+    head_probability: regression-line-head's probability to outperform market
+    tail_probability: regression-line-tail's probability to lose to market
+"""
 def eval_LinearRegression(aggregateDf):
     aggregateDf = aggregateDf.dropna(how="any")
     slope, intercept, r_value, p_value, std_err = stats.linregress(aggregateDf["score"], aggregateDf["return"])
@@ -21,7 +35,14 @@ def eval_LinearRegression(aggregateDf):
     tail_probability = 1.0 - stats.norm.cdf(z_value_tail)
     return head_probability, tail_probability
 
-  
+"""computeFitness
+Description:
+    compute a single fitness score for a given LinearRegression model
+Input:
+    lr: LinearRegression model instance
+Output:
+    fitness: fitness score
+"""  
 def computeFitness(lr):
     lr_train, lr_validate = lr.train_validate("snp500")
     lr_predict = lr.predict()

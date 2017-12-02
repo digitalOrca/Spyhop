@@ -20,7 +20,6 @@ class MoneyFlow:
     
         
     def computeMoneyFlow(self, sequences):
-        #flow = {}
         flow = pd.DataFrame(columns=["flow"])
         for symbol in sequences.keys():
             prev_price = None
