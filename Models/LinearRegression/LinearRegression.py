@@ -255,7 +255,7 @@ class LinearRegression:
         trainSet, validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
         v = self.validate(benchmark, validateset = validateSet)
-        self.visualizeTrainValidate(t, v)
+        #self.visualizeTrainValidate(t, v)
         return t,v
         
     """

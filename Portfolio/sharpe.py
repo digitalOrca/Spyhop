@@ -2,10 +2,10 @@
 
 import numpy as np
 
-def TangentPortfolio(rskRet,covar,rskfr):
-    A = (1/covar)*(rskRet-rskfr)
+def TangentPortfolio(rskret,covar,rskfr):
+    A = (1/covar)*(rskret-rskfr)
     A /= sum(A)
-    pret=rskRet.T*A
+    pret=rskret.T*A
     prsk=np.power(A.T*(covar*A),0.5)
     return A.T,pret,prsk
 

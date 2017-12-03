@@ -8,13 +8,16 @@ import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
 
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 public class MainGateway{
 
     /* Running mode */
+    static boolean Historical = true;
     static boolean Live = true; //Live trading or Paper trading
     static boolean RHT = true;  //if Paper trading, fake during RTH or off RTH
 
@@ -28,6 +31,9 @@ public class MainGateway{
     static EReader messageQueue;
     static QueueProcessor messageProcessor;
     static Thread strategyExecutor;
+
+    /* Pacing Metrics */
+    static int pendingHistReq = 0;
 
     public static void main(String[] args) {
 
@@ -91,18 +97,34 @@ public class MainGateway{
                 }
             }
 
-            /* Debug */
-            // Add debugging operation here
-            //Contract contract1 = OrderBuilder.makeContract("RNVA", SecType.STK, Exchange.SMART, Currency.USD);
-            //client.getClientSocket().reqHistoricalData(132, contract1, "20171006 23:59:59 GMT", "5 D", "1 hour", "MIDPOINT", 1, 1, false, null);
-            //Helper.pauseSec(10);
-            //if (Live)
-            //   System.exit(0);
-
             /* Check if the market is closed */
-            if (!beforeClose())
-                break;
+            if (!beforeClose()) {
+                /* Consolidate tick data */
+                System.out.println("=============Consolidate daily data==============");
+                CallbackAction.consolidateTicks("tick", "tick_history");
 
+                /* Historical Data Requests */
+                if (Historical) {
+                    LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
+                    Calendar cal = Calendar.getInstance();
+                    SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+                    String formatted = form.format(cal.getTime());
+                    int reqId = 1000; //starting reqId for historical data request
+                    for (String symbol : allSymbols) {
+                        while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
+                            Helper.pauseMilli(5);
+                        }
+                        System.out.println("reqId:"+reqId);
+                        SocketComm.getInstance().registerSymbol(reqId, symbol);
+                        Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
+                        client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
+                        pendingHistReq++;
+                        reqId++;
+                        Helper.pauseMilli(250);
+                    }
+                    break;
+                }
+            }
             /* One-time requests */
             if (!streaming) {
                 System.out.println("============Sending One-time Requests============");
@@ -138,9 +160,7 @@ public class MainGateway{
             //}
             Helper.pauseSec(1);
         }
-        System.out.println("=============Consolidate daily data==============");
         Logger.getInstance().close();
-        CallbackAction.consolidateTicks("tick", "tick_history");
         System.out.println("============Main Gateway Disconnected============");
         System.exit(0);
     }

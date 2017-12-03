@@ -8,6 +8,8 @@ import utils.DatabaseConn;
 import utils.Helper;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 class CallbackAction {
@@ -44,6 +46,12 @@ class CallbackAction {
 
     static LinkedList<String> selectActiveStocks() {
         String query = "SELECT symbol FROM security WHERE status=1 ORDER BY symbol ASC";
+        ResultSet resultSet = DatabaseConn.getInstance().execQuery(query);
+        return Helper.resultToList(resultSet, "symbol");
+    }
+
+    static LinkedList<String> selectAllStocks() {
+        String query = "SELECT symbol FROM security ORDER BY symbol ASC";
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(query);
         return Helper.resultToList(resultSet, "symbol");
     }
@@ -256,5 +264,14 @@ class CallbackAction {
                                         column, strPrice, symbol, date,
                                         column, date, symbol, strPrice);
         DatabaseConn.getInstance().execUpdate(query);
+    }
+
+    static void updateHistoricBar(String symbol, String timestamp, double open, double high, double low, double close, long volume, int count, double wap) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd  HH:mm:ss");
+        String dateTime = LocalDateTime.parse(timestamp, formatter).toString();
+        String insertion = "INSERT INTO bar_history(symbol, timestamp, open, high, low, close, volume, count, wap) " +
+                           "VALUES ('%s', '%s', %s, %s, %s, %s, %s, %s, %s)";
+        String statement = String.format(insertion, symbol, dateTime, open, high, low, close, volume, count, wap);
+        DatabaseConn.getInstance().execUpdate(statement);
     }
 }

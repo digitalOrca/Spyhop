@@ -190,7 +190,7 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void historicalData(int reqId, Bar bar) {
-        System.out.println("HistoricalData. "+reqId+" - Date: "+bar.time()+", Open: "+bar.open()+", High: "+bar.high()+", Low: "+bar.low()+", Close: "+bar.close()+", Volume: "+bar.volume()+", Count: "+bar.count()+", WAP: "+bar.wap());
+        CallbackAction.updateHistoricBar(SocketComm.getInstance().getSymbol(reqId), bar.time(), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume(), bar.count(), bar.wap());
     }
 
     public void scannerParameters(String s) {
@@ -289,6 +289,15 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void error(int id, int errorCode, String errorMsg) {
+        switch (errorCode) {
+            case 162:
+                MainGateway.pendingHistReq--;
+                break;
+            case 200:
+                MainGateway.pendingHistReq--;
+                break;
+            default:
+        }
         System.out.println("reqId: " + id + ", Error Code: " + errorCode + ", Error Message: " + errorMsg);
     }
 
@@ -339,8 +348,9 @@ public class EWrapperImpl implements EWrapper {
         System.out.println("TEST56");
     }
 
-    public void historicalDataEnd(int i, String s, String s1) {
-        System.out.println("Callback -> historicalDataEnd");
+    public void historicalDataEnd(int reqId, String s, String s1) {
+        MainGateway.pendingHistReq--;
+        System.out.println("Closing ReqId:"+reqId+", Pending requests:"+MainGateway.pendingHistReq);
     }
 
     public void mktDepthExchanges(DepthMktDataDescription[] depthMktDataDescriptions) {

@@ -7,7 +7,8 @@ from Preprocess import Preprocess
 
 class MoneyFlow:
     
-    def __init__(self, lag=30):
+    #TODO: increase lag once more data is available
+    def __init__(self, lag=3):
         self.preprocess = Preprocess(data='ticks', lag=lag)
     
         
@@ -54,6 +55,7 @@ class MoneyFlow:
     
     def visualizeFlowReturn(self, normalizedFlow):
         ar = self.preprocess.retrieveAR()
+        print(ar)
         flowReturn = pd.concat([normalizedFlow, ar], axis=1, join='inner')
         #print(flowReturn)
         x = flowReturn["flow"]
