@@ -73,6 +73,33 @@ class Preprocess:
             return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
     
     
+    def _retrieveBars(self, lag=True):
+        if lag:
+            # get time window
+            start = (date.today() - timedelta(days=self.lag)).isoformat()
+            query = "SELECT * from bar_history WHERE timestamp > \
+                     (SELECT timestamp FROM bar_history \
+                         WHERE timestamp > '%s' \
+                         ORDER BY timestamp ASC LIMIT 1) \
+                     AND timestamp < \
+                     (SELECT timestamp FROM bar_history \
+                        WHERE timestamp > '%s' \
+                        ORDER BY timestamp ASC LIMIT 1) \
+                        + INTERVAL '%s days' \
+                     ORDER BY timestamp ASC" \
+                     %(start, start, self.lag/2)
+            df = self.db.query(query)
+        else:
+            query = "SELECT * FROM bar_history WHERE timestamp > \
+                     (SELECT timestamp FROM bar_history \
+                     ORDER BY timestamp DESC LIMIT 1) \
+                     - INTERVAL '%s days' \
+                     ORDER BY timestamp ASC" \
+                     %(self.lag/2)
+            df = self.db.query(query)
+        return df
+                
+    
     def retrieveMktCaps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
         end = (date.today() - timedelta(days=self.lag/2)).isoformat()
@@ -209,6 +236,8 @@ class Preprocess:
         elif self.data == "ticks":
             raw_data = self._retrieveTicks(lag)
             return raw_data
+        elif self.data == "bars":
+            raw_data = self._retrieveBars(lag)
 
 
 #TODO: MOVE THIS TO UNITTEST
@@ -228,4 +257,3 @@ print elapsed
 """
 #pfr = Preprocess(data="ticks")
 #print(pfr._retrieveTicks(lag=False))
-#pfr.retrieveMktCaps(["NVDA"])

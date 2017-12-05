@@ -3,6 +3,7 @@ import com.ib.client.EReader;
 import enums.Currency;
 import enums.Exchange;
 import enums.SecType;
+import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import sun.font.CoreMetrics;
 import utils.Helper;
 import utils.Logger;
@@ -122,8 +123,13 @@ public class MainGateway{
                         reqId++;
                         Helper.pauseMilli(250);
                     }
-                    break;
                 }
+                // make sure pending requests are processed before exiting
+                while (pendingHistReq > 0) {
+                    Helper.pauseSec(1);
+                }
+                Helper.pauseSec(60); // give 60s seconds of lag tolerance
+                break;
             }
             /* One-time requests */
             if (!streaming) {
