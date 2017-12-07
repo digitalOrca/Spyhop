@@ -88,7 +88,7 @@ class Preprocess:
                         + INTERVAL '%s days' \
                      ORDER BY timestamp ASC" \
                      %(start, start, self.lag/2)
-            df = self.db.query(query)
+            df = self.db.query(query)[["wap", "volume"]]
         else:
             query = "SELECT * FROM bar_history WHERE timestamp > \
                      (SELECT timestamp FROM bar_history \
@@ -96,7 +96,7 @@ class Preprocess:
                      - INTERVAL '%s days' \
                      ORDER BY timestamp ASC" \
                      %(self.lag/2)
-            df = self.db.query(query)
+            df = self.db.query(query)[["wap", "volume"]]
         return df
                 
     
@@ -238,6 +238,7 @@ class Preprocess:
             return raw_data
         elif self.data == "bars":
             raw_data = self._retrieveBars(lag)
+            
 
 
 #TODO: MOVE THIS TO UNITTEST

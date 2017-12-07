@@ -1,5 +1,14 @@
 #!/usr/bin/python3
 
+"""MoneyFlow.py
+Description:
+    computing the accumulative imbalance of two driving forces to the prices. 
+    If the current trade tick is higher than the previous one, then its monetary
+    amount is counted as the positive force, and vice-versa. The accumulative
+    imbalance between positive and negative force is then correlated to the 
+    price movement over a period of time.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,14 +18,14 @@ class MoneyFlow:
     
     #TODO: increase lag once more data is available
     def __init__(self, lag=3):
-        self.preprocess = Preprocess(data='ticks', lag=lag)
+        self.preprocess = Preprocess(data='bars', lag=lag)
     
         
     def prepareData(self):
         df = self.preprocess.getData()
         sequences = {}
-        for symbol in df.index.unique().values:
-            sequences[symbol] = df[df.index == symbol]
+        for symbol in df.symbol.unique().values:
+            sequences[symbol] = df[df.symbol == symbol]
         return sequences
     
         
@@ -28,16 +37,16 @@ class MoneyFlow:
             for index, row in sequences[symbol].iterrows():
                 # https://interactivebrokers.github.io/tws-api/interfaceIBApi_1_1EWrapper.html#a1844eb442fb657c0f2cc0a63e4e74eba
                 # tick size has multiplier of 100
-                vote = row["last_price"] * row["last_size"] * 100
+                vote = row["wap"] * row["volume"] * 100
                 if prev_price is None:
                     pass
-                elif row["last_price"] > prev_price:
+                elif row["wap"] > prev_price:
                     balance += vote
-                elif row["last_price"] < prev_price:
+                elif row["wap"] < prev_price:
                     balance -= vote
                 else:
                     pass
-                prev_price = row["last_price"]
+                prev_price = row["wap"]
             flow.loc[symbol] = balance
         return flow
                 
