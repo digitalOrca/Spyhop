@@ -32,7 +32,7 @@ class DBConnect:
         dataframe = None
         try:
             dataframe = psql.read_sql(query, self.connection)
-            if index is not None:
+            if index != None:
                 dataframe.set_index(index, inplace=True)
         except:
             traceback.print_exc()

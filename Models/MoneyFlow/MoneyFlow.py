@@ -22,15 +22,22 @@ class MoneyFlow:
     
         
     def prepareData(self):
+        print("retrieving bar data...")
         df = self.preprocess.getData()
         sequences = {}
-        for symbol in df.symbol.unique().values:
-            sequences[symbol] = df[df.symbol == symbol]
+        count = 0
+        print(df)
+        print((df.index).unique().values)
+        for symbol in (df.index).unique().values:
+            print("count:",count, " symbol: ", symbol)
+            count += 1
+            sequences[symbol] = df[df.index == symbol]
         return sequences
     
         
     def computeMoneyFlow(self, sequences):
         flow = pd.DataFrame(columns=["flow"])
+        count = 0
         for symbol in sequences.keys():
             prev_price = None
             balance = 0
@@ -48,17 +55,22 @@ class MoneyFlow:
                     pass
                 prev_price = row["wap"]
             flow.loc[symbol] = balance
+            print("count: ", count, " symbol: ", symbol, " balance: ", balance)
+            count += 1
         return flow
                 
         
     def normalizeMoneyFlow(self, flow):
         mktcap = self.preprocess.retrieveMktCaps(flow.index)
         normalizedFlow = pd.DataFrame(columns=["flow"])
+        count = 0
         for symbol in flow.index:
             if mktcap[symbol] is None:
                 print("market caps data not available for %s"%symbol)
+                count += 1
                 continue
             normalizedFlow.loc[symbol] = flow.loc[symbol]["flow"] / (mktcap[symbol] * 1000000)
+        print("Number of discarded symbols: ", count)
         return normalizedFlow
         
     
