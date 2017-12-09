@@ -16,14 +16,25 @@ from Preprocess import Preprocess
 
 class MoneyFlow:
     
+    """
+    Constructor
+    """
     #TODO: increase lag once more data is available
-    def __init__(self, lag=3):
+    def __init__(self, lag=6):
         self.preprocess = Preprocess(data='bars', lag=lag)
     
-        
-    def prepareData(self):
+    
+    """prepareData
+    Description:
+        prepare data as a dict of price sequences
+    Input:
+        lag: if the data is lagged
+    Output:
+        sequences: dict of price sequence for each symbol
+    """
+    def prepareData(self, lag=True):
         print("retrieving bar data...")
-        df = self.preprocess.getData()
+        df = self.preprocess.getData(lag=lag)
         sequences = {}
         count = 0
         print(df)
@@ -34,7 +45,15 @@ class MoneyFlow:
             sequences[symbol] = df[df.index == symbol]
         return sequences
     
-        
+    
+    """computeMoneyFlow
+    Description:
+        compute money flow imbalance for each symbol
+    Input:
+        sequences: dict of price sequence for each symbol
+    Output:
+        flow: dict of trade imbalance correspond to each symbol
+    """    
     def computeMoneyFlow(self, sequences):
         flow = pd.DataFrame(columns=["flow"])
         count = 0
@@ -58,8 +77,18 @@ class MoneyFlow:
             print("count: ", count, " symbol: ", symbol, " balance: ", balance)
             count += 1
         return flow
-                
+    
+    
+    """normalizeMoneyFlow
+    Description:
+        normalize computed money flow imbalance by the market cap of the symbol
+    Input:
+        flow: dict of trade imbalance correspond to each symbol
+    Output:
+        normalizeMoneyFlow: dict of normalized trade imbalance correspond 
+        to each symbol
         
+    """    
     def normalizeMoneyFlow(self, flow):
         mktcap = self.preprocess.retrieveMktCaps(flow.index)
         normalizedFlow = pd.DataFrame(columns=["flow"])
@@ -74,6 +103,10 @@ class MoneyFlow:
         return normalizedFlow
         
     
+    """visualizeFlowReturn
+    Description:
+        visualize normalized money flow imbalance and the return
+    """
     def visualizeFlowReturn(self, normalizedFlow):
         ar = self.preprocess.retrieveAR()
         print(ar)
