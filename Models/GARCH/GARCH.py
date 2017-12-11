@@ -1,9 +1,15 @@
 #!/usr/bin/python3
 
 import numpy as np
+from Preprocess import Preprocess
 
 def GARCH(resi, omega, alpha, beta):
-    #TODO condition check
+    
+    assert omega > 0
+    assert np.amin(alpha) > 0
+    assert np.amin(beta) > 0
+    assert np.sum(alpha) + np.sum(beta) < 1
+    
     size = resi.size
     lag = beta.size
     vari = np.zeros(shape=size)
@@ -20,5 +26,22 @@ def GARCH(resi, omega, alpha, beta):
             if v-j-1 >= 0:
                 vari[v] += beta[j] * vari[v-j-1]
     return vari
+    
+    
+class GARCH:
+    
+    def __init__(self, omega, alpha, beta):
+        self.omega = omega
+        self.alpha = alpha
+        self.beta = beta
+        self.preprocess = Preprocess
+        
+    def prepareData(self, lag):
+        self.preprocess = Preprocess(data='bars', lag=lag)
+        
+        
+    
+        
+    
     
     
