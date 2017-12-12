@@ -34,10 +34,12 @@ class GARCH:
         self.omega = omega
         self.alpha = alpha
         self.beta = beta
-        self.preprocess = Preprocess
+        self.preprocess = Preprocess(data='open_close', lag=lag)
         
     def prepareData(self, lag):
-        self.preprocess = Preprocess(data='bars', lag=lag)
+        return self.preprocess.getData()
+        
+    
         
         
     

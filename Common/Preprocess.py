@@ -100,6 +100,18 @@ class Preprocess:
         return df
                 
     
+    def _retrieveOpenClose(self):
+        start_date = (date.today() - timedelta(days=self.lag)).isoformat()
+        selection = "SELECT * FROM open_close WHERE date >= '%s' \
+                     ORDER BY index ASC"%start_date
+        df = self.db.query(selection)
+        df["average"] = df[["lastclose", "open"]].mean(axis=1, skipna=True, numeric_only=True)
+        dailyPrice = {}
+        for symbol in (df.index).unique().values:
+            dailyPrice[symbol] = df[df.index==symbol][["date", "average"]]
+        return dailyPrice
+    
+    
     def retrieveMktCaps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
         end = (date.today() - timedelta(days=self.lag/2)).isoformat()
@@ -239,6 +251,9 @@ class Preprocess:
         elif self.data == "bars":
             raw_data = self._retrieveBars(lag)
             return raw_data
+        elif self.data == 'open_close':
+            raw_data = self._retrieveOpenClose(lag)
+            return raw_data
             
 
 
@@ -257,5 +272,5 @@ elapsed = timeit.default_timer() - start_time
 print elapsed
 #pfr.getData('filled')
 """
-#pfr = Preprocess(data="ticks")
-#print(pfr._retrieveTicks(lag=False))
+#pfr = Preprocess(data="open_close")
+#print(pfr._retrieveOpenClose())
