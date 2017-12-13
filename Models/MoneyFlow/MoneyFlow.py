@@ -34,11 +34,9 @@ class MoneyFlow:
     """
     def prepareData(self, lag=True):
         print("retrieving bar data...")
-        df = self.preprocess.getData(lag=lag)
+        df = self.preprocess.getData(lag=lag, dset="train_validate")
         sequences = {}
         count = 0
-        print(df)
-        print((df.index).unique().values)
         for symbol in (df.index).unique().values:
             print("count:",count, " symbol: ", symbol)
             count += 1
@@ -108,6 +106,7 @@ class MoneyFlow:
         visualize normalized money flow imbalance and the return
     """
     def visualizeFlowReturn(self, normalizedFlow):
+        #TODO: BUG, THIS IS AR FOR THE FULL LAG PERIOD
         ar = self.preprocess.retrieveAR()
         print(ar)
         flowReturn = pd.concat([normalizedFlow, ar], axis=1, join='inner')

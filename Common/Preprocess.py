@@ -73,32 +73,39 @@ class Preprocess:
             return df[df["event"]=="last"][["timestamp","last_price","last_size"]]
     
     
-    def _retrieveBars(self, lag=True):
-        if lag:
-            # get time window
-            start = (date.today() - timedelta(days=self.lag)).isoformat()
-            query = "SELECT * from bar_history WHERE timestamp > \
-                     (SELECT timestamp FROM bar_history \
-                         WHERE timestamp > '%s' \
-                         ORDER BY timestamp ASC LIMIT 1) \
-                     AND timestamp < \
-                     (SELECT timestamp FROM bar_history \
-                        WHERE timestamp > '%s' \
-                        ORDER BY timestamp ASC LIMIT 1) \
-                        + INTERVAL '%s days' \
-                     ORDER BY timestamp ASC" \
-                     %(start, start, self.lag/2)
-            df = self.db.query(query)[["timestamp", "wap", "volume"]]
+    def _retrieveBars(self, split=True, lag=True):
+        if split:
+            if lag:
+                # get time window
+                start = (date.today() - timedelta(days=self.lag)).isoformat()
+                query = "SELECT * from bar_history WHERE timestamp > \
+                         (SELECT timestamp FROM bar_history \
+                             WHERE timestamp > '%s' \
+                             ORDER BY timestamp ASC LIMIT 1) \
+                         AND timestamp < \
+                         (SELECT timestamp FROM bar_history \
+                            WHERE timestamp > '%s' \
+                            ORDER BY timestamp ASC LIMIT 1) \
+                            + INTERVAL '%s days' \
+                         ORDER BY timestamp ASC" \
+                         %(start, start, self.lag/2)
+                df = self.db.query(query)[["timestamp", "wap", "volume"]]
+            else:
+                query = "SELECT * FROM bar_history WHERE timestamp > \
+                         (SELECT timestamp FROM bar_history \
+                         ORDER BY timestamp DESC LIMIT 1) \
+                         - INTERVAL '%s days' \
+                         ORDER BY timestamp ASC" \
+                         %(self.lag/2)
+                df = self.db.query(query)[["timestamp", "wap", "volume"]]
+            return df
         else:
-            query = "SELECT * FROM bar_history WHERE timestamp > \
-                     (SELECT timestamp FROM bar_history \
-                     ORDER BY timestamp DESC LIMIT 1) \
-                     - INTERVAL '%s days' \
-                     ORDER BY timestamp ASC" \
-                     %(self.lag/2)
+            start_date = (date.today() - timedelta(days=self.lag)).isoformat()
+            query = "SELECT * FROM bar_history WHERE timestamp >= '%s' \
+                     ORDER BY index ASC"%start_date
             df = self.db.query(query)[["timestamp", "wap", "volume"]]
-        return df
-                
+            return df
+    
     
     def _retrieveOpenClose(self):
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
@@ -249,8 +256,12 @@ class Preprocess:
             raw_data = self._retrieveTicks(lag)
             return raw_data
         elif self.data == "bars":
-            raw_data = self._retrieveBars(lag)
-            return raw_data
+            if dset == "train_validate":
+                split_data = self._retrieveBars(split=True, lag=lag)
+                return split_data
+            else:
+                whole_data = self._retrieveBars(split=False, lag=lag)
+                return whole_data
         elif self.data == 'open_close':
             raw_data = self._retrieveOpenClose(lag)
             return raw_data
@@ -272,5 +283,5 @@ elapsed = timeit.default_timer() - start_time
 print elapsed
 #pfr.getData('filled')
 """
-#pfr = Preprocess(data="open_close")
-#print(pfr._retrieveOpenClose())
+#pfr = Preprocess(data="bars")
+#print(pfr.getData(lag=True, dset="all"))
