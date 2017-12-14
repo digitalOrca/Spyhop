@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import numpy as np
+import pandas as pd
 from scipy.optimize import fmin
 from Preprocess import Preprocess
     
@@ -15,7 +16,40 @@ class GARCH:
         self.vari = None
         
     def prepareData(self):
-        return self.preprocess.getData(dset="all")
+        rawData = self.preprocess.getData(dset="all")
+        rawData["date"] = rawData["timestamp"].apply(lambda x: x.date())
+        rawData["time"] = rawData["timestamp"].apply(lambda x: x.time())
+        symbols = (rawData.index).unique().values
+        dates = sorted((rawData["date"]).unique())
+        formatedData = {}
+        count = 0
+        for symbol in symbols:
+            count += 1
+            print(count, ", process for symbol:",symbol)
+            symbolData = rawData[rawData.index == symbol]
+            symbolDf = pd.DataFrame(index=dates, columns=["vari", "resi"])
+            #compute change
+            change = symbolData["wap"].pct_change() + 1
+            logChange = change.apply(lambda x: np.log(x))
+            symbolData["change"] = logChange
+            #correct for first bar of each day
+            earliestBar = symbolData.iloc[0]["time"]
+            symbolData[symbolData["time"]==earliestBar]["change"] = 0
+            #compute symbol mean
+            mu = symbolData["change"].mean()
+            symbolData["change"] = symbolData["change"].subtract(mu)
+            #symbolData.fillna(value=0)
+            #TODO: pct_change for each day instead
+            for date in dates:
+                series= symbolData[symbolData["date"]==date]["change"]
+                vari = series.var()
+                resi = series.mean()
+                symbolDf.loc[date, "vari"] = vari
+                symbolDf.loc[date, "resi"] = resi
+                print("------>",date, "vari:", vari, "resi:", resi)
+                
+            formatedData[symbol] = symbolDf
+        return formatedData
     
     def costFunc(self, resi, vari):
          return np.sum(np.add(np.divide(np.power(resi, 2), vari), np.log(2*np.pi*vari)))
@@ -46,13 +80,10 @@ class GARCH:
         
     def optimizeParameters(self, resi):
         theta0 = (0.01, np.array([0.1]), np.array([0.1]))
+        
         res = fmin(costFunc(resi, GARCH(resi, theta)), theta0)
         optTheta = res[0]
         
     
-#g = GARCH(1, 2, 3)    
-#print(g.prepareData())
-        
-    
-    
-    
+g = GARCH(1, 2, 3)    
+print(g.prepareData())    
