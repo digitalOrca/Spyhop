@@ -38,12 +38,15 @@ class GARCH:
             #compute symbol mean
             mu = symbolData["change"].mean()
             symbolData["change"] = symbolData["change"].subtract(mu)
-            #symbolData.fillna(value=0)
-            #TODO: pct_change for each day instead
+            vari, resi = 0, 0
             for date in dates:
                 series= symbolData[symbolData["date"]==date]["change"]
-                vari = series.var()
-                resi = series.mean()
+                v = series.var()
+                if not np.isnan(v):
+                    vari = v
+                r = series.mean()
+                if not np.isnan(r):
+                    resi = r
                 symbolDf.loc[date, "vari"] = vari
                 symbolDf.loc[date, "resi"] = resi
                 print("------>",date, "vari:", vari, "resi:", resi)
