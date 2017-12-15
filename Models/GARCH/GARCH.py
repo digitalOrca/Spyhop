@@ -7,10 +7,10 @@ from Preprocess import Preprocess
     
 class GARCH:
     
-    def __init__(self, omega, alpha, beta):
-        self.omega = omega
-        self.alpha = alpha
-        self.beta = beta
+    def __init__(self):
+        #self.omega = omega
+        #self.alpha = alpha
+        #self.beta = beta
         self.preprocess = Preprocess(data='bars')
         self.resi = None
         self.vari = None
@@ -26,18 +26,15 @@ class GARCH:
         for symbol in symbols:
             count += 1
             print(count, ", process for symbol:",symbol)
-            symbolData = rawData[rawData.index == symbol]
+            symbolData = rawData[rawData.index == symbol].copy()
             symbolDf = pd.DataFrame(index=dates, columns=["vari", "resi"])
             #compute change
-            change = symbolData["wap"].pct_change() + 1
+            change = (symbolData["wap"].pct_change()).add(1)
             logChange = change.apply(lambda x: np.log(x))
+            mu = logChange.mean()
+            logChange = logChange.subtract(mu)
+            logChange.iloc[0] = 0
             symbolData["change"] = logChange
-            #correct for first bar of each day
-            earliestBar = symbolData.iloc[0]["time"]
-            symbolData[symbolData["time"]==earliestBar]["change"] = 0
-            #compute symbol mean
-            mu = symbolData["change"].mean()
-            symbolData["change"] = symbolData["change"].subtract(mu)
             vari, resi = 0, 0
             for date in dates:
                 series= symbolData[symbolData["date"]==date]["change"]
@@ -50,15 +47,23 @@ class GARCH:
                 symbolDf.loc[date, "vari"] = vari
                 symbolDf.loc[date, "resi"] = resi
                 print("------>",date, "vari:", vari, "resi:", resi)
-                
             formatedData[symbol] = symbolDf
+            #TODO: TEST BLOCK
+            theta0 = [0.01, 0.1, 0.1]
+            #result = fmin(self.costFunc(resi, GARCH(symbolDf["resi"], theta)), theta0)
+            result = fmin(func=self.costFunc, x0=theta0, args=(symbolDf["resi"],))
+            print(result)
+            #TODO: END TEST BLOCK
         return formatedData
     
-    def costFunc(self, resi, vari):
-         return np.sum(np.add(np.divide(np.power(resi, 2), vari), np.log(2*np.pi*vari)))
+    def costFunc(self, theta, resi):
+        vari = self.GARCH(theta, resi)
+        return np.sum(np.add(np.divide(np.power(resi, 2), vari), np.log(2*np.pi*vari)))
 
-    def GARCH(resi, theta):
-        omega, alpha, beta = theta
+    def GARCH(self, theta, resi):
+        omega = theta[0]
+        alpha = theta[1]
+        beta = theta[2]
         #assert omega > 0
         #assert np.amin(alpha) > 0
         #assert np.amin(beta) > 0
@@ -69,24 +74,28 @@ class GARCH:
         # initialize variance as the overall residual series variance
         vari[0] = np.var(resi, axis=0)
         for v in range(size-1):
-            vari[v+1] += omega
-            for i in alpha.size:
-                # reduce order if necessary
-                if v-i-1 >= 0:
-                    vari[v] += alpha[i] * np.power(resi[v-i-1], 2)
-            for j in beta.size:
-                # reduce order if necessary
-                if v-j-1 >= 0:
-                    vari[v] += beta[j] * vari[v-j-1]
+            vari[v+1] = omega + alpha * np.power(resi[v-1], 2) + beta * vari[v-1]
+            #vari[v+1] += omega
+            #for i in alpha.size:
+            #    # reduce order if necessary
+            #    if v-i-1 >= 0:
+            #        vari[v+1] += alpha[i] * np.power(resi[v-i-1], 2)
+            #for j in beta.size:
+            #    # reduce order if necessary
+            #    if v-j-1 >= 0:
+            #        vari[v+1] += beta[j] * vari[v-j-1]
         return vari
     
         
-    def optimizeParameters(self, resi):
-        theta0 = (0.01, np.array([0.1]), np.array([0.1]))
-        
-        res = fmin(costFunc(resi, GARCH(resi, theta)), theta0)
-        optTheta = res[0]
-        
+    def optimizeParameters(self):
+        formatedData = self.prepareData()
+        theta0 = [0.01, 0.1, 0.1]
+        optimal = {}
+        for symbol in formatedData.keys():
+            resi = formatedData[symbol]
+            result = fmin(costFunc(resi, GARCH(resi, theta)), theta0)
+            optimal[symbol] = result
+            print(result)
     
-g = GARCH(1, 2, 3)    
-print(g.prepareData())    
+g = GARCH()    
+print(g.prepareData())   
