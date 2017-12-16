@@ -39,21 +39,24 @@ class GARCH:
             for date in dates:
                 series= symbolData[symbolData["date"]==date]["change"]
                 v = series.var()
+                r = series.mean()
                 if not np.isnan(v):
                     vari = v
-                r = series.mean()
                 if not np.isnan(r):
                     resi = r
                 symbolDf.loc[date, "vari"] = vari
                 symbolDf.loc[date, "resi"] = resi
                 print("------>",date, "vari:", vari, "resi:", resi)
-            formatedData[symbol] = symbolDf
-            #TODO: TEST BLOCK
-            theta0 = [0.01, 0.1, 0.1]
-            #result = fmin(self.costFunc(resi, GARCH(symbolDf["resi"], theta)), theta0)
-            result = fmin(func=self.costFunc, x0=theta0, args=(symbolDf["resi"],))
-            print(result)
-            #TODO: END TEST BLOCK
+            
+            try:
+                formatedData[symbol] = symbolDf
+                #TODO: TEST BLOCK
+                theta0 = [0.01, 0.1, 0.1]
+                result = fmin(func=self.costFunc, x0=theta0, args=(symbolDf["resi"],))
+                print(result)
+                #TODO: END TEST BLOCK
+            except Exception as e:
+                print(str(e))
         return formatedData
     
     def costFunc(self, theta, resi):
