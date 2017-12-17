@@ -21,7 +21,7 @@ class SGDRegression(SGDRegressor):
     
     
     def prepareData(self, lag = True, dset = "all"):
-        scaled_data = self.preprocess.getData('raw', lag=lag, dset=dset)
+        scaled_data = self.preprocess.get_data('raw', lag=lag, dset=dset)
         if self.dimReductAlgo is None:
             return scaled_data
         if isinstance(self.dimReductAlgo, PCAImpl):
@@ -42,7 +42,7 @@ class SGDRegression(SGDRegressor):
             traindata = trainset
         else:
             traindata = self.prepareData(lag=True, dset="train")
-        ret = self.preprocess.retrieveAR()
+        ret = self.preprocess.compute_return()
         traindata = traindata.join(ret, how="inner")
         y = traindata["return"].copy()
         x = traindata.drop(['return'], axis=1, inplace=False)

@@ -14,16 +14,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from Preprocess import Preprocess
 
+
 class MoneyFlow:
     
     """
     Constructor
     """
     #TODO: increase lag once more data is available
-    def __init__(self, lag=6):
+    def __init__(self, lag=14):
         self.preprocess = Preprocess(data='bars', lag=lag)
-    
-    
+
     """prepareData
     Description:
         prepare data as a dict of price sequences
@@ -34,7 +34,7 @@ class MoneyFlow:
     """
     def prepareData(self, lag=True):
         print("retrieving bar data...")
-        df = self.preprocess.getData(lag=lag, dset="train_validate")
+        df = self.preprocess.get_data(lag=lag, dset="train_validate")
         sequences = {}
         count = 0
         for symbol in (df.index).unique().values:
@@ -42,8 +42,7 @@ class MoneyFlow:
             count += 1
             sequences[symbol] = df[df.index == symbol]
         return sequences
-    
-    
+
     """computeMoneyFlow
     Description:
         compute money flow imbalance for each symbol
@@ -75,8 +74,7 @@ class MoneyFlow:
             print("count: ", count, " symbol: ", symbol, " balance: ", balance)
             count += 1
         return flow
-    
-    
+
     """normalizeMoneyFlow
     Description:
         normalize computed money flow imbalance by the market cap of the symbol
@@ -88,7 +86,7 @@ class MoneyFlow:
         
     """    
     def normalizeMoneyFlow(self, flow):
-        mktcap = self.preprocess.retrieveMktCaps(flow.index)
+        mktcap = self.preprocess.retrieve_mkt_caps(flow.index)
         normalizedFlow = pd.DataFrame(columns=["flow"])
         count = 0
         for symbol in flow.index:
@@ -99,15 +97,14 @@ class MoneyFlow:
             normalizedFlow.loc[symbol] = flow.loc[symbol]["flow"] / (mktcap[symbol] * 1000000)
         print("Number of discarded symbols: ", count)
         return normalizedFlow
-        
-    
+
     """visualizeFlowReturn
     Description:
         visualize normalized money flow imbalance and the return
     """
     def visualizeFlowReturn(self, normalizedFlow):
         #TODO: BUG, THIS IS AR FOR THE FULL LAG PERIOD
-        ar = self.preprocess.retrieveAR()
+        ar = self.preprocess.compute_return()
         print(ar)
         flowReturn = pd.concat([normalizedFlow, ar], axis=1, join='inner')
         #print(flowReturn)

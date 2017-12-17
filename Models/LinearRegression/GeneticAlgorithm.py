@@ -77,7 +77,7 @@ def fitnessTest():
     for index, name in enumerate(population):
         print("\n-------------------------------------------------------------")
         print("Evaluating %s in progress[%s/%s]..."%(name, index+1, popSize))
-        traits = ec.getTraits(name)
+        traits = ec.get_traits(name)
         result = traits["Result"]
         if result["latest_update"] != date.today().strftime("%Y-%m-%d"):
             try:

@@ -49,7 +49,7 @@ Output:
     lr: an instance of LinearRegression model
 """ 
 def loadParameters(name):
-    traits = ec.getTraits(name)
+    traits = ec.get_traits(name)
     lr_paramList = ["lag", "density", "groupNum", "scoreOrder", "retMin", "retMax", "p_value"]
     lag, density, groupNum, scoreOrder, retMin, retMax, p_value = extractParameter(traits, "LinearRegression", lr_paramList)
     lr = LinearRegression(lag, density, groupNum, scoreOrder, retMin, retMax, p_value)
@@ -64,7 +64,7 @@ Output:
     fitness: fitness score
 """
 def computeAccuracy(name):
-    traits = ec.getTraits(name)
+    traits = ec.get_traits(name)
     lr = loadParameters(name)
     fitness = computeFitness(lr)
     data_start_date = lr.preprocess.frdate

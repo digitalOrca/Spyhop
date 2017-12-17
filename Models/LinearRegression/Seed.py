@@ -32,7 +32,7 @@ if __name__ == "__main__":
     except:
         print("Invalide argument. Usage: ./Seed [population_size]")
         sys.exit()
-    traits = ec.getTraits()
+    traits = ec.get_traits()
     for i in range(int(sys.argv[1])):
         newTraits = ec.mutate(traits, 1.0)
         save(newTraits)

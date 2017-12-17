@@ -14,7 +14,7 @@ class RegressionNet:
         pass
         
     def train(self):
-        train_data = self.preprocess.getData(dataType = 'scaled', lag = True)
+        train_data = self.preprocess.get_data(dataType ='scaled', lag = True)
         train_data_t = torch.from_numpy(train_data.as_matrix())
         print(train_data_t)
         #TODO: MUST FIND A WAY TO SELECT SAME COLUMNS IN VALIDATION AND PREDITION

@@ -7,12 +7,12 @@ Description:
 
 import psycopg2 as pg
 import pandas.io.sql as psql
-import pandas as pd
 import traceback
 
+
 class DBConnect:
-	
-    """Constructor
+
+    """constructor
     """
     def __init__(self):
         self.connection = pg.connect("""dbname='interactive_brokers'
@@ -22,21 +22,22 @@ class DBConnect:
         self.connection.autocommit = True
     
     """query
-	Description:
-	    issue query to the database and returning result
-	Input:
-	    query: query string
-	    index: index of the returned dataframe
+    Description:
+        issue query to the database and returning result
+    Input:
+        query: query string
+        index: index of the returned dataframe
     """
     def query(self, query, index='symbol'):
-        dataframe = None
+        df = None
         try:
-            dataframe = psql.read_sql(query, self.connection)
-            if index != None:
-                dataframe.set_index(index, inplace=True)
+            df = psql.read_sql(query, self.connection)
+            if index is not None:
+                df[index] = df[index].astype('category')
+                df.set_index(index, inplace=True)
         except:
             traceback.print_exc()
-        return dataframe
+        return df
     
     """update
     Description:

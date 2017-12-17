@@ -16,7 +16,7 @@ class GARCH:
         self.vari = None
         
     def prepareData(self):
-        rawData = self.preprocess.getData(dset="all")
+        rawData = self.preprocess.get_data(dset="all")
         rawData["date"] = rawData["timestamp"].apply(lambda x: x.date())
         rawData["time"] = rawData["timestamp"].apply(lambda x: x.time())
         symbols = (rawData.index).unique().values
@@ -25,7 +25,7 @@ class GARCH:
         count = 0
         for symbol in symbols:
             count += 1
-            print(count, ", process for symbol:",symbol)
+            print(count, ", process for symbol:", symbol)
             symbolData = rawData[rawData.index == symbol].copy()
             symbolDf = pd.DataFrame(index=dates, columns=["vari", "resi"])
             #compute change
@@ -76,8 +76,10 @@ class GARCH:
         vari = np.zeros(shape=size)
         # initialize variance as the overall residual series variance
         vari[0] = np.var(resi, axis=0)
-        for v in range(size-1):
-            vari[v+1] = omega + alpha * np.power(resi[v-1], 2) + beta * vari[v-1]
+        v = vari[0]
+        for i in range(size-1):
+            v = omega + alpha * np.power(resi[i], 2) + beta * v
+            vari[i+1] = v
             #vari[v+1] += omega
             #for i in alpha.size:
             #    # reduce order if necessary

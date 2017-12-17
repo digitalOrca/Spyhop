@@ -19,9 +19,9 @@ class SectorNorm():
         
     def computeSectorReturnProbability(self):
         symbolSector = self.db.query("SELECT symbol, sector FROM security")
-        self.preprocess._retrieveFundamentalRatios(lag=True)
+        self.preprocess.__retrieve_fundamental_ratios(lag=True)
         start_date = self.preprocess.frdate
-        ArDf = self.preprocess.retrieveAR()
+        ArDf = self.preprocess.compute_return()
         ArDf = ArDf.dropna(axis=0, how='any') # prevent arithmetic error TODO: CONSIDER USING BENCHMARK
         ArDf["return"] = (ArDf["end"]/ArDf["start"])-1.0
         # remove legacy columns

@@ -115,8 +115,8 @@ class LinearRegression:
         groupAR: group average returns
     """
     def computeAR(self, groupDf, benchmark):
-        ArDf = self.preprocess.retrieveAR()
-        benchmarkAR = self.preprocess.computeBenchmarkAR(benchmark)
+        ArDf = self.preprocess.compute_return()
+        benchmarkAR = self.preprocess.compute_benchmark(benchmark)
         ArDf["return"] = ArDf["return"]/benchmarkAR -1.0
         # remove outlier returns
         bull = ArDf[ArDf['return'] > self.retMax]
@@ -231,7 +231,7 @@ class LinearRegression:
         if trainset is not None:
             data = trainset
         else:
-            data = self.preprocess.getData(dataType = 'filled', lag = True)
+            data = self.preprocess.get_data(dataType ='filled', lag = True)
         groups = self.group(data)
         ar, gar = self.computeAR(groups, benchmark)
         #self.visualizeGroupAR(gar)
@@ -252,7 +252,7 @@ class LinearRegression:
     TRAIN AND VALIDATE
     """
     def train_validate(self, benchmark):
-        trainSet, validateSet = self.preprocess.getData(dataType = 'filled', lag = True, dset="train_validate")
+        trainSet, validateSet = self.preprocess.get_data(dataType ='filled', lag = True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
         v = self.validate(benchmark, validateset = validateSet)
         #self.visualizeTrainValidate(t, v)
@@ -262,7 +262,7 @@ class LinearRegression:
     PREDICT
     """
     def predict(self):
-        newdata = self.preprocess.getData(dataType = 'filled', lag = False)
+        newdata = self.preprocess.get_data(dataType ='filled', lag = False)
         if self.coefficient.empty:
             raise Exception("model coefficient not fitted!")
         newGroupDf = self.group(newdata)
