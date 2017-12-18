@@ -4,6 +4,7 @@ IBAccount/
 Logs/
 TradeGateway/build/
 TradeGateway/.idea/
+Models/.idea/
 
 Models/LinearRegression/progression/*
 !Models/LinearRegression/progression/DNA.json
