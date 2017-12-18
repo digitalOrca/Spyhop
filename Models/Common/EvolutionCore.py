@@ -154,8 +154,7 @@ def birth(parent1, parent2):
     traits1 = get_traits(parent1)
     traits2 = get_traits(parent2)
     new_traits = mate(traits1, traits2)
-    # TODO:DEFINE MUTATION RATE IN CONFIG
-    new_traits = mutate(new_traits, 0.05)
+    new_traits = mutate(new_traits, 0.05)  # TODO:DEFINE MUTATION RATE IN CONFIG
     new_name = names.get_full_name().replace(' ', '_')
     save(new_traits, new_name)
     return new_name
@@ -170,7 +169,7 @@ def eliminate(losers):
     """
     for name in losers:
         print("Eliminate:", name)
-        os.system("rm -f %s%s.json"%(population_root,name))
+        os.system("rm -f %s%s.json" % (population_root, name))
     
 #t1 = getTraits("Denis_Garza")
 #t2 = getTraits("David_Stull")

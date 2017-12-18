@@ -20,7 +20,6 @@ class MoneyFlow:
     """
     Constructor
     """
-    #TODO: increase lag once more data is available
     def __init__(self, lag=14):
         self.preprocess = Preprocess(data='bars', lag=lag)
 
@@ -38,7 +37,7 @@ class MoneyFlow:
         sequences = {}
         count = 0
         for symbol in (df.index).unique().values:
-            print("count:",count, " symbol: ", symbol)
+            print("count:", count, " symbol: ", symbol)
             count += 1
             sequences[symbol] = df[df.index == symbol]
         return sequences
@@ -52,27 +51,18 @@ class MoneyFlow:
         flow: dict of trade imbalance correspond to each symbol
     """    
     def computeMoneyFlow(self, sequences):
-        flow = pd.DataFrame(columns=["flow"])
         count = 0
+        flow = pd.DataFrame(columns=["flow"])
         for symbol in sequences.keys():
-            prev_price = None
-            balance = 0
-            for index, row in sequences[symbol].iterrows():
-                # https://interactivebrokers.github.io/tws-api/interfaceIBApi_1_1EWrapper.html#a1844eb442fb657c0f2cc0a63e4e74eba
-                # tick size has multiplier of 100
-                vote = row["wap"] * row["volume"] * 100
-                if prev_price is None:
-                    pass
-                elif row["wap"] > prev_price:
-                    balance += vote
-                elif row["wap"] < prev_price:
-                    balance -= vote
-                else:
-                    pass
-                prev_price = row["wap"]
-            flow.loc[symbol] = balance
-            print("count: ", count, " symbol: ", symbol, " balance: ", balance)
+            symbol_seq = sequences[symbol]
+            sign = np.sign(np.subtract(symbol_seq["wap"], symbol_seq["wap"].shift(periods=1)))
+            balance = np.multiply(sign[1:], np.multiply(symbol_seq["wap"][1:], symbol_seq["volume"][1:])).sum()
+            print("count", count, ", symbol", symbol, ":", balance)
             count += 1
+            # https://interactivebrokers.github.io/tws-api/interfaceIBApi_1_1EWrapper.html#a1844eb442fb657c0f2cc0a63e4e74eba
+            # tick size has multiplier of 100
+            flow.loc[symbol] = balance * 100
+        flow.set_index(pd.Series(data=flow.index).astype('category'))
         return flow
 
     """normalizeMoneyFlow
@@ -83,33 +73,30 @@ class MoneyFlow:
     Output:
         normalizeMoneyFlow: dict of normalized trade imbalance correspond 
         to each symbol
-        
-    """    
+    """
     def normalizeMoneyFlow(self, flow):
+        print("retrieving market capitalization...")
         mktcap = self.preprocess.retrieve_mkt_caps(flow.index)
-        normalizedFlow = pd.DataFrame(columns=["flow"])
-        count = 0
-        for symbol in flow.index:
-            if mktcap[symbol] is None:
-                print("market caps data not available for %s"%symbol)
-                count += 1
-                continue
-            normalizedFlow.loc[symbol] = flow.loc[symbol]["flow"] / (mktcap[symbol] * 1000000)
-        print("Number of discarded symbols: ", count)
-        return normalizedFlow
+        print("received market capitalization")
+        flow_cap = pd.concat([flow, mktcap], axis=1, join="inner").dropna(axis=0, how="any")
+        flow_cap["normal_flow"] = np.divide(np.divide(flow_cap["flow"], flow_cap["mktcap"]), 1000000)
+        normalized_flow = flow_cap["normal_flow"].to_frame()
+        return normalized_flow
 
     """visualizeFlowReturn
     Description:
         visualize normalized money flow imbalance and the return
     """
     def visualizeFlowReturn(self, normalizedFlow):
-        #TODO: BUG, THIS IS AR FOR THE FULL LAG PERIOD
+        # TODO: BUG, THIS IS AR FOR THE FULL LAG PERIOD
         ar = self.preprocess.compute_return()
+        ar.set_index(pd.Series(data=ar.index).astype('category'))  # TODO: use category index type
         print(ar)
-        flowReturn = pd.concat([normalizedFlow, ar], axis=1, join='inner')
-        #print(flowReturn)
-        x = flowReturn["flow"]
-        y = flowReturn["return"]
+        flow_return = pd.concat([normalizedFlow, ar], axis=1, join='inner')
+        print(flow_return)
+        # print(flow_return)
+        x = flow_return["normal_flow"]
+        y = flow_return["return"]
         plt.plot(x, y, 'r.')
         plt.show()
     

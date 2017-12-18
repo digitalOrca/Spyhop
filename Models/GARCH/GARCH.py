@@ -7,13 +7,10 @@ from Preprocess import Preprocess
     
 class GARCH:
     
-    def __init__(self):
-        #self.omega = omega
-        #self.alpha = alpha
-        #self.beta = beta
+    def __init__(self, p, q):
+        self.p = p  # order of residual term
+        self.q = q  # order of variance term
         self.preprocess = Preprocess(data='bars')
-        self.resi = None
-        self.vari = None
         
     def prepareData(self):
         rawData = self.preprocess.get_data(dset="all")
@@ -28,7 +25,7 @@ class GARCH:
             print(count, ", process for symbol:", symbol)
             symbolData = rawData[rawData.index == symbol].copy()
             symbolDf = pd.DataFrame(index=dates, columns=["vari", "resi"])
-            #compute change
+            # compute log change
             change = (symbolData["wap"].pct_change()).add(1)
             logChange = change.apply(lambda x: np.log(x))
             mu = logChange.mean()
@@ -47,26 +44,17 @@ class GARCH:
                 symbolDf.loc[date, "vari"] = vari
                 symbolDf.loc[date, "resi"] = resi
                 print("------>",date, "vari:", vari, "resi:", resi)
-            
-            try:
-                formatedData[symbol] = symbolDf
-                #TODO: TEST BLOCK
-                theta0 = [0.01, 0.1, 0.1]
-                result = fmin(func=self.costFunc, x0=theta0, args=(symbolDf["resi"],))
-                print(result)
-                #TODO: END TEST BLOCK
-            except Exception as e:
-                print(str(e))
+            formatedData[symbol] = symbolDf
         return formatedData
     
     def costFunc(self, theta, resi):
         vari = self.GARCH(theta, resi)
         return np.sum(np.add(np.divide(np.power(resi, 2), vari), np.log(2*np.pi*vari)))
 
-    def GARCH(self, theta, resi):
+    def GARCH(self, theta, resi):        
         omega = theta[0]
-        alpha = theta[1]
-        beta = theta[2]
+        alpha = theta[1:-self.q]
+        beta = theta[self.p+1:]
         #assert omega > 0
         #assert np.amin(alpha) > 0
         #assert np.amin(beta) > 0
@@ -77,30 +65,28 @@ class GARCH:
         # initialize variance as the overall residual series variance
         vari[0] = np.var(resi, axis=0)
         v = vari[0]
-        for i in range(size-1):
-            v = omega + alpha * np.power(resi[i], 2) + beta * v
-            vari[i+1] = v
-            #vari[v+1] += omega
-            #for i in alpha.size:
-            #    # reduce order if necessary
-            #    if v-i-1 >= 0:
-            #        vari[v+1] += alpha[i] * np.power(resi[v-i-1], 2)
-            #for j in beta.size:
-            #    # reduce order if necessary
-            #    if v-j-1 >= 0:
-            #        vari[v+1] += beta[j] * vari[v-j-1]
+        for r in range(size-1):
+            pterm = 0
+            for i in range(len(alpha)):
+                if r-i >= 0:  # reduce order at start
+                    pterm += alpha[i] * np.power(resi[r-i], 2)
+            qterm = 0
+            for j in range(len(beta)):
+                if r-j >= 0: # reduce order if necessary, starting ordder 1
+                    qterm += beta[j] * vari[r-j]
+            vari[r+1] = omega + pterm + qterm      
         return vari
-    
-        
-    def optimizeParameters(self):
-        formatedData = self.prepareData()
-        theta0 = [0.01, 0.1, 0.1]
-        optimal = {}
+
+    def optimizeParameters(self, formatedData):
         for symbol in formatedData.keys():
-            resi = formatedData[symbol]
-            result = fmin(costFunc(resi, GARCH(resi, theta)), theta0)
-            optimal[symbol] = result
-            print(result)
-    
-g = GARCH()    
-print(g.prepareData())   
+            try:
+                theta0 = [0.05 for x in range(self.p+self.q+1)]
+                result = fmin(func=self.costFunc, x0=theta0, args=((formatedData[symbol])["resi"],))
+                print(result)
+            except Exception as e:
+                print(str(e))
+
+
+g = GARCH(3,3)
+data = g.prepareData()
+g.optimizeParameters(data)

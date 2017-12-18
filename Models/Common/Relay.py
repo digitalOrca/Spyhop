@@ -10,7 +10,7 @@ import socket
 *	message to TradeGateway and StrategyCore. It establishes a client socket
 *	for TradeGateway and server socket for StrategyCore.
 *///////////////////////////////////////////////////////////////////////////////
-"""			
+"""
 class Relay:
 	"""
 	Constructor

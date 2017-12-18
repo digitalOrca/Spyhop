@@ -30,7 +30,7 @@ class Preprocess:
                     (SELECT DISTINCT date FROM fundamental_ratios \
                     WHERE date > '%s'\
                     ORDER BY date ASC LIMIT 1)"\
-                    %(start)
+                    % start
             df = self.db.query(query)
             
             self.frdate = df.date[0]
@@ -116,7 +116,8 @@ class Preprocess:
     def retrieve_mkt_caps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
         end = (date.today() - timedelta(days=self.lag/2)).isoformat()
-        mktcap = {}
+        #mktcap = {}
+        mktcap = pd.DataFrame(columns=["mktcap"])
         for symbol in symbols:
             query = "SELECT AVG(mktcap) FROM fundamental_ratios WHERE symbol='%s' \
                      AND date BETWEEN '%s' AND '%s'" \
@@ -127,7 +128,9 @@ class Preprocess:
                 query2 = "SELECT AVG(mktcap) FROM fundamental_ratios WHERE symbol='%s'" \
                           % symbol
                 avg_mkt_caps = self.db.query(query2, index=None)["avg"].values[0]
-            mktcap[symbol] = avg_mkt_caps
+            mktcap.loc[symbol] = avg_mkt_caps
+            #mktcap[symbol] = avg_mkt_caps
+        mktcap.set_index(pd.Series(data=mktcap.index).astype('category'))  # change index type to category
         return mktcap
 
     def compute_return(self):
