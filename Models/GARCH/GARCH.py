@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import fmin
 from Preprocess import Preprocess
-    
+
+
 class GARCH:
     
     def __init__(self, p, q):
@@ -34,7 +35,7 @@ class GARCH:
             symbolData["change"] = logChange
             vari, resi = 0, 0
             for date in dates:
-                series= symbolData[symbolData["date"]==date]["change"]
+                series= symbolData[symbolData["date"] == date]["change"]
                 v = series.var()
                 r = series.mean()
                 if not np.isnan(v):
@@ -72,7 +73,7 @@ class GARCH:
                     pterm += alpha[i] * np.power(resi[r-i], 2)
             qterm = 0
             for j in range(len(beta)):
-                if r-j >= 0: # reduce order if necessary, starting ordder 1
+                if r-j >= 0: # reduce order if necessary, starting order 1
                     qterm += beta[j] * vari[r-j]
             vari[r+1] = omega + pterm + qterm      
         return vari
@@ -87,6 +88,6 @@ class GARCH:
                 print(str(e))
 
 
-g = GARCH(3,3)
+g = GARCH(3, 3)
 data = g.prepareData()
 g.optimizeParameters(data)

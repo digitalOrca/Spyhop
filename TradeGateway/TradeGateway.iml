@@ -31,5 +31,6 @@
     </orderEntry>
     <orderEntry type="library" name="TwsApi_debug" level="project" />
     <orderEntry type="library" name="postgresql-42.1.4" level="project" />
+    <orderEntry type="library" name="jsoup-1.11.2" level="project" />
   </component>
 </module>

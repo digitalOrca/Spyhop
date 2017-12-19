@@ -3,11 +3,15 @@ import enums.Currency;
 import enums.Exchange;
 import enums.Log;
 import enums.SecType;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import utils.DatabaseConn;
 import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.LinkedList;
 
@@ -49,6 +53,15 @@ class UpdateAction {
     }
 
     static void updateIndices() {
-        Helper.runCmd(new String[] {"python", "/home/meng/Projects/NeuroTrader/TradeGateway/src/main/resources/python/updateIndex.py"}, false);
+        try {
+            Document doc = Jsoup.connect("https://finance.google.com/finance?q=INDEXSP:.INX").get();
+            double indices = Double.parseDouble(doc.getElementsByAttributeValue("id", "ref_626307_l").text().replace(",", ""));
+            String update = "INSERT INTO benchmark (date, snp500) VALUES ('%s',%s)";
+            String query = String.format(update, Helper.today(), indices);
+            DatabaseConn.getInstance().execUpdate(query);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

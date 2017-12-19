@@ -102,7 +102,7 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
-    def retrieve_open_close(self):
+    def retrieve_open_close(self):  # TODO: convert to DataFrame, instead of dict
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' \
                      ORDER BY index ASC" % start_date
@@ -116,7 +116,6 @@ class Preprocess:
     def retrieve_mkt_caps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
         end = (date.today() - timedelta(days=self.lag/2)).isoformat()
-        #mktcap = {}
         mktcap = pd.DataFrame(columns=["mktcap"])
         for symbol in symbols:
             query = "SELECT AVG(mktcap) FROM fundamental_ratios WHERE symbol='%s' \
@@ -129,7 +128,6 @@ class Preprocess:
                           % symbol
                 avg_mkt_caps = self.db.query(query2, index=None)["avg"].values[0]
             mktcap.loc[symbol] = avg_mkt_caps
-            #mktcap[symbol] = avg_mkt_caps
         mktcap.set_index(pd.Series(data=mktcap.index).astype('category'))  # change index type to category
         return mktcap
 
@@ -152,14 +150,17 @@ class Preprocess:
         return ret
 
     def compute_benchmark(self, benchmark):
+        if self.frdate == "" or self.prdate == "":
+            self.retrieve_fundamental_ratios(lag=True)
         # get the date of fundamental ratio data
-        query1 = "SELECT date, %s FROM benchmark WHERE date='%s'"\
-                                                % (benchmark, self.frdate)
-        start_index = float(self.db.query(query1, index='date')[benchmark][0])
-        query2 = "SELECT date, %s FROM benchmark WHERE date=\
+        query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, self.frdate)
+        print(query1)
+        print(self.db.query(query1, index=None))
+        start_index = float(self.db.query(query1, index=None)[benchmark][0])
+        query2 = "SELECT date, %s FROM benchmark WHERE date= \
             (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
             % benchmark
-        end_index = float(self.db.query(query2, index='date')[benchmark][0])
+        end_index = float(self.db.query(query2, index=None)[benchmark][0])
         return end_index/start_index
 
     def filter_column(self, df):

@@ -20,8 +20,6 @@ class updateActionTest {
         DatabaseConn.getInstance().execUpdate(query_1);
         // run test subject
         UpdateAction.updateIndices();
-        // account for delay in get request
-        Helper.pauseSec(3);
         // verify database entry
         int count = 0;
         String query_template_2 = "SELECT COUNT(*) FROM benchmark WHERE date='%s'";
