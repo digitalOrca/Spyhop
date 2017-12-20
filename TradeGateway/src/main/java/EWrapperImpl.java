@@ -291,9 +291,13 @@ public class EWrapperImpl implements EWrapper {
     public void error(int id, int errorCode, String errorMsg) {
         switch (errorCode) {
             case 162:
+                String error162 = String.format("pending: %d, id: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, id, errorCode, errorCode);
+                Logger.getInstance().log(Log.CALLBACK, error162);
                 MainGateway.pendingHistReq--;
                 break;
             case 200:
+                String error200 = String.format("pending: %d, id: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, id, errorCode, errorCode);
+                Logger.getInstance().log(Log.CALLBACK, error200);
                 MainGateway.pendingHistReq--;
                 break;
             default:

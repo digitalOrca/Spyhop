@@ -54,8 +54,12 @@ class TestPreprocess(TestCase):
     def test_compute_return(self):
         self.preprocess = Preprocess(data="", lag=7)
         try:
-            df = self.preprocess.compute_return()
-            if not isinstance(df, pd.DataFrame) and not df.empty:
+            df1 = self.preprocess.compute_return(split=False)  # non-split is a super set of split returns
+            df2 = self.preprocess.compute_return(split=True, dset='train')
+            df3 = self.preprocess.compute_return(split=True, dset='predict')
+            if not isinstance(df1, pd.DataFrame) and not df1.empty and \
+               not isinstance(df2, pd.DataFrame) and not df2.empty and \
+               not isinstance(df3, pd.DataFrame) and not df3.empty:
                 raise Exception
         except:
             self.fail()
@@ -82,7 +86,6 @@ class TestPreprocess(TestCase):
         filtered = self.preprocess.filter_column(df)
         self.assertEqual(len(filtered.columns), 2)  # only symbol and dense will survive
 
-
     def test_fill_missing_value(self):
         self.preprocess = Preprocess(data="", lag=7)
         data = [('x', [40, 30, np.NaN, np.NaN]),
@@ -91,13 +94,27 @@ class TestPreprocess(TestCase):
         filled = self.preprocess.fill_missing_value(df)
         self.assertFalse(filled.isnull().values.any())
 
-    """
     def test_cap_outlier(self):
-        self.fail()
+        self.preprocess = Preprocess(data="", lag=7, limit=3, outlier=4)
+        data = [('x', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 8]),
+                ('y', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 50]),
+                ('z', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 10000])]
+        df = pd.DataFrame.from_items(data)
+        dfc = df.copy()  # method will operate on the same memory location without making copy
+        capped = self.preprocess.cap_outlier(df)
+        self.assertEqual(capped['x'].max(), dfc['x'].max())
+        self.assertTrue(capped['z'].max() < dfc['z'].max())
 
     def test_scale_data(self):
-        self.fail()
+        self.preprocess = Preprocess(data="", lag=7)
+        data = [('x', [1, 2, 3, 4]),
+                ('y', [51, -6, 43, -8])]
+        df = pd.DataFrame.from_items(data)
+        scaled = self.preprocess.scale_data(df)
+        self.assertTrue(scaled['x'].max() <= 1)
+        self.assertTrue(scaled['y'].max() <= 1)
+        self.assertTrue(scaled['x'].min() >= 0)
+        self.assertTrue(scaled['y'].min() >= 0)
 
     def test_get_data(self):
-        self.fail()
-    """
+        pass  # this method is composed of other tested methods

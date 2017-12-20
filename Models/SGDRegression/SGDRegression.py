@@ -42,7 +42,7 @@ class SGDRegression(SGDRegressor):
             traindata = trainset
         else:
             traindata = self.prepareData(lag=True, dset="train")
-        ret = self.preprocess.compute_return()
+        ret = self.preprocess.compute_return(split=False)
         traindata = traindata.join(ret, how="inner")
         y = traindata["return"].copy()
         x = traindata.drop(['return'], axis=1, inplace=False)

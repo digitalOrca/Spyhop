@@ -5,12 +5,10 @@ import enums.Log;
 import enums.SecType;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import utils.DatabaseConn;
 import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
-
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.LinkedList;

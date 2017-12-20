@@ -88,9 +88,8 @@ class MoneyFlow:
         visualize normalized money flow imbalance and the return
     """
     def visualizeFlowReturn(self, normalizedFlow):
-        # TODO: BUG, THIS IS AR FOR THE FULL LAG PERIOD
-        ar = self.preprocess.compute_return()
-        ar.set_index(pd.Series(data=ar.index).astype('category'))  # TODO: use category index type
+        ar = self.preprocess.compute_return(split=True, dset='train')  # stock return during next period
+        ar.set_index(pd.Series(data=ar.index).astype('category'))
         print(ar)
         flow_return = pd.concat([normalizedFlow, ar], axis=1, join='inner')
         print(flow_return)
@@ -99,12 +98,10 @@ class MoneyFlow:
         y = flow_return["return"]
         plt.plot(x, y, 'r.')
         plt.show()
-    
-        
+
     def train(self):
         pass
-        
-        
+
     def predict(self):
         pass
 

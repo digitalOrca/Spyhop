@@ -1,6 +1,3 @@
 {
-  "test_preprocess.py::TestPreprocess::test_cap_outlier": true,
-  "test_preprocess.py::TestPreprocess::test_get_data": true,
-  "test_preprocess.py::TestPreprocess::test_retrieve_open_close": true,
-  "test_preprocess.py::TestPreprocess::test_scale_data": true
+  "test_preprocess.py::TestPreprocess::test_retrieve_open_close": true
 }

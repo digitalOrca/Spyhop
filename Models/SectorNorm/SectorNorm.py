@@ -21,8 +21,8 @@ class SectorNorm():
         symbolSector = self.db.query("SELECT symbol, sector FROM security")
         self.preprocess.__retrieve_fundamental_ratios(lag=True)
         start_date = self.preprocess.frdate
-        ArDf = self.preprocess.compute_return()
-        ArDf = ArDf.dropna(axis=0, how='any') # prevent arithmetic error TODO: CONSIDER USING BENCHMARK
+        ArDf = self.preprocess.compute_return(split=False)
+        ArDf = ArDf.dropna(axis=0, how='any')  # prevent arithmetic error TODO: CONSIDER USING BENCHMARK
         ArDf["return"] = (ArDf["end"]/ArDf["start"])-1.0
         # remove legacy columns
         ArDf.drop(['start', 'end'], axis=1, inplace=True)

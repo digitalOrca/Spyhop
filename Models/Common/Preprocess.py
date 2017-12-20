@@ -131,23 +131,40 @@ class Preprocess:
         mktcap.set_index(pd.Series(data=mktcap.index).astype('category'))  # change index type to category
         return mktcap
 
-    def compute_return(self):
+    def compute_return(self, split=False, dset='train'):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)
-        query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
-        start_df = self.db.query(query1)
+        splitPoint = (date.today() - timedelta(days=self.lag/2)).isoformat()
+        if not split:
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
+            start_df = self.db.query(query1)
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
+                (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+            end_df = self.db.query(query2)
+        elif dset == 'train':
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
+            start_df = self.db.query(query1)
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
+                     (SELECT DISTINCT date FROM open_close WHERE date < '%s' ORDER BY date DESC LIMIT 1)" % splitPoint
+            end_df = self.db.query(query2)
+        elif dset == 'predict':  # predict
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
+                     (SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % splitPoint
+            start_df = self.db.query(query1)
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
+                            (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+            end_df = self.db.query(query2)
+        else:
+            raise Exception('Invalid value for dset[train/predict] parameter!')
         start_df['start'] = start_df.mean(axis=1, numeric_only=True)
-        
-        query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-            (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-        end_df = self.db.query(query2)
         end_df['end'] = end_df.mean(axis=1, numeric_only=True)
         start_df.drop(["lastclose", "open"], axis=1, inplace=True)
         end_df.drop(["lastclose", "open"], axis=1, inplace=True)
         ret = pd.concat([start_df, end_df], axis=1, join="inner")  # type: pd.DataFrame
-        ret["return"] = (ret["end"]/ret["start"])
+        ret["return"] = (ret["end"] / ret["start"])
         ret.drop(['start', 'end'], axis=1, inplace=True)
         return ret
+
 
     def compute_benchmark(self, benchmark):
         if self.frdate == "" or self.prdate == "":
