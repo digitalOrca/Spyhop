@@ -165,7 +165,6 @@ class Preprocess:
         ret.drop(['start', 'end'], axis=1, inplace=True)
         return ret
 
-
     def compute_benchmark(self, benchmark):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)

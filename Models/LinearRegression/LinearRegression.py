@@ -92,18 +92,6 @@ class LinearRegression:
             rankDf[column] = col
         return rankDf
 
-
-    #def computeBenchmarkAR(self, benchmark):
-    #    # get the date of fundamental ratio data
-    #    query1 = "SELECT date, %s FROM benchmark WHERE date='%s'"\
-    #                                            %(benchmark, self.preprocess.frdate)
-    #    startIndex = float(self.db.query(query1, index='date')[benchmark][0])
-    #    query2 = "SELECT date, %s FROM benchmark WHERE date=\
-    #        (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
-    #                                            %benchmark
-    #    endIndex = float(self.db.query(query2, index='date')[benchmark][0])
-    #    return endIndex/startIndex
-        
     """computeAR
     Description:
         compute the individuals returns and group average returns
