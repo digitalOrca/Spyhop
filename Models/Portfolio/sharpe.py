@@ -3,8 +3,11 @@
 import numpy as np
 import pandas as pd
 from DBUtils import DBConnect
+import matplotlib.pyplot as plt
 
 db = DBConnect()
+
+covariance, mean = None, None
 
 
 def buildPortfolio(position):
@@ -14,6 +17,9 @@ def buildPortfolio(position):
 
 
 def computeCovarMean(portfolio):  # actually correlation matrix TODO:CONSIDER WHETHER INCLUDE RISK FREE RETURN HERE
+    global covariance, mean
+    if covariance is None and mean is not None:
+        return covariance, mean
     date_query = "SELECT DISTINCT date FROM open_close ORDER BY date ASC"
     dates = db.query(date_query, index=None)["date"].astype('category')
     symbols = portfolio.index.values
@@ -38,12 +44,26 @@ def evaluatePortfolio(portfolio):  # TODO:CONSIDER WHETHER INCLUDE RISK FREE RET
 
 
 def randomPorfolioGenerator(position, iters):
+    results = np.zeros((3, iters))
     for i in range(iters):
         w = np.random.random(len(position))
         w /= np.sum(w)
         randomPortfolio = pd.Series(w, index=position.keys())
         ret, stdev = evaluatePortfolio(randomPortfolio)
-        # TODO: DO SOME PLOTTING TO FIND RETURN FRONTIER
+        results[0, i] = ret
+        results[1, i] = stdev
+        results[2, i] = ret / stdev
+        print("evaluate portfolio:", i, " ret:", ret, "stdev:", stdev)
+    results_frame = pd.DataFrame(results.T, columns=['ret', 'stdev', 'sharpe'])
+    plt.scatter(results_frame.stdev, results_frame.ret, c=results_frame.sharpe, cmap='RdYlBu')
+    plt.colorbar()
+    plt.show()
+    # plot red star to highlight position of portfolio with highest Sharpe Ratio
+    #plt.scatter(max_sharpe_port[1], max_sharpe_port[0], marker=(5, 1, 0), color='r', s=1000)
+    # plot green star to highlight position of minimum variance portfolio
+    #plt.scatter(min_vol_port[1], min_vol_port[0], marker=(5, 1, 0), color='g', s=1000)
+
+
 
 
 ps = {"MMM":  1000,
@@ -51,9 +71,7 @@ ps = {"MMM":  1000,
        "GS":   800
        }
 
-pf = buildPortfolio(ps)
-evaluatePortfolio(pf)
+#pf = buildPortfolio(ps)
+#evaluatePortfolio(pf)
 
-
-weights = np.random.random(4)
-print(weights.sum())
+randomPorfolioGenerator(ps, 5000)
