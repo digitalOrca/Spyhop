@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+"""PortfolioOptimization.py
+Description:
+    compute the estimated overall return and return variance of portfolios
+    and optimize the assignment of capital in different assets
+"""
+
 import numpy as np
 import pandas as pd
 from DBUtils import DBConnect
@@ -8,6 +14,8 @@ import matplotlib.pyplot as plt
 
 class PortfolioOptimizer:
 
+    """constructor
+    """
     def __init__(self, asset, risk_free=0):
         self.db = DBConnect()
         self.asset = asset
@@ -17,6 +25,14 @@ class PortfolioOptimizer:
         self.max_sharpe_comp = None  # maximum sharpe portfolio composition
         self.min_vol_comp = None  # minimum volatility portfolio composition
 
+    """
+        Description:
+            compute the return covariance matrix for the items in the portfolio
+            and the estimated(mean) return of each item
+        Output:
+            covariance: covariance matrix
+            mean: mean daily return
+    """
     def computeCovarMean(self):  # correlation matrix
         if self.covariance is not None and not self.mean.empty:  # avoid duplicate query
             return self.covariance, self.mean
@@ -35,6 +51,12 @@ class PortfolioOptimizer:
             self.mean = self.mean.subtract(self.risk_free/252)
             return self.covariance, self.mean
 
+    """
+        Description:
+            evaluate a given portfolio and compute its overall return and volatility(standard deviation)
+        Input:
+            portfolio: portfolio to be evaluated as a DataFrame
+    """
     def evaluatePortfolio(self, portfolio):
         weights = portfolio.values
         cov, mean = self.computeCovarMean()
@@ -42,6 +64,12 @@ class PortfolioOptimizer:
         portfolio_stdev = np.sqrt(np.dot(weights, np.dot(cov, weights[np.newaxis].T)))*np.sqrt(252)
         return portfolio_return, portfolio_stdev
 
+    """
+        Description:
+            using random search to find return and volatility of various portfolio composition
+        Input:
+            iters: number of iteration for the search
+    """
     def searchReturnFrontier(self, iters):
         results = np.zeros((3, iters))
         compositions = {}

@@ -97,8 +97,7 @@ class Preprocess:
             return df
         else:
             start_date = (date.today() - timedelta(days=self.lag)).isoformat()
-            query = "SELECT * FROM bar_history WHERE timestamp >= '%s' \
-                     ORDER BY index ASC" % start_date
+            query = "SELECT * FROM bar_history WHERE timestamp >= '%s 08:30:00' ORDER BY index ASC" % start_date
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 

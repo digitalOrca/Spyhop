@@ -105,12 +105,9 @@ class MoneyFlow:
     def predict(self):
         pass
 
-
-mf = MoneyFlow()
-seq = mf.prepareData()
-f = mf.computeMoneyFlow(seq)
-nf = mf.normalizeMoneyFlow(f)
-mf.visualizeFlowReturn(nf)
-
-
-# IMPLEMENT EVALUATION OF MODEL
+if __name__ == "__main__":
+    mf = MoneyFlow()
+    seq = mf.prepareData()
+    f = mf.computeMoneyFlow(seq)
+    nf = mf.normalizeMoneyFlow(f)
+    mf.visualizeFlowReturn(nf)
