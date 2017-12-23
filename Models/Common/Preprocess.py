@@ -101,15 +101,16 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
-    def retrieve_open_close(self):  # TODO: convert to DataFrame, instead of dict
+    def retrieve_open_close(self):
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
-        selection = "SELECT * FROM open_close WHERE date >= '%s' \
-                     ORDER BY index ASC" % start_date
-        df = self.db.query(selection)
+        selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
+        df = self.db.query(selection, index='date')  # Type: DataFrame
         df["average"] = df[["lastclose", "open"]].mean(axis=1, skipna=True, numeric_only=True)
-        daily_price = {}
-        for symbol in (df.index).unique().values:
-            daily_price[symbol] = df[df.index == symbol][["date", "average"]]
+        df['symbol'] = df['symbol'].astype('category')
+        symbols = df["symbol"].unique()
+        daily_price = pd.DataFrame(index=df.index.unique())
+        for symbol in symbols:
+            daily_price[symbol] = df[df["symbol"] == symbol]["average"]
         return daily_price
 
     def retrieve_mkt_caps(self, symbols):
@@ -169,8 +170,6 @@ class Preprocess:
             self.retrieve_fundamental_ratios(lag=True)
         # get the date of fundamental ratio data
         query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, self.frdate)
-        print(query1)
-        print(self.db.query(query1, index=None))
         start_index = float(self.db.query(query1, index=None)[benchmark][0])
         query2 = "SELECT date, %s FROM benchmark WHERE date= \
             (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
@@ -266,25 +265,5 @@ class Preprocess:
                 whole_data = self.retrieve_bars(split=False, lag=lag)
                 return whole_data
         elif self.data == 'open_close':
-            raw_data = self.retrieve_open_close(lag)
+            raw_data = self.retrieve_open_close()
             return raw_data
-            
-
-
-#TODO: MOVE THIS TO UNITTEST
-"""
-pfr = Preprocess('fundamental_ratios')
-raw = pfr._retrieveFundamentalRatios(lag=True)
-pfr.retrieveAR()
-import timeit
-start_time = timeit.default_timer()
-data = pfr._filterColumn(raw)
-fulldata = pfr._fillMissingValue(data)
-capped_data = pfr._capOutlier(fulldata)
-pfr._scaleData(capped_data)
-elapsed = timeit.default_timer() - start_time
-print elapsed
-#pfr.getData('filled')
-"""
-#pfr = Preprocess(data="bars")
-#print(pfr.getData(lag=True, dset="all"))

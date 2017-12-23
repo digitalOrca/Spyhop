@@ -25,44 +25,14 @@ class GARCH:
         Description:
             prepare all bar data into a DataFrame organized by symbols, residual and mean
         Output:
-            formatedData: the DataFrame with processed(compute vaiance and mean) and organized bar data
+            formatedData: the DataFrame with processed residual data
     """
-    def prepareData(self):
-        print("start retrieving data...")
-        rawData = self.preprocess.get_data(dset="all")
-        rawData["date"] = rawData["timestamp"].apply(lambda x: x.date())
-        rawData["time"] = rawData["timestamp"].apply(lambda x: x.time())
-        symbols = (rawData.index).unique().values
-        dates = sorted((rawData["date"]).unique())
-        formatedData = {}
-        count = 0
-        print("start formatting data...")
-        for symbol in symbols:
-            count += 1
-            print(count, ", process for symbol:", symbol)
-            symbolData = rawData[rawData.index == symbol].copy()
-            symbolDf = pd.DataFrame(index=dates, columns=["vari", "resi"])
-            # compute log change
-            change = (symbolData["wap"].pct_change()).add(1)
-            logChange = change.apply(lambda x: np.log(x))
-            mu = logChange.mean()
-            logChange = logChange.subtract(mu)
-            logChange.iloc[0] = 0
-            symbolData["change"] = logChange
-            vari, resi = 0, 0
-            for date in dates:
-                series= symbolData[symbolData["date"] == date]["change"]
-                v = series.var()
-                r = series.mean()
-                if not np.isnan(v):
-                    vari = v
-                if not np.isnan(r):
-                    resi = r
-                symbolDf.loc[date, "vari"] = vari
-                symbolDf.loc[date, "resi"] = resi
-                print("------>",date, "vari:", vari, "resi:", resi)
-            formatedData[symbol] = symbolDf
-        return formatedData
+    def prepData(self):
+        preprocess = Preprocess(data='open_close')
+        daily_log_change = preprocess.get_data().pct_change().fillna(0).add(1).applymap(lambda x: np.log(x))
+        mu = daily_log_change.mean()
+        residual = daily_log_change.subtract(mu)
+        return residual
 
     """
         Description:
@@ -94,8 +64,7 @@ class GARCH:
         #assert np.amin(alpha) > 0
         #assert np.amin(beta) > 0
         #assert np.sum(alpha) + np.sum(beta) < 1
-        size = resi.size
-        lag = beta.size
+        size = resi.shape[0]
         vari = np.zeros(shape=size)
         # initialize variance as the overall residual series variance
         vari[0] = np.var(resi, axis=0)
@@ -122,13 +91,13 @@ class GARCH:
         for symbol in formatedData.keys():
             try:
                 theta0 = [0.05 for x in range(self.p+self.q+1)]
-                result = fmin(func=self.costFunc, x0=theta0, args=((formatedData[symbol])["resi"],))
+                result = fmin(func=self.costFunc, x0=theta0, args=(formatedData[symbol].values,))
                 print(result)
             except Exception as e:
                 print(str(e))
 
 
-if __name__ == "__main__":  # TODO: IMPROVE MEMORY EFFICIENCY, OTHERWISE UPGRADE MEMORY
-    garch = GARCH(1, 1)
-    data = garch.prepareData()
+if __name__ == "__main__":
+    garch = GARCH(3, 3)
+    data = garch.prepData()
     garch.optimizeParameters(data)

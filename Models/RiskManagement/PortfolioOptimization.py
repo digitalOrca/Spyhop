@@ -9,6 +9,7 @@ Description:
 import numpy as np
 import pandas as pd
 from DBUtils import DBConnect
+from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 
 
@@ -18,6 +19,7 @@ class PortfolioOptimizer:
     """
     def __init__(self, asset, risk_free=0):
         self.db = DBConnect()
+        self.preprocess = Preprocess(data='open_close')
         self.asset = asset
         self.risk_free = risk_free
         self.covariance = None  # Type: pd.DataFrame
@@ -37,18 +39,9 @@ class PortfolioOptimizer:
         if self.covariance is not None and not self.mean.empty:  # avoid duplicate query
             return self.covariance, self.mean
         else:
-            date_query = "SELECT DISTINCT date FROM open_close ORDER BY date ASC"
-            dates = self.db.query(date_query, index=None)["date"].astype('category')
-            all_series = pd.DataFrame(index=dates, columns=self.asset)
-            self.mean = pd.Series(index=self.asset)  # initialize mean series
-            for symbol in self.asset:
-                query = "SELECT date, symbol, lastclose, open FROM open_close WHERE symbol='%s' ORDER BY date ASC" % symbol
-                series = self.db.query(query, index='date')
-                # daily price change
-                all_series[symbol] = (series[['lastclose', 'open']].mean(axis=1, numeric_only=True)).pct_change()
-                self.mean.loc[symbol] = all_series[symbol].mean()
-            self.covariance = all_series.cov()
-            self.mean = self.mean.subtract(self.risk_free/252)
+            daily_change = self.preprocess.get_data()[self.asset].pct_change()
+            self.covariance = daily_change.cov()
+            self.mean = daily_change.mean().subtract(self.risk_free/252)
             return self.covariance, self.mean
 
     """
@@ -93,6 +86,8 @@ class PortfolioOptimizer:
         min_vol_index = results_frame['stdev'].idxmin()
         min_vol_port = results_frame.iloc[min_vol_index]
         self.min_vol_comp = compositions[min_vol_index]
+        print("==========Stock Stats==========")
+        print(self.mean)
         print("==========Maximum Sharpe Ratio Portfolio==========")
         print(self.max_sharpe_comp)
         print("==========Minimum Volatility Portfolio==========")
@@ -105,6 +100,6 @@ class PortfolioOptimizer:
 
 
 if __name__ == "__main__":
-    stocks = ["MMM", "GS", "NVDA", "GOOGL", "ABT", "AMZN"]
+    stocks = ["MMM", "GS", "GOOGL", "ABT", "AMZN"]
     po = PortfolioOptimizer(stocks)
-    po.searchReturnFrontier(100000)
+    po.searchReturnFrontier(50000)

@@ -33,14 +33,14 @@ class TestPreprocess(TestCase):
         except:
             self.fail()
 
-    #def test_retrieve_open_close(self):  # TODO: maybe this is not needed
-    #    self.preprocess = Preprocess(data="open_close", lag=7)
-    #    try:
-    #        df = self.preprocess.retrieve_open_close()
-    #        if not isinstance(df, pd.DataFrame) and not df.empty:
-    #            raise Exception
-    #    except:
-    #        self.fail()
+    def test_retrieve_open_close(self):
+        self.preprocess = Preprocess(data="open_close", lag=7)
+        try:
+            df = self.preprocess.retrieve_open_close()
+            if not isinstance(df, pd.DataFrame) and not df.empty:
+                raise Exception
+        except:
+            self.fail()
 
     def test_retrieve_mkt_caps(self):
         self.preprocess = Preprocess(data="mktcaps", lag=7)  # TODO: add mktcaps option to Preprocess.getData
