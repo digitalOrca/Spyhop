@@ -118,8 +118,8 @@ public class MainGateway{
                         System.out.println("reqId:"+reqId);
                         SocketComm.getInstance().registerSymbol(reqId, symbol);
                         Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                        client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
                         pendingHistReq++;
+                        client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
                         reqId++;
                         Helper.pauseMilli(250);
                     }

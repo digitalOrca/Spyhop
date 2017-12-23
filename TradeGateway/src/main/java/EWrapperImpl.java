@@ -289,8 +289,6 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void error(int id, int errorCode, String errorMsg) {
-        String error = String.format("[E]pending: %d, id: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, id, errorCode, errorCode);
-        Logger.getInstance().log(Log.CALLBACK, error);
         switch (errorCode) {
             case 162:
                 MainGateway.pendingHistReq--;
@@ -300,6 +298,8 @@ public class EWrapperImpl implements EWrapper {
                 break;
             default:
         }
+        String error = String.format("[E]pending: %d, id: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, id, errorCode, errorCode);
+        Logger.getInstance().log(Log.CALLBACK, error);
         System.out.println("reqId: " + id + ", Error Code: " + errorCode + ", Error Message: " + errorMsg);
     }
 
@@ -351,9 +351,9 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void historicalDataEnd(int reqId, String s, String s1) {
+        MainGateway.pendingHistReq--;
         String end = String.format("[N]pending: %d, id: %d, s: %s, s1: %s", MainGateway.pendingHistReq, reqId, s, s1);
         Logger.getInstance().log(Log.CALLBACK, end);
-        MainGateway.pendingHistReq--;
         System.out.println("Closing ReqId:"+reqId+", Pending requests:"+MainGateway.pendingHistReq);
     }
 
