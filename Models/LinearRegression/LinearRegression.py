@@ -14,10 +14,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
 from DBUtils import DBConnect
-from datetime import date
-from datetime import timedelta
 from sklearn import preprocessing
 from Preprocess import Preprocess
+
 
 class LinearRegression:
 

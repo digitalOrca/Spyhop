@@ -8,6 +8,7 @@ Description:
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from scipy.optimize import fmin
 from Preprocess import Preprocess
 
@@ -19,7 +20,9 @@ class GARCH:
     def __init__(self, p, q):
         self.p = p  # order of residual term
         self.q = q  # order of variance term
-        self.preprocess = Preprocess(data='bars')
+        self.omega = np.array([])
+        self.alpha = np.empty(shape=(0, self.p))  # residual term parameter
+        self.beta = np.empty(shape=(0, self.q))  # variance term parameter
 
     """
         Description:
@@ -33,6 +36,26 @@ class GARCH:
         mu = daily_log_change.mean()
         residual = daily_log_change.subtract(mu)
         return residual
+
+    def computeTrueVolatility(self):
+        preprocess = Preprocess(data='bars')
+        df = preprocess.get_data(dset='all')
+        df["date"] = df["timestamp"].apply(lambda x: x.date()).astype('category')
+        dates = sorted((df["date"]).unique())
+        formated_variance = pd.DataFrame(index=dates)
+        count = 0
+        for symbol in df.index.unique():
+            print(count, " processing: ", symbol)
+            wap = df[df.index == symbol][["date", "wap"]]
+            symbol_variance = pd.Series(index=dates)
+            for date in dates:
+                vari = wap[wap["date"] == date].var()
+                symbol_variance.loc[date] = vari
+            formated_variance[symbol] = symbol_variance
+        print(formated_variance)
+
+
+
 
     """
         Description:
@@ -88,16 +111,31 @@ class GARCH:
             formatedData: the DataFrame with processed(compute vaiance and mean) and organized bar data
     """
     def optimizeParameters(self, formatedData):
+        paramSize = self.p+self.q+1
         for symbol in formatedData.keys():
             try:
-                theta0 = [0.05 for x in range(self.p+self.q+1)]
-                result = fmin(func=self.costFunc, x0=theta0, args=(formatedData[symbol].values,))
-                print(result)
+                theta0 = [0.05 for x in range(paramSize)]
+                xopt = fmin(func=self.costFunc, x0=theta0, args=(formatedData[symbol].values,))
+                print(xopt)
+                if len(xopt) == paramSize:
+                    self.omega = np.append(self.omega, xopt[0])
+                    self.alpha = np.append(self.alpha, [xopt[1:-self.q]], axis=0)
+                    self.beta = np.append(self.beta, [xopt[self.p+1:]], axis=0)
             except Exception as e:
                 print(str(e))
 
 
 if __name__ == "__main__":
     garch = GARCH(3, 3)
-    data = garch.prepData()
+    # data = garch.prepData()
+    garch.computeTrueVolatility()
+    """
     garch.optimizeParameters(data)
+    print(garch.omega)
+    print(garch.alpha)
+    print(garch.beta)
+    plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
+    plt.plot(garch.alpha[:, 1], garch.beta[:, 1], 'r.', label="2nd order")
+    plt.plot(garch.alpha[:, 2], garch.beta[:, 2], 'y.', label="3rd order")
+    plt.show()
+    """
