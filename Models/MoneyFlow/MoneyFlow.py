@@ -105,6 +105,7 @@ class MoneyFlow:
     def predict(self):
         pass
 
+
 if __name__ == "__main__":
     mf = MoneyFlow()
     seq = mf.prepareData()

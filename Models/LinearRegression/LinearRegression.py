@@ -30,11 +30,9 @@ class LinearRegression:
     retMax: maximum return example to be included in the model
     p_value: p-value requirement for each variable columns
     """
-    def __init__(self, lag=30, density=0.8, groupNum=21, scoreOrder=4, \
-                                    retMin=-0.25, retMax=0.25, p_value = 0.05):
+    def __init__(self, lag=30, density=0.8, groupNum=21, scoreOrder=4, retMin=-0.25, retMax=0.25, p_value=0.05):
         self.db = DBConnect()
-        self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, \
-                                                             density=density)
+        self.preprocess = Preprocess(data='fundamental_ratios', lag=lag, density=density)
         self.groupNum = groupNum
         self.scoreOrder = scoreOrder
         self.retMin = retMin
@@ -105,7 +103,7 @@ class LinearRegression:
     def computeAR(self, groupDf, benchmark):
         ArDf = self.preprocess.compute_return()
         benchmarkAR = self.preprocess.compute_benchmark(benchmark)
-        ArDf["return"] = ArDf["return"]/benchmarkAR -1.0
+        ArDf["return"] = ArDf["return"]/benchmarkAR - 1.0
         # remove outlier returns
         bull = ArDf[ArDf['return'] > self.retMax]
         #print("Number of stocks exceeding max gain:",len(bull))
@@ -148,7 +146,7 @@ class LinearRegression:
             plt.xlabel("groups")
             plt.ylabel(factor)
             axes = plt.gca()
-            axes.set_ylim([-0.05,0.05]) 
+            axes.set_ylim([-0.05, 0.05])
         plt.show()
         
     """visualizeTrainValidate
@@ -256,18 +254,3 @@ class LinearRegression:
         newGroupDf = self.group(newdata)
         newRankDf = self.computeRank(newdata, newGroupDf)
         return self.computeSymbolScore(self.coefficient, newRankDf)
-        
-       
-#lr = LinearRegression()
-#print(lr.train("snp500")))
-#import timeit
-#start_time = timeit.default_timer()
-#data = lr.preprocess.getData(dataType = 'filled', lag = True)
-#groups = lr.group(data)
-#ar, gar = lr.computeAR(groups, "snp500")
-#coefDf = lr.computeCorrCoef(gar)
-#rankDf = lr.computeRank(data, groups)
-#lr.computeSymbolScore(coefDf, rankDf, ar)
-#elapsed = timeit.default_timer() - start_time
-#self.visualizeGroupAR(gar)
-#print(elapsed)

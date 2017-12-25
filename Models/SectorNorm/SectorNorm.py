@@ -18,7 +18,7 @@ class SectorNorm():
         
         
     def computeSectorReturnProbability(self):
-        symbolSector = self.db.query("SELECT symbol, sector FROM security")
+        symbolSector = self.db.query("SELECT symbol, sector FROM security")  #TODO: move this to preprocess
         self.preprocess.__retrieve_fundamental_ratios(lag=True)
         start_date = self.preprocess.frdate
         ArDf = self.preprocess.compute_return(split=False)
