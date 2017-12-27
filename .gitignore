@@ -5,6 +5,7 @@ Logs/
 TradeGateway/build/
 TradeGateway/.idea/
 Models/.idea/
+TradeQueue.json
 
 Models/LinearRegression/progression/*
 !Models/LinearRegression/progression/DNA.json

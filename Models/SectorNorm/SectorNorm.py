@@ -23,7 +23,7 @@ class SectorNorm():
         start_date = self.preprocess.frdate
         ArDf = self.preprocess.compute_return(split=False)
         ArDf = ArDf.dropna(axis=0, how='any')  # prevent arithmetic error TODO: CONSIDER USING BENCHMARK
-        ArDf["return"] = (ArDf["end"]/ArDf["start"])-1.0
+        ArDf["return"] = (ArDf["end"]/ArDf["start"])-1.0  # TODO:use log
         # remove legacy columns
         ArDf.drop(['start', 'end'], axis=1, inplace=True)
         # remove outlier returns

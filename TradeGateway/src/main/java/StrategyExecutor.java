@@ -1,9 +1,9 @@
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+
+import java.io.FileReader;
+import java.util.HashMap;
 
 /**
  * Created by meng on 6/7/17.
@@ -16,56 +16,48 @@ public class StrategyExecutor implements Runnable {
         return ourInstance;
     }
 
-    private int port;
-    private ServerSocket serverSocket;
-    private Socket clientSocket;
-    private BufferedReader bufferedReader;
-    private InputStreamReader inputStreamReader;
-
     private StrategyExecutor() {
-        this.port = 8899;
     }
 
-    public void end() {
+    public static HashMap<String, Integer> buy_backlog = new HashMap<>();
+    public static HashMap<String, Integer> sell_backlog = new HashMap<>();
+    public static HashMap<String, Integer> buy_active = new HashMap<>();
+    public static HashMap<String, Integer> sell_active = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public static void loadTask() {
+        JSONParser parser = new JSONParser();
         try {
-            bufferedReader.close();
-            clientSocket.close();
-            serverSocket.close();
-        } catch (IOException e) {
+            JSONObject jsonObject = (JSONObject) parser.parse(
+                    new FileReader("/home/meng/Projects/NeuroTrader/TradeQueue.json"));
+            JSONArray buyList = (JSONArray)jsonObject.get("BUY");
+            JSONArray sellList = (JSONArray)jsonObject.get("SELL");
+            for (Object jobj : buyList) {
+                String symbol =  (String)((JSONObject)jobj).get("symbol");
+                Integer quantity = (int)(long)((JSONObject)jobj).get("quantity");
+                buy_backlog.put(symbol, quantity);
+            }
+            for (Object jobj : sellList) {
+                String symbol =  (String)((JSONObject)jobj).get("symbol");
+                Integer quantity = (int)(long)((JSONObject)jobj).get("quantity");
+                sell_backlog.put(symbol, quantity);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-    private void restart() {
-        end();
-        System.out.println("StrategyCore connection interrupted...");
-        run();
+    public static void trigger(String symbol, boolean buy) {
+        // place the order
+        if (buy) {
+            buy_active.put(symbol, buy_backlog.remove(symbol));
+        } else {
+            sell_active.put(symbol, sell_backlog.remove(symbol));
+        }
     }
 
     @Override
     public void run() {
-        try {
-            serverSocket = new ServerSocket(port);
-            clientSocket = serverSocket.accept();
-            System.out.println("StrategyCore started...");
-            this.inputStreamReader = new InputStreamReader(this.clientSocket.getInputStream());
-            bufferedReader = new BufferedReader(this.inputStreamReader);
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-        String line;
-        try {
-            while ((line = bufferedReader.readLine()) != null) {
-                System.out.println(line);
-                //TODO: DO SOMETHING ABOUT THE STRATEGY RECEIVED
 
-
-            }
-            restart();
-        } catch (IOException e) {
-            e.printStackTrace();
-            restart();
-        }
     }
 }

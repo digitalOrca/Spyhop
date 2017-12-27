@@ -12,7 +12,7 @@
         {
             "parameter" : "lag",
             "type" : "int",
-            "value" : 30
+            "value" : 60
         }
     ],
     "LinearRegression" : [
