@@ -1,9 +1,5 @@
-import java.util.*;
 import com.ib.client.*;
 import enums.*;
-import enums.Currency;
-
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -23,16 +19,11 @@ final public class OrderBuilder { // Make final to prevent modification and exte
         return contract;
     }
 
-    public static void placeOrder(EWrapperImpl client, int orderId, Contract contract, Order order) {
-        client.getClientSocket().placeOrder(orderId, contract, order);
-    }
-
-    public static Order createMarketOrder(String action, int quantity, double price) {
+    public static Order createMarketOrder(String action, int quantity) {
         Order order = new Order();
         order.action(action);
-        order.orderType("MIT");
+        order.orderType("MKT");
         order.totalQuantity(quantity);
-        order.auxPrice(price);
         return order;
     }
 

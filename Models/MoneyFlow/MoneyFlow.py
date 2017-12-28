@@ -20,7 +20,7 @@ class MoneyFlow:
     """
     Constructor
     """
-    def __init__(self, lag=14):
+    def __init__(self, lag=20):
         self.preprocess = Preprocess(data='bars', lag=lag)
 
     """prepareData

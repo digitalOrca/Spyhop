@@ -80,13 +80,6 @@ public class MainGateway{
                         strategyExecutor.start();
                         System.out.println("Strategy executor thread started");
 
-                        System.out.println("Waiting for utils.SocketComm client...");
-                        //utils.SocketComm.getInstance().start(); // not real thread
-                        System.out.println("utils.SocketComm client started");
-
-                        System.out.println("Sending preprocessor parameters...");
-                        //utils.SocketComm.getInstance().send(0,"configuration", "", Integer.toString(numStock));
-
                         System.out.println("Setting log level...");
                         client.getClientSocket().setServerLogLevel(3);
 

@@ -6,6 +6,7 @@ Description:
     using intraday bar data
 """
 
+import time
 import numpy as np
 import pandas as pd
 import traceback
@@ -58,7 +59,6 @@ class GARCH:
             for date in dates:
                 vari = wap[wap["date"] == date]["wap"].var()
                 symbol_variance.loc[date] = vari
-            print(symbol_variance)
             volatility[symbol] = symbol_variance.fillna(mean)
         print(volatility)
         return volatility
@@ -67,17 +67,14 @@ class GARCH:
     Incomplete
     """
     def inaccuracy(self, theta, resi, symbol_volatility):
-        print(">>>>>>>>>>>>>>>>>>")
-        print(theta)
         vari = self.GARCH(theta, resi)
         sl = min(len(resi), len(symbol_volatility))  # shared length, force two series to the same length
-        print("<<<<<<<<<<<<<<<,<<")
-        print(vari)
-        print("==================")
         print(vari[0:sl])
-        diff = (symbol_volatility[0:sl] - vari[0:sl]).sum()  # maybe make it second order later
-        return diff
-
+        plt.close()
+        plt.plot(range(sl), symbol_volatility[0:sl], 'r.', label="real")
+        plt.plot(range(sl), vari[0:sl], 'b.', label="garch")
+        plt.show(block=False)
+        time.sleep(1)
 
     """
         Description:
@@ -134,13 +131,14 @@ class GARCH:
     def optimizeParameters(self, residuals):
         paramSize = self.p+self.q+1
         theta0 = [0.05 for x in range(paramSize)]
-        # volatility = self.computeVolatility()
-        # volatility_symbols = volatility.columns
+        volatility = self.computeVolatility()
+        volatility_symbols = volatility.columns
         for symbol in residuals.keys():
-            # if symbol not in volatility_symbols:
-            #     continue  # skip if two symbol lists don't intersect
+            if symbol not in volatility_symbols:
+                continue  # skip if two symbol lists don't intersect
             try:
                 xopt = fmin(func=self.costFunc, x0=theta0, args=(residuals[symbol].values, ))
+                self.inaccuracy(xopt, residuals[symbol].values, volatility)  # plot difference
                 print(xopt)
                 if len(xopt) == paramSize:
                     self.omega = np.append(self.omega, xopt[0])

@@ -1,7 +1,10 @@
+import com.ib.client.*;
+import enums.Currency;
+import enums.Exchange;
+import enums.SecType;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
-
 import java.io.FileReader;
 import java.util.HashMap;
 
@@ -32,14 +35,14 @@ public class StrategyExecutor implements Runnable {
                     new FileReader("/home/meng/Projects/NeuroTrader/TradeQueue.json"));
             JSONArray buyList = (JSONArray)jsonObject.get("BUY");
             JSONArray sellList = (JSONArray)jsonObject.get("SELL");
-            for (Object jobj : buyList) {
-                String symbol =  (String)((JSONObject)jobj).get("symbol");
-                Integer quantity = (int)(long)((JSONObject)jobj).get("quantity");
+            for (Object jsonObj : buyList) {
+                String symbol =  (String)((JSONObject)jsonObj).get("symbol");
+                Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
                 buy_backlog.put(symbol, quantity);
             }
-            for (Object jobj : sellList) {
-                String symbol =  (String)((JSONObject)jobj).get("symbol");
-                Integer quantity = (int)(long)((JSONObject)jobj).get("quantity");
+            for (Object jsonObj : sellList) {
+                String symbol =  (String)((JSONObject)jsonObj).get("symbol");
+                Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
                 sell_backlog.put(symbol, quantity);
             }
         } catch (Exception e) {
@@ -47,13 +50,15 @@ public class StrategyExecutor implements Runnable {
         }
     }
 
-    public static void trigger(String symbol, boolean buy) {
-        // place the order
-        if (buy) {
+    public static void trigger(int orderId, String symbol, String action) {
+        if (action == "BUY") {
             buy_active.put(symbol, buy_backlog.remove(symbol));
         } else {
             sell_active.put(symbol, sell_backlog.remove(symbol));
         }
+        Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
+        Order order = OrderBuilder.createMarketOrder(action, buy_backlog.get(symbol));
+        MainGateway.client.getClientSocket().placeOrder(orderId, contract, order);
     }
 
     @Override
