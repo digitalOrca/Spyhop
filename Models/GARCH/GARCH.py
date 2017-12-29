@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 import traceback
 import matplotlib.pyplot as plt
-from scipy.optimize import fmin
+from scipy import optimize
+from scipy import stats
 from Preprocess import Preprocess
 
 
@@ -67,7 +68,7 @@ class GARCH:
     Incomplete
     """
     def inaccuracy(self, theta, resi, symbol_volatility):
-        vari = self.GARCH(theta, resi)
+        vari = self.garch(theta, resi)
         sl = min(len(resi), len(symbol_volatility))  # shared length, force two series to the same length
         print(vari[0:sl])
         plt.close()
@@ -85,9 +86,10 @@ class GARCH:
         Output:
             cost of model
     """
-    def costFunc(self, theta, resi):
-        vari = self.GARCH(theta, resi)
-        return np.sum(np.add(np.divide(np.power(resi, 2), vari), np.log(2*np.pi*vari)))
+    def maximumLikelihood(self, theta, resi):
+        vari = self.garch(theta, resi)
+        negative_likelihood = np.log(2*np.pi*vari)+np.divide(np.power(resi, 2), vari)
+        return np.sum(negative_likelihood)
 
     """
         Description:
@@ -98,7 +100,7 @@ class GARCH:
         Output:
             vari: computed series of variance
     """
-    def GARCH(self, theta, resi):        
+    def garch(self, theta, resi):
         omega = theta[0]
         alpha = theta[1:-self.q]
         beta = theta[self.p+1:]
@@ -126,20 +128,22 @@ class GARCH:
         Description:
             optimize GARCH parameter
         Input:
-            formatedData: the DataFrame with processed(compute vaiance and mean) and organized bar data
+            formatedData: the DataFrame with processed(compute variance and mean) and organized bar data
     """
     def optimizeParameters(self, residuals):
         paramSize = self.p+self.q+1
         theta0 = [0.05 for x in range(paramSize)]
-        volatility = self.computeVolatility()
-        volatility_symbols = volatility.columns
         for symbol in residuals.keys():
-            if symbol not in volatility_symbols:
-                continue  # skip if two symbol lists don't intersect
             try:
-                xopt = fmin(func=self.costFunc, x0=theta0, args=(residuals[symbol].values, ))
-                self.inaccuracy(xopt, residuals[symbol].values, volatility)  # plot difference
-                print(xopt)
+                xopt = optimize.fmin(func=self.maximumLikelihood, x0=theta0, args=(residuals[symbol].values,),
+                                     xtol=0.0001, disp=False)
+                VaR = np.multiply(np.sqrt(self.garch(xopt, residuals[symbol].values)), stats.norm.ppf(0.95))
+                plt.close()
+                plt.plot(range(len(VaR)), VaR, 'r-')
+                plt.plot(range(len(VaR)), -VaR, 'r-')
+                plt.plot(range(len(residuals[symbol].values)), residuals[symbol].values, 'b-')
+                plt.show(block=False)
+                time.sleep(5)
                 if len(xopt) == paramSize:
                     self.omega = np.append(self.omega, xopt[0])
                     self.alpha = np.append(self.alpha, [xopt[1:-self.q]], axis=0)
@@ -150,7 +154,7 @@ class GARCH:
 
 
 if __name__ == "__main__":
-    garch = GARCH(2, 2)
+    garch = GARCH(3, 3)
     data = garch.prepData()
     garch.optimizeParameters(data)
     print(garch.omega)
@@ -158,6 +162,6 @@ if __name__ == "__main__":
     print(garch.beta)
     plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
     plt.plot(garch.alpha[:, 1], garch.beta[:, 1], 'r.', label="2nd order")
-    # plt.plot(garch.alpha[:, 2], garch.beta[:, 2], 'y.', label="3rd order")
+    plt.plot(garch.alpha[:, 2], garch.beta[:, 2], 'y.', label="3rd order")
     plt.show()
 
