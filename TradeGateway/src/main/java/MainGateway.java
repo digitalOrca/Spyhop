@@ -2,9 +2,8 @@ import com.ib.client.Contract;
 import com.ib.client.EReader;
 import enums.Currency;
 import enums.Exchange;
+import enums.Log;
 import enums.SecType;
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
-import sun.font.CoreMetrics;
 import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
@@ -18,37 +17,26 @@ import java.util.concurrent.TimeUnit;
 public class MainGateway{
 
     /* Running mode */
-    static boolean Historical = true;
     static boolean Live = true; //Live trading or Paper trading
     static boolean RHT = true;  //if Paper trading, fake during RTH or off RTH
 
     /* Update flag */
     static boolean recvFundRatio = false;
-    static int reqIdUpdateBase = 1000;
+    static int reqIdUpdateBase = 10000;
+    static int reqIdHistBarBase = 20000;
     static int updateTimeout = 3000;
 
     /* API objects */
     static EWrapperImpl client;
-    static EReader messageQueue;
-    static QueueProcessor messageProcessor;
-    static Thread strategyExecutor;
 
     /* Pacing Metrics */
     static int pendingHistReq = 0;
 
     public static void main(String[] args) {
 
-        /* Retrieve active stocks */
-        LinkedList<String> symbols = CallbackAction.selectActiveStocks();
-
         /* One-time request status */
-        boolean streaming = false;
+        // boolean streaming = false;
         boolean updated = false;
-
-        /* Debug */
-        // Add debugging operation here
-        //if (Live)
-        //    System.exit(0);
 
         /* Update benchmark indices */
         UpdateAction.updateIndices();
@@ -65,17 +53,17 @@ public class MainGateway{
                     if (client.getClientSocket().isConnected()) {
                         System.out.println("Connected to InteractiveBrokers API");
 
-                        messageQueue = new EReader(client.getClientSocket(), client.getReadSignal());
+                        EReader messageQueue = new EReader(client.getClientSocket(), client.getReadSignal());
                         messageQueue.isDaemon();
                         messageQueue.start();
                         System.out.println("Message queue thread started");
 
-                        messageProcessor = new QueueProcessor(client, messageQueue);
+                        QueueProcessor messageProcessor = new QueueProcessor(client, messageQueue);
                         messageProcessor.isDaemon();
                         messageProcessor.start();
                         System.out.println("Message processor thread started");
 
-                        strategyExecutor = new Thread(StrategyExecutor.getInstance());
+                        Thread strategyExecutor = new Thread(StrategyExecutor.getInstance());
                         strategyExecutor.isDaemon();
                         strategyExecutor.start();
                         System.out.println("Strategy executor thread started");
@@ -92,31 +80,33 @@ public class MainGateway{
             }
 
             /* Check if the market is closed */
-            if (!beforeClose()) {
+            if (!beforeClose()) { //execute block after market close
                 /* Consolidate tick data */
                 System.out.println("=============Consolidate daily data==============");
                 CallbackAction.consolidateTicks("tick", "tick_history");
 
-                /* Historical Data Requests */
-                if (Historical) {
-                    LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
-                    Calendar cal = Calendar.getInstance();
-                    SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-                    String formatted = form.format(cal.getTime());
-                    int reqId = 1000; //starting reqId for historical data request
-                    for (String symbol : allSymbols) {
-                        while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
-                            Helper.pauseMilli(5);
-                        }
-                        System.out.println("reqId:"+reqId);
-                        SocketComm.getInstance().registerSymbol(reqId, symbol);
-                        Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                        pendingHistReq++;
-                        client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
-                        reqId++;
-                        Helper.pauseMilli(250);
+                /* Daily 1-min Bar Data Requests */
+                LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
+                Calendar cal = Calendar.getInstance();
+                SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+                String formatted = form.format(cal.getTime());
+                int reqId = reqIdHistBarBase; //starting reqId for historical data request
+                pendingHistReq = 0; //resetting pending request before
+                for (String symbol : allSymbols) {
+                    while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
+                        Helper.pauseMilli(1);
                     }
+                    System.out.println("reqId:"+reqId);
+                    SocketComm.getInstance().registerSymbol(reqId, symbol);
+                    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
+                    pendingHistReq++;
+                    client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
+                    String request = String.format("[R]pending: %d, id: %d", pendingHistReq, reqId);
+                    Logger.getInstance().log(Log.CALLBACK, request);
+                    reqId++;
+                    Helper.pauseMilli(50);
                 }
+
                 // make sure pending requests are processed before exiting
                 while (pendingHistReq > 0) {
                     Helper.pauseSec(1);
@@ -125,20 +115,22 @@ public class MainGateway{
                 break;
             }
             /* One-time requests */
-            if (!streaming) {
-                System.out.println("============Sending One-time Requests============");
-                int reqId = 1;
-                String genericTickList = "233";
-                for (String symbol : symbols) {
-                    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                    SocketComm.getInstance().registerSymbol(reqId, symbol);
-                    client.getClientSocket().reqMktData(reqId,contract, genericTickList, false, false, null);
-                    System.out.println("[R] reqMktData: " + symbol);
-                    //client.getClientSocket().reqRealTimeBars(reqId, contract, 5, "TRADES", true, null);
-                    reqId++;
-                }
-                streaming = true;
-            }
+            ///* Retrieve active stocks */
+            //if (!streaming) {
+                //LinkedList<String> symbols = CallbackAction.selectActiveStocks();
+                //System.out.println("============Sending One-time Requests============");
+                //int reqId = 1;
+                //String genericTickList = "233";
+                //for (String symbol : symbols) {
+                //    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
+                //    SocketComm.getInstance().registerSymbol(reqId, symbol);
+                //    client.getClientSocket().reqMktData(reqId,contract, genericTickList, false, false, null);
+                //    System.out.println("[R] reqMktData: " + symbol);
+                //    client.getClientSocket().reqRealTimeBars(reqId, contract, 5, "TRADES", true, null);
+                //    reqId++;
+                //}
+            //    streaming = true;
+            //}
 
             /* Data Refresh */
             if (!updated) {

@@ -1,5 +1,7 @@
 package utils;
 
+import com.ib.client.EReader;
+import com.ib.client.EWrapper;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;

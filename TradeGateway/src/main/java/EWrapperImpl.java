@@ -34,15 +34,13 @@ public class EWrapperImpl implements EWrapper {
 
     public void tickPrice(int reqId, int field, double price, TickAttr tickAttr) {
         String symbol = SocketComm.getInstance().getSymbol(reqId);
-        if (reqId >= MainGateway.reqIdUpdateBase) {
+        if (reqId >= MainGateway.reqIdUpdateBase && reqId <= MainGateway.reqIdHistBarBase) {
             switch (field) {
                 case 9: // previous day's close price
                     CallbackAction.updateOpenClose(false, symbol, price);
-                    Logger.getInstance().log(Log.ACTION, "[Callback] [9]" + symbol);
                     break;
                 case 14: // today's opening price
                     CallbackAction.updateOpenClose(true, symbol, price);
-                    Logger.getInstance().log(Log.ACTION, "[Callback] [14]" + symbol);
                     break;
                 default:
                     System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " price:" + Double.toString(price));
@@ -288,19 +286,35 @@ public class EWrapperImpl implements EWrapper {
         System.out.println("Error Message: " + errorMsg);
     }
 
-    public void error(int id, int errorCode, String errorMsg) {
+    public void error(int reqId, int errorCode, String errorMsg) {
         switch (errorCode) {
             case 162:
-                MainGateway.pendingHistReq--;
+                if(reqId > MainGateway.reqIdHistBarBase) {
+                    MainGateway.pendingHistReq--;
+                }
                 break;
             case 200:
-                MainGateway.pendingHistReq--;
+                if(reqId > MainGateway.reqIdHistBarBase) {
+                    MainGateway.pendingHistReq--; //receive error response from historical 1-min bar data request
+                }else if(reqId > MainGateway.reqIdUpdateBase) {
+                    MainGateway.recvFundRatio = true; //received error response from fundamental ratios request, symbol ambiguous
+                }
+                break;
+            case 300:
+                //ignored
+                break;
+            case 354:
+                if(reqId > MainGateway.reqIdHistBarBase) {
+                    //invalid case
+                }else if(reqId > MainGateway.reqIdUpdateBase) {
+                    MainGateway.recvFundRatio = true; //received error response from fundamental ratios request, no data subscription
+                }
                 break;
             default:
         }
-        String error = String.format("[E]pending: %d, id: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, id, errorCode, errorCode);
+        String error = String.format("[E]pending: %d, reqId: %d, errorCode: %d, message: %s", MainGateway.pendingHistReq, reqId, errorCode, errorCode);
         Logger.getInstance().log(Log.CALLBACK, error);
-        System.out.println("reqId: " + id + ", Error Code: " + errorCode + ", Error Message: " + errorMsg);
+        System.out.println("reqId: " + reqId + ", Error Code: " + errorCode + ", Error Message: " + errorMsg);
     }
 
     public void connectionClosed() {

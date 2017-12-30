@@ -16,7 +16,7 @@ class EWrapperImplTest {
     @Test
     void tickPrice_9() {
         EWrapperImpl client = new EWrapperImpl();
-        int reqId = 1001;
+        int reqId = MainGateway.reqIdUpdateBase+1;
         SocketComm.getInstance().registerSymbol(reqId, "TEST");
         String today = Helper.today();
         // backup current entry
@@ -47,7 +47,7 @@ class EWrapperImplTest {
     @Test
     void tickPrice_14() {
         EWrapperImpl client = new EWrapperImpl();
-        int reqId = 1001;
+        int reqId = MainGateway.reqIdUpdateBase + 1;
         SocketComm.getInstance().registerSymbol(reqId, "TEST");
         String today = Helper.today();
         // backup current entry

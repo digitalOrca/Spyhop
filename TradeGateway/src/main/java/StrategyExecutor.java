@@ -51,7 +51,7 @@ public class StrategyExecutor implements Runnable {
     }
 
     public static void trigger(int orderId, String symbol, String action) {
-        if (action == "BUY") {
+        if (action.equals("BUY")) {
             buy_active.put(symbol, buy_backlog.remove(symbol));
         } else {
             sell_active.put(symbol, sell_backlog.remove(symbol));
