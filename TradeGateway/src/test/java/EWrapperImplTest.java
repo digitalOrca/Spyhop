@@ -76,6 +76,61 @@ class EWrapperImplTest {
     }
 
     @Test
+    void tickPrice_15_21() {
+        EWrapperImpl client = new EWrapperImpl();
+        int reqId = MainGateway.reqIdUpdateBase + 1;
+        //entry 1
+        SocketComm.getInstance().registerSymbol(reqId, "TEST1");
+        for (int field= 15; field<22; field++) { // create row
+            client.tickPrice(reqId, field, 1, null);
+        }
+        for (int field= 15; field<22; field++) { // update row
+            client.tickPrice(reqId, field, 2, null);
+        }
+        //entry 2
+        reqId++;
+        SocketComm.getInstance().registerSymbol(reqId, "TEST2");
+        for (int field= 15; field<22; field++) { // create row
+            client.tickPrice(reqId, field, 1, null);
+        }
+        for (int field= 15; field<22; field++) { // update row
+            client.tickPrice(reqId, field, field, null);
+        }
+        // validate content
+        String validate_query_1 = "SELECT COUNT(*) FROM high_low WHERE symbol='TEST1'";
+        ResultSet resultSet1 = DatabaseConn.getInstance().execQuery(validate_query_1);
+        String validate_query_2 = "SELECT COUNT(*) FROM high_low WHERE symbol='TEST2'";
+        ResultSet resultSet2 = DatabaseConn.getInstance().execQuery(validate_query_2);
+        String validate_query_3 = "SELECT * FROM high_low WHERE symbol='TEST2'";
+        ResultSet resultSet3 = DatabaseConn.getInstance().execQuery(validate_query_3);
+        try {
+            resultSet1.next();
+            resultSet2.next();
+            resultSet3.next();
+            int count1 = resultSet1.getInt("count");
+            int count2 = resultSet2.getInt("count");
+            assertEquals(1, count1);
+            assertEquals(1, count2);
+            assertEquals(resultSet3.getDouble("low13"), 15);
+            assertEquals(resultSet3.getDouble("high13"), 16);
+            assertEquals(resultSet3.getDouble("low26"), 17);
+            assertEquals(resultSet3.getDouble("high26"), 18);
+            assertEquals(resultSet3.getDouble("low52"), 19);
+            assertEquals(resultSet3.getDouble("high52"), 20);
+            assertEquals(resultSet3.getInt("vol90"), 21);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally { // restore database entries
+            String clear_test1 = "DELETE FROM high_low WHERE symbol='TEST1'";
+            DatabaseConn.getInstance().execUpdate(clear_test1);
+            String clear_test2 = "DELETE FROM high_low WHERE symbol='TEST2'";
+            DatabaseConn.getInstance().execUpdate(clear_test2);
+        }
+
+
+    }
+
+    @Test
     void tickPriceSize() {
         EWrapperImpl client = new EWrapperImpl();
         SocketComm.getInstance().registerSymbol(1, "TEST");

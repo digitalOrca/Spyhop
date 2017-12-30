@@ -21,10 +21,11 @@ public class MainGateway{
     static boolean RHT = true;  //if Paper trading, fake during RTH or off RTH
 
     /* Update flag */
-    static boolean recvFundRatio = false;
+    static boolean receivedFundRatio = false;
+    static int callbackTracker = 0; // flag from right to left: 47, 15-21
     static int reqIdUpdateBase = 10000;
+    static int updateTimeout = 3000; // 3 seconds timeout
     static int reqIdHistBarBase = 20000;
-    static int updateTimeout = 3000;
 
     /* API objects */
     static EWrapperImpl client;

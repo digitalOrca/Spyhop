@@ -38,11 +38,13 @@ public class StrategyExecutor implements Runnable {
             for (Object jsonObj : buyList) {
                 String symbol =  (String)((JSONObject)jsonObj).get("symbol");
                 Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
+                System.out.println("Buy " + quantity + " shares of " + symbol);
                 buy_backlog.put(symbol, quantity);
             }
             for (Object jsonObj : sellList) {
                 String symbol =  (String)((JSONObject)jsonObj).get("symbol");
                 Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
+                System.out.println("Sell " + quantity + " shares of " + symbol);
                 sell_backlog.put(symbol, quantity);
             }
         } catch (Exception e) {
@@ -57,7 +59,7 @@ public class StrategyExecutor implements Runnable {
             sell_active.put(symbol, sell_backlog.remove(symbol));
         }
         Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-        Order order = OrderBuilder.createMarketOrder(action, buy_backlog.get(symbol));
+        Order order = OrderBuilder.createMarketOrder(action, buy_backlog.get(symbol));  //market order
         MainGateway.client.getClientSocket().placeOrder(orderId, contract, order);
     }
 

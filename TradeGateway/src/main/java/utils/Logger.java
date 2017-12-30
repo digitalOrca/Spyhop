@@ -32,7 +32,7 @@ public class Logger {
         Date date = new Date();
         String timestamp = this.dateFormat.format(date);
 
-        this.logFileName = logRoot + "C" + timestamp + ".txt";
+        this.logFileName = logRoot + timestamp + ".csv";
         this.log = new File(this.logFileName);
         try {
             if (!this.log.exists()) {
@@ -48,10 +48,9 @@ public class Logger {
     public void log(Log type, String entry) {
         String timestamp = this.timeFormat.format(new Date());
         try {
-            if (type == Log.CALLBACK) {
-                this.bufferedWriter.write(timestamp + entry + "\n");
-                this.bufferedWriter.flush();
-            }
+            String category = String.format("%1$-10s","[" + type.toString() + "]");
+            this.bufferedWriter.write(category + "," + timestamp + "," + entry + "\n");
+            this.bufferedWriter.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }

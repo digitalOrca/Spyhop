@@ -12,7 +12,7 @@ public class EWrapperImpl implements EWrapper {
 
     private EReaderSignal readSignal;
     private EClientSocket clientSocket;
-    static Set<Integer> validTicks = new HashSet<>(Arrays.asList(0, 1, 2,3,4,5,32,33,45,84));
+    static Set<Integer> repeatTicks = new HashSet<>(Arrays.asList(0, 1, 2,3,4,5,32,33,45,84));
 
     EWrapperImpl(){
         readSignal = new EJavaSignal();
@@ -42,11 +42,21 @@ public class EWrapperImpl implements EWrapper {
                 case 14: // today's opening price
                     CallbackAction.updateOpenClose(true, symbol, price);
                     break;
+                case 15: //13-week low
+                case 16: //13-week high
+                case 17: //26-week low
+                case 18: //26-week high
+                case 19: //52-week low
+                case 20: //52-week high
+                case 21: //90-days average daily volume(mutiple of 100)
+                    MainGateway.callbackTracker |= (int)Math.pow(2, (field-14));
+                    CallbackAction.updateHighLow(symbol, field, price);
+                    break;
                 default:
                     System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " price:" + Double.toString(price));
                     break;
             }
-        } else if (validTicks.contains(field)) {
+        } else if (repeatTicks.contains(field)) {
             CallbackAction.updateTickPrice(symbol, field, price);
         }
     }
@@ -54,7 +64,7 @@ public class EWrapperImpl implements EWrapper {
     public void tickSize(int reqId, int field, int size) {
         if (reqId == MainGateway.reqIdUpdateBase)
             return;
-        if (validTicks.contains(field)) {
+        if (repeatTicks.contains(field)) {
             String symbol = SocketComm.getInstance().getSymbol(reqId);
             CallbackAction.updateTickSize(symbol, field, size);
         }
@@ -77,13 +87,14 @@ public class EWrapperImpl implements EWrapper {
                 case 47: // fundamental ratio
                     CallbackAction.updateFundamentalRatios(symbol, value);
                     Logger.getInstance().log(Log.ACTION, "[Callback] [47]" + symbol);
-                    MainGateway.recvFundRatio = true;
+                    MainGateway.callbackTracker |= 1;
+                    //MainGateway.receivedFundRatio = true;
                     break;
                 default:
                     System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " value:" + value);
                     break;
             }
-        }else if (validTicks.contains(field) && reqId < MainGateway.reqIdUpdateBase) {
+        }else if (repeatTicks.contains(field) && reqId < MainGateway.reqIdUpdateBase) {
             switch (field) {
                 case 32: //bid exchange
                     CallbackAction.updateTickExchange(symbol, "bid_exchange", value);
@@ -297,7 +308,8 @@ public class EWrapperImpl implements EWrapper {
                 if(reqId > MainGateway.reqIdHistBarBase) {
                     MainGateway.pendingHistReq--; //receive error response from historical 1-min bar data request
                 }else if(reqId > MainGateway.reqIdUpdateBase) {
-                    MainGateway.recvFundRatio = true; //received error response from fundamental ratios request, symbol ambiguous
+                    //MainGateway.receivedFundRatio = true; //received error response from fundamental ratios request, symbol ambiguous
+                    MainGateway.callbackTracker = 0; //reset bit map tracker
                 }
                 break;
             case 300:
@@ -307,7 +319,8 @@ public class EWrapperImpl implements EWrapper {
                 if(reqId > MainGateway.reqIdHistBarBase) {
                     //invalid case
                 }else if(reqId > MainGateway.reqIdUpdateBase) {
-                    MainGateway.recvFundRatio = true; //received error response from fundamental ratios request, no data subscription
+                    //MainGateway.receivedFundRatio = true; //received error response from fundamental ratios request, no data subscription
+                    MainGateway.callbackTracker = 0; //reset bit map tracker
                 }
                 break;
             default:

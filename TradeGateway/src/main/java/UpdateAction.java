@@ -18,9 +18,9 @@ import java.util.LinkedList;
  */
 class UpdateAction {
 
-    private static void waitForFlag() {
+    public static void waitForFlag() { // make it public so it can be tested
         int timeout = 0;
-        while(!MainGateway.recvFundRatio && timeout < MainGateway.updateTimeout) {
+        while(MainGateway.callbackTracker != 255 && timeout < MainGateway.updateTimeout) {
             Helper.pauseMilli(1);
             timeout++;
         }
@@ -28,7 +28,7 @@ class UpdateAction {
 
     static void updateAllSecurities() {
         String symbol_query = "SELECT symbol FROM security";
-        String genericTicks = "258";
+        String genericTicks = "165, 258"; //165:high low  258:fundamental ratios
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(symbol_query);
         LinkedList<String> allSymbols = Helper.resultToList(resultSet, "symbol");
         String prevSymbol = "";
@@ -39,7 +39,8 @@ class UpdateAction {
             // increment reqId for new Id-symbol pair
             SocketComm.getInstance().registerSymbol(++reqIdUpdate, symbol);
             Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-            MainGateway.recvFundRatio = false;
+            //MainGateway.receivedFundRatio = false;
+            MainGateway.callbackTracker = 0; //reset bit map tracker
             MainGateway.client.getClientSocket().reqMktData(reqIdUpdate, contract, genericTicks, false, false, null);
             prevSymbol = symbol;
             waitForFlag();

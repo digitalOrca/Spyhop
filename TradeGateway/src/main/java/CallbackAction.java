@@ -3,7 +3,6 @@
  */
 
 import com.ib.client.HistogramEntry;
-import com.ib.client.TickType;
 import utils.DatabaseConn;
 import utils.Helper;
 
@@ -21,7 +20,7 @@ class CallbackAction {
     private static HashMap<String, Integer> lastPtr = new HashMap<>();
 
     static { // static initialization of tickTypes
-        for (int tickId : EWrapperImpl.validTicks) {
+        for (int tickId : EWrapperImpl.repeatTicks) {
             String TickQuery = "SELECT name FROM tick_type WHERE id=%d";
             String query = String.format(TickQuery, tickId);
             ResultSet resultSet = DatabaseConn.getInstance().execQuery(query);
@@ -272,6 +271,30 @@ class CallbackAction {
         String insertion = "INSERT INTO bar_history(symbol, timestamp, open, high, low, close, volume, count, wap) " +
                            "VALUES ('%s', '%s', %s, %s, %s, %s, %s, %s, %s)";
         String statement = String.format(insertion, symbol, dateTime, open, high, low, close, volume, count, wap);
+        DatabaseConn.getInstance().execUpdate(statement);
+    }
+
+    static void updateHighLow(String symbol, int field, double price) {
+        String column = "";
+        switch (field) {
+            case 15: //13-week low
+                column = "low13"; break;
+            case 16: //13-week high
+                column = "high13"; break;
+            case 17: //26-week low
+                column = "low26"; break;
+            case 18: //26-week high
+                column = "high26"; break;
+            case 19: //52-week low
+                column = "low52"; break;
+            case 20: //52-week high
+                column = "high52"; break;
+            case 21: //90-days average daily volume(mutiple of 100)
+                column = "vol90"; break;
+            default:
+        }
+        String update = "INSERT INTO high_low(symbol, %s) VALUES('%s', %s) ON CONFLICT (symbol) DO UPDATE SET %s = %s";
+        String statement = String.format(update, column, symbol, price, column, price);
         DatabaseConn.getInstance().execUpdate(statement);
     }
 }

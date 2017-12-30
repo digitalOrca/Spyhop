@@ -14,6 +14,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class updateActionTest {
 
     @Test
+    void callbackTrackBitmap() {
+        EWrapperImpl client = new EWrapperImpl();
+        MainGateway.callbackTracker = 0; //reset bits
+        MainGateway.callbackTracker |= 1;
+        assertEquals(MainGateway.callbackTracker, 1);
+        for (int field = 15; field < 22; field++) {
+            MainGateway.callbackTracker |= (int) Math.pow(2, (field - 14));
+        }
+        assertEquals(MainGateway.callbackTracker, 255);
+    }
+
+    @Test
     void updateIndices() {
         // backup any existing data
         String today = Helper.today();
