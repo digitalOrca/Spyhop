@@ -237,17 +237,17 @@ class LinearRegression:
     TRAIN AND VALIDATE
     """
     def train_validate(self, benchmark):
-        trainSet, validateSet = self.preprocess.get_data(dataType ='filled', lag = True, dset="train_validate")
+        trainSet, validateSet = self.preprocess.get_data(dataType ='filled', lag=True, dset="train_validate")
         t = self.train(benchmark, trainset=trainSet)
         v = self.validate(benchmark, validateset = validateSet)
         #self.visualizeTrainValidate(t, v)
-        return t,v
+        return t, v
         
     """
     PREDICT
     """
     def predict(self):
-        newdata = self.preprocess.get_data(dataType ='filled', lag = False)
+        newdata = self.preprocess.get_data(dataType ='filled', lag=False)
         if self.coefficient.empty:
             raise Exception("model coefficient not fitted!")
         newGroupDf = self.group(newdata)

@@ -27,18 +27,14 @@ class Preprocess:
             end = date.today().isoformat()
             # select the earliest fundamental ratio data within one month
             query = "SELECT * FROM fundamental_ratios WHERE date = \
-                    (SELECT DISTINCT date FROM fundamental_ratios \
-                    WHERE date > '%s'\
-                    ORDER BY date ASC LIMIT 1)"\
-                    % start
+                    (SELECT DISTINCT date FROM fundamental_ratios WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % start
             df = self.db.query(query)
             
             self.frdate = df.date[0]
             self.prdate = end 
         else:
             query = "SELECT * FROM fundamental_ratios WHERE date = \
-                    (SELECT DISTINCT date FROM fundamental_ratios \
-                    ORDER BY date DESC LIMIT 1)"
+                    (SELECT DISTINCT date FROM fundamental_ratios ORDER BY date DESC LIMIT 1)"
             df = self.db.query(query)
         return df.fillna(value=np.nan)
 
@@ -112,6 +108,11 @@ class Preprocess:
         for symbol in symbols:
             daily_price[symbol] = df[df["symbol"] == symbol]["average"]
         return daily_price
+
+    def retrieve_high_low(self):
+        selection = "SELECT * FROM high_low"
+        df = self.db.query(selection, index="symbol")  # Type: DataFrame
+        return df
 
     def retrieve_mkt_caps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
@@ -241,7 +242,7 @@ class Preprocess:
                 capped_validate_data = self.cap_outlier(filled_validate_data)
                 scaled_train_data = self.scale_data(capped_train_data)
                 scaled_validate_data = self.scale_data(capped_validate_data)
-                return scaled_train_data, scaled_validate_data
+                return scaled_train_data, scaled_validate_data  # dataType == 'scaled'
             else:
                 if dataType == 'raw':
                     return raw_data
@@ -253,7 +254,7 @@ class Preprocess:
                     return filled_data
                 capped_data = self.cap_outlier(filled_data)
                 scaled_data = self.scale_data(capped_data)
-                return scaled_data
+                return scaled_data  # dataType == 'scaled'
         elif self.data == "ticks":
             raw_data = self.retrieve_ticks(lag)
             return raw_data
@@ -266,4 +267,7 @@ class Preprocess:
                 return whole_data
         elif self.data == 'open_close':
             raw_data = self.retrieve_open_close()
+            return raw_data
+        elif self.data == 'high_low':
+            raw_data = self.retrieve_high_low()
             return raw_data
