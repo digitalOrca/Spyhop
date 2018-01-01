@@ -1,16 +1,14 @@
 #!/usr/bin/python3.6
 
-from __future__ import print_function
-from itertools import count
-
 import random
+from itertools import count
 from Preprocess import Preprocess
+import numpy as np
+import matplotlib.pyplot as plt
 import torch
 from torch import nn
+from torch import autograd
 
-import torch.autograd
-import torch.nn.functional as F
-from torch.autograd import Variable
 
 POLY_DEGREE = 4
 W_target = torch.randn(POLY_DEGREE, 1) * 5
@@ -35,17 +33,23 @@ def preprocessData():
 
 
 def createModel(input_size):
-    model = nn.Linear(input_size, 1)
+    model = nn.Sequential(
+        nn.Linear(input_size, 50),
+        nn.ReLU(),
+        nn.Linear(50, 25),
+        nn.ReLU(),
+        nn.Linear(25, 1),
+    )
     return model
 
 
 def createBatch(input, target, batch_size):
     batch_index = random.sample(range(len(input)), batch_size)
-    batch_input = input.iloc[batch_index].as_matrix().astype('float')
-    batch_target = target.iloc[batch_index].as_matrix().astype('float')
+    batch_input = input.iloc[batch_index].as_matrix().astype(np.float32)
+    batch_target = target.iloc[batch_index].as_matrix().astype(np.float32)
     batch_input = torch.from_numpy(batch_input)
     batch_target = torch.from_numpy(batch_target)
-    return batch_input, batch_target
+    return autograd.Variable(batch_input), autograd.Variable(batch_target)
 
 
 def create_features(x):
@@ -68,31 +72,22 @@ def poly_desc(W, b):
     return result
 
 
-def get_batch(batch_size=32):
-    """Builds a batch i.e. (x, f(x)) pair."""
-    random = torch.randn(batch_size)
-    x = create_features(random)
-    y = f(x)
-    return Variable(x), Variable(y)
-
-
 train, validate = preprocessData()
 train_in, train_out = train
 createBatch(train_in, train_out, 32)
 fc = createModel(len(train_in.columns))
 
-for batch_idx in count(1):
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+epoch, residual = [], []
+
+for i in count(1):
     # Get data
     batch_input, batch_target = createBatch(train_in, train_out, 32)
     # Reset gradients
     fc.zero_grad()
     # Forward pass
-    print(type(batch_input))
-    print(type(batch_target))
-    print(fc(batch_input))  # TODO: PROBLEM WITH DATA TYPE?
-    import sys
-    sys.exit()
-    output = F.smooth_l1_loss(fc.forward(batch_input), batch_target)
+    output = nn.functional.smooth_l1_loss(fc.forward(batch_input), batch_target)
     loss = output.data[0]
 
     # Backward pass
@@ -102,14 +97,19 @@ for batch_idx in count(1):
     for param in fc.parameters():
         param.data.add_(-0.1 * param.grad.data)
 
+    epoch.append(i)
+    residual.append(loss)
+    ax1.clear()
+    ax1.plot(epoch, residual)
+    title = "Iteration:%s Loss:%s" % (i, loss)
+    ax1.set_title(title)
+    plt.pause(0.1)
+
     # Stop criterion
     if loss < 1e-3:
         break
 
-print('Loss: {:.6f} after {} batches'.format(loss, batch_idx))
-print('==> Learned function:\t' + poly_desc(fc.weight.data.view(-1), fc.bias.data))
-print('==> Actual function:\t' + poly_desc(W_target.view(-1), b_target))
-
+plt.show()
 
 
 
