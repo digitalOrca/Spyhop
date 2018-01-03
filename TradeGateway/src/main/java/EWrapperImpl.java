@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import com.ib.client.*;
 import enums.Log;
+import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
 
@@ -34,39 +35,43 @@ public class EWrapperImpl implements EWrapper {
 
     public void tickPrice(int reqId, int field, double price, TickAttr tickAttr) {
         String symbol = SocketComm.getInstance().getSymbol(reqId);
-        if (reqId >= MainGateway.reqIdUpdateBase && reqId <= MainGateway.reqIdHistBarBase) {
-            switch (field) {
-                case 9: // previous day's close price
-                    CallbackAction.updateOpenClose(false, symbol, price);
-                    break;
-                case 14: // today's opening price
-                    CallbackAction.updateOpenClose(true, symbol, price);
-                    break;
-                case 15: //13-week low
-                case 16: //13-week high
-                case 17: //26-week low
-                case 18: //26-week high
-                case 19: //52-week low
-                case 20: //52-week high
-                case 21: //90-days average daily volume(mutiple of 100)
-                    MainGateway.callbackTracker |= (int)Math.pow(2, (field-14));
-                    CallbackAction.updateHighLow(symbol, field, price);
-                    break;
-                default:
-                    System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " price:" + Double.toString(price));
-                    break;
-            }
-        } else if (repeatTicks.contains(field)) {
-            CallbackAction.updateTickPrice(symbol, field, price);
+        switch (field) {
+            case 1: //bid price
+            case 2: //ask price
+            case 4: //last price
+                CallbackAction.updateTickPrice(symbol, field, price);
+                break;
+            case 9: // previous day's close price
+                CallbackAction.updateOpenClose(false, symbol, price);
+                break;
+            case 14: // today's opening price
+                CallbackAction.updateOpenClose(true, symbol, price);
+                break;
+            case 15: //13-week low
+            case 16: //13-week high
+            case 17: //26-week low
+            case 18: //26-week high
+            case 19: //52-week low
+            case 20: //52-week high
+            case 21: //90-days average daily volume(mutiple of 100)
+                MainGateway.callbackTracker |= (int)Math.pow(2, (field-14));
+                CallbackAction.updateHighLow(symbol, field, price);
+                break;
+            default:
+                System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " price:" + Double.toString(price));
+                break;
         }
     }
 
     public void tickSize(int reqId, int field, int size) {
-        if (reqId == MainGateway.reqIdUpdateBase)
-            return;
-        if (repeatTicks.contains(field)) {
-            String symbol = SocketComm.getInstance().getSymbol(reqId);
-            CallbackAction.updateTickSize(symbol, field, size);
+        switch (field) {
+            case 0: //bid size
+            case 3: //ask size
+            case 5: //last size
+                String symbol = SocketComm.getInstance().getSymbol(reqId);
+                CallbackAction.updateTickSize(symbol, field, size);
+                break;
+            default:
         }
     }
 
@@ -82,36 +87,27 @@ public class EWrapperImpl implements EWrapper {
         String symbol = SocketComm.getInstance().getSymbol(reqId);
         if (symbol.equals("INVALID"))
             return;
-        if (reqId >= MainGateway.reqIdUpdateBase) {
-            switch (field) {
-                case 47: // fundamental ratio
-                    CallbackAction.updateFundamentalRatios(symbol, value);
-                    Logger.getInstance().log(Log.ACTION, "[Callback] [47]" + symbol);
-                    MainGateway.callbackTracker |= 1;
-                    //MainGateway.receivedFundRatio = true;
-                    break;
-                default:
-                    System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " value:" + value);
-                    break;
-            }
-        }else if (repeatTicks.contains(field) && reqId < MainGateway.reqIdUpdateBase) {
-            switch (field) {
-                case 32: //bid exchange
-                    CallbackAction.updateTickExchange(symbol, "bid_exchange", value);
-                    break;
-                case 33: //ask exchange
-                    CallbackAction.updateTickExchange(symbol, "ask_exchange", value);
-                    break;
-                case 45: //last time
-                    CallbackAction.updateTickLastTime(symbol, value);
-                    break;
-                case 84: //last exchange
-                    CallbackAction.updateTickExchange(symbol, "last_exchange", value);
-                    break;
-                default:
-                    System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " value:" + value);
-                    break;
-            }
+        switch (field) {
+            case 47: // fundamental ratio
+                CallbackAction.updateFundamentalRatios(symbol, value);
+                Logger.getInstance().log(Log.ACTION, "[Callback] [47]" + symbol);
+                MainGateway.callbackTracker |= 1;
+                break;
+            case 32: //bid exchange
+                CallbackAction.updateTickExchange(symbol, "bid_exchange", value);
+                break;
+            case 33: //ask exchange
+                CallbackAction.updateTickExchange(symbol, "ask_exchange", value);
+                break;
+            case 45: //last time
+                CallbackAction.updateTickLastTime(symbol, value);
+                break;
+            case 84: //last exchange
+                CallbackAction.updateTickExchange(symbol, "last_exchange", value);
+                break;
+            default:
+                System.out.println("reqId:" + Integer.toString(reqId) + " field:" + Integer.toString(field) + " value:" + value);
+                break;
         }
     }
 
@@ -397,7 +393,7 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void tickReqParams(int i, double v, String s, int i1) {
-        System.out.println("[C] tickReqParams -> tickerId: " + i + ", minTick: " + v + ", bboExchange: " + s + ", snapshotPermission: " + i1);
+        // System.out.println("[C] tickReqParams -> tickerId: " + i + ", minTick: " + v + ", bboExchange: " + s + ", snapshotPermission: " + i1);
     }
 
     public void newsProviders(NewsProvider[] newsProviders) {

@@ -117,7 +117,7 @@ class CallbackAction {
         String event = type.split("_")[0];
         String timestamp = Helper.timestampNow();
 
-        // prepare register
+        // prepare register: bid_size, bid_price, ask_price, ask_size, last_price, last_size, last_time
         String[] s = {"NULL", "NULL", "NULL", "NULL", "NULL", "NULL"};
         if (register.containsKey(symbol)) {
             s = register.get(symbol);
@@ -149,14 +149,14 @@ class CallbackAction {
         register.put(symbol, s);
         String insertion = "INSERT INTO tick (timestamp, symbol, event, bid_size, bid_price, " +
                            "ask_price, ask_size, last_price, last_size) VALUES ('%s', '%s', '%s', %s)";
-        if (field == 4) {
+        if (field == 4) { //only update last index for last price
             insertion += " RETURNING index";
             String statement = String.format(insertion, timestamp, symbol, event, values);
             ResultSet resultSet = DatabaseConn.getInstance().execQuery(statement);
             try {
                 resultSet.next();
                 int index = resultSet.getInt("index");
-                lastPtr.put(symbol, new Integer(index));
+                lastPtr.put(symbol, index);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -201,7 +201,7 @@ class CallbackAction {
     static void updateTickLastTime(String symbol, String time) {
         long unixTime = Long.parseLong(time);
         Timestamp timestamp = new Timestamp(unixTime * 1000);
-        int lastIndex = (int)lastPtr.get(symbol);
+        int lastIndex = lastPtr.get(symbol);
         String template = "UPDATE tick SET last_time='%s' WHERE index=%s";
         String query = String.format(template, timestamp.toString(), lastIndex);
         DatabaseConn.getInstance().execUpdate(query);

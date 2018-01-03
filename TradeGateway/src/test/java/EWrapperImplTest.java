@@ -173,11 +173,11 @@ class EWrapperImplTest {
     @Test
     void lastTime() {
         EWrapperImpl client = new EWrapperImpl();
-        SocketComm.getInstance().registerSymbol(1, "TEST");
-        client.tickPrice(1, 4, 0.1, null);
-        client.tickString(1, 45, "654912000");
-        client.tickPrice(1, 4, 0.2, null);
-        client.tickString(1, 45, "686448000");
+        SocketComm.getInstance().registerSymbol(14785, "TEST");
+        client.tickPrice(14785, 4, 0.1, null);
+        client.tickString(14785, 45, "654912000");
+        client.tickPrice(14785, 4, 0.2, null);
+        client.tickString(14785, 45, "686448000");
         String validate_query = "SELECT COUNT(DISTINCT last_time) FROM tick";
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(validate_query);
         try {

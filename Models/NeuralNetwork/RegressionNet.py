@@ -7,12 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch import nn
+from torch.nn import functional
 from torch import autograd
-
-
-POLY_DEGREE = 4
-W_target = torch.randn(POLY_DEGREE, 1) * 5
-b_target = torch.randn(1) * 5
+from torch import cuda
 
 
 def preprocessData():
@@ -27,18 +24,26 @@ def preprocessData():
     print("trim fundamental ratios...")
     fr_train = fr_train[fr_train.index.isin(ar_train.index)]
     fr_validate = fr_validate[fr_validate.index.isin(ar_validate.index)]
+    # re-order train set for visualization
+    ar_train = ar_train.sort_values("return")
+    fr_train = fr_train.loc[ar_train.index]
     train = (fr_train, ar_train)
+    # re-order validation set for visualization
+    ar_validate =ar_validate.sort_values("return")
+    fr_validate = fr_validate.loc[ar_validate.index]
     validate = (fr_validate, ar_validate)
     return train, validate
 
 
 def createModel(input_size):
     model = nn.Sequential(
-        nn.Linear(input_size, 50),
+        nn.Linear(input_size, 5000),
+        nn.Linear(5000, 5000),
         nn.ReLU(),
-        nn.Linear(50, 25),
+        nn.Linear(5000, 2500),
         nn.ReLU(),
-        nn.Linear(25, 1),
+        nn.Linear(2500, 1),
+        nn.Sigmoid()
     )
     return model
 
@@ -52,64 +57,68 @@ def createBatch(input, target, batch_size):
     return autograd.Variable(batch_input), autograd.Variable(batch_target)
 
 
-def create_features(x):
-    """Builds features i.e. a matrix with columns [x, x^2, x^3, x^4]."""
-    x = x.unsqueeze(1)
-    return torch.cat([x ** i for i in range(1, POLY_DEGREE+1)], 1)
-
-
-def f(x):
-    """Approximated function."""
-    return x.mm(W_target) + b_target[0]
-
-
-def poly_desc(W, b):
-    """Creates a string description of a polynomial."""
-    result = 'y = '
-    for i, w in enumerate(W):
-        result += '{:+.2f} x^{} '.format(w, len(W) - i)
-    result += '{:+.2f}'.format(b[0])
-    return result
+if cuda.is_available():
+    gpu_count = cuda.device_count()
+    print("%s CUDA enabled GPU(s) available..." % gpu_count)
 
 
 train, validate = preprocessData()
 train_in, train_out = train
-createBatch(train_in, train_out, 32)
-fc = createModel(len(train_in.columns))
+validate_in, validate_out = validate
 
-fig = plt.figure()
-ax1 = fig.add_subplot(111)
+net = createModel(len(train_in.columns))
+
+#fig1 = plt.figure()
+#ax1 = fig1.add_subplot(111)
+#fig2 = plt.figure()
+#ax2 = fig2.add_subplot(111)
+
 epoch, residual = [], []
 
 for i in count(1):
     # Get data
-    batch_input, batch_target = createBatch(train_in, train_out, 32)
+    batch_input, batch_target = createBatch(train_in, train_out, 256)
     # Reset gradients
-    fc.zero_grad()
+    net.zero_grad()
     # Forward pass
-    output = nn.functional.smooth_l1_loss(fc.forward(batch_input), batch_target)
+    output = functional.mse_loss(net.forward(batch_input), batch_target)
     loss = output.data[0]
 
     # Backward pass
     output.backward()
 
     # Apply gradients
-    for param in fc.parameters():
-        param.data.add_(-0.1 * param.grad.data)
+    for param in net.parameters():
+        param.data.add_(-0.01 * param.grad.data)
 
-    epoch.append(i)
-    residual.append(loss)
-    ax1.clear()
-    ax1.plot(epoch, residual)
-    title = "Iteration:%s Loss:%s" % (i, loss)
-    ax1.set_title(title)
-    plt.pause(0.1)
+    #predict = net(autograd.Variable(torch.from_numpy(validate_in.as_matrix().astype(np.float32))))
+    result = net(autograd.Variable(torch.from_numpy(train_in.as_matrix().astype(np.float32))))
+
+    plt.clf()
+    #x = range(len(validate_in))
+    #plt.plot(x, validate_out["return"].values, 'b-')
+    #plt.plot(x, [1 for i in x], 'y.-')
+    #plt.plot(x, predict.data.numpy(), 'r-')
+    x = range(len(train_in))
+    plt.plot(x, train_out["return"].values, 'b-')
+    plt.plot(x, result.data.numpy(), 'r-')
+
+    title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
+    plt.title(title)
+    plt.pause(0.01)
+
+    #epoch.append(i)
+    #residual.append(loss)
+    #ax1.clear()
+    #ax1.plot(epoch, residual)
+    #title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
+    #ax1.set_title(title)
+    #plt.pause(0.1)
 
     # Stop criterion
     if loss < 1e-3:
         break
 
-plt.show()
 
 
 
