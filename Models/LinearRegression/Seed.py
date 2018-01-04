@@ -17,7 +17,7 @@ Description:
     save the traits as json profile with a randomly generated name
 """             
 def save(traits):
-    name = names.get_full_name().replace(' ','_')
+    name = names.get_full_name().replace(' ', '_')
     path = "./progression/population/"
     f = open(path+name+".json", "w")
     json.dump(traits, f, indent=4)

@@ -90,7 +90,6 @@ public class EWrapperImpl implements EWrapper {
         switch (field) {
             case 47: // fundamental ratio
                 CallbackAction.updateFundamentalRatios(symbol, value);
-                Logger.getInstance().log(Log.ACTION, "[Callback] [47]" + symbol);
                 MainGateway.callbackTracker |= 1;
                 break;
             case 32: //bid exchange
@@ -375,9 +374,8 @@ public class EWrapperImpl implements EWrapper {
 
     public void historicalDataEnd(int reqId, String s, String s1) {
         MainGateway.pendingHistReq--;
-        String end = String.format("[N]pending: %d, id: %d, s: %s, s1: %s", MainGateway.pendingHistReq, reqId, s, s1);
+        String end = String.format("[N], pending: %d, id: %d, s: %s, s1: %s", MainGateway.pendingHistReq, reqId, s, s1);
         Logger.getInstance().log(Log.CALLBACK, end);
-        System.out.println("Closing ReqId:"+reqId+", Pending requests:"+MainGateway.pendingHistReq);
     }
 
     public void mktDepthExchanges(DepthMktDataDescription[] depthMktDataDescriptions) {

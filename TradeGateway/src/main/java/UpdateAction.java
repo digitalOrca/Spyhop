@@ -35,7 +35,7 @@ class UpdateAction {
         int reqIdUpdate = MainGateway.reqIdUpdateBase;
         for (String symbol : allSymbols) {
             MainGateway.client.getClientSocket().cancelMktData(reqIdUpdate); // error on first element: OK
-            Logger.getInstance().log(Log.ACTION, "[Cancel] " + prevSymbol + "\n");
+            Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
             // increment reqId for new Id-symbol pair
             SocketComm.getInstance().registerSymbol(++reqIdUpdate, symbol);
             Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
@@ -44,11 +44,11 @@ class UpdateAction {
             MainGateway.client.getClientSocket().reqMktData(reqIdUpdate, contract, genericTicks, false, false, null);
             prevSymbol = symbol;
             waitForFlag();
-            Logger.getInstance().log(Log.ACTION, "[Request] " + symbol);
+            Logger.getInstance().log(Log.ACTION, "[Request]," + symbol);
         }
 
         MainGateway.client.getClientSocket().cancelMktData(reqIdUpdate);
-        Logger.getInstance().log(Log.ACTION, "[Cancel] " + prevSymbol + "\n");
+        Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
     }
 
     static void updateIndices() {

@@ -22,7 +22,7 @@ class PortfolioOptimizer:
         self.preprocess = Preprocess(data='open_close')
         self.asset = asset
         self.risk_free = risk_free
-        self.covariance = None  # Type: pd.DataFrame
+        self.covariance = None  # type: pd.DataFrame
         self.mean = pd.Series(index=asset)
         self.max_sharpe_comp = None  # maximum sharpe portfolio composition
         self.min_vol_comp = None  # minimum volatility portfolio composition
@@ -89,8 +89,10 @@ class PortfolioOptimizer:
         print("==========Stock Stats==========")
         print(self.mean)
         print("==========Maximum Sharpe Ratio Portfolio==========")
+        print("Sharpe: ", results_frame['sharpe'].iloc[max_sharpe_index])
         print(self.max_sharpe_comp)
         print("==========Minimum Volatility Portfolio==========")
+        print("Sharpe: ", results_frame['sharpe'].iloc[min_vol_index])
         print(self.min_vol_comp)
         # plot red star to highlight position of portfolio with highest Sharpe Ratio
         plt.scatter(max_sharpe_port[1], max_sharpe_port[0], marker=(5, 1, 0), color='r', s=250)
@@ -100,6 +102,6 @@ class PortfolioOptimizer:
 
 
 if __name__ == "__main__":
-    stocks = ["MMM", "GS", "GOOGL", "ABT", "AMZN"]
+    stocks = ["NVDA", "AMZN", "GS", "ABT"]
     po = PortfolioOptimizer(stocks)
     po.searchReturnFrontier(50000)

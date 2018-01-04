@@ -126,8 +126,6 @@ class EWrapperImplTest {
             String clear_test2 = "DELETE FROM high_low WHERE symbol='TEST2'";
             DatabaseConn.getInstance().execUpdate(clear_test2);
         }
-
-
     }
 
     @Test

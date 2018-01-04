@@ -5,7 +5,10 @@ import enums.SecType;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
+import utils.Helper;
+
 import java.io.FileReader;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 
 /**
@@ -65,6 +68,26 @@ public class StrategyExecutor implements Runnable {
 
     @Override
     public void run() {
+        loadTask();
+        /*
+        ZonedDateTime now = ZonedDateTime.now();
+        String date = now.toString().split("T")[0];
+        ZonedDateTime hit = ZonedDateTime.parse(date+"T12:30:00.000-04:00[America/New_York]");
+        int triggerBase = 30000;
+        while(!buy_backlog.isEmpty() || !sell_backlog.isEmpty() || !buy_active.isEmpty() || !sell_active.isEmpty()) {
+            now = ZonedDateTime.now();
+            if (now.isAfter(hit)) {
+                for (String symbol : buy_backlog.keySet()) {
+                    trigger(triggerBase, symbol, "BUY");
+                    Helper.pauseSec(60);
+                }
+                for (String symbol : sell_backlog.keySet()) {
+                    trigger(triggerBase, symbol, "SELL");
+                    Helper.pauseSec(60);
+                }
+            }
 
+        }
+        */
     }
 }

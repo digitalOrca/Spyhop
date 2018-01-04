@@ -5,13 +5,14 @@ import pandas as pd
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 
+
 class RecentHigh:
 
     def __init__(self):
         self.preprocess1 = Preprocess(data='open_close')
         self.preprocess2 = Preprocess(data='high_low')
     
-    def prepData(self, tolerance=3, reference=13):
+    def prepData(self, tolerance=3, reference=26):
         daily_price = self.preprocess1.get_data()
         recent_average = daily_price.tail(tolerance).mean(axis=0, skipna=True).to_frame(name="recent")
         high, low = "", ""
@@ -23,17 +24,16 @@ class RecentHigh:
             low, high = "low52", "high52"
         columns = [low, high]
         high_low = self.preprocess2.get_data()[columns]
-        processed = pd.concat([high_low, recent_average], axis=1, join='inner')
+        processed = pd.concat([high_low, recent_average], axis=1, join='inner')  # type: pd.DataFrame
         processed["ratio"] = np.clip(np.divide(np.subtract(processed["recent"], processed[low]),
                                                np.subtract(processed[high], processed[low])),
                                      0, 1)
-        print(processed)
+        processed["ratio"] = processed["ratio"].fillna(processed["ratio"].mean())  # fill missing values
 
         # the histogram of the data
-        n, bins, patches = plt.hist(processed["ratio"].values, bins=50, normed=1, facecolor='green', alpha=0.75)
+        plt.hist(x=processed["ratio"].values, bins=50, stacked=False, normed=1, facecolor='green', alpha=0.75)
         plt.axis([0, 1, 0, 2])
         plt.show()
-
 
 
 if __name__ == "__main__":

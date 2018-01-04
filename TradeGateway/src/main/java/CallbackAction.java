@@ -289,7 +289,7 @@ class CallbackAction {
                 column = "low52"; break;
             case 20: //52-week high
                 column = "high52"; break;
-            case 21: //90-days average daily volume(mutiple of 100)
+            case 21: //90-days average daily volume(multiple of 100)
                 column = "vol90"; break;
             default:
         }
