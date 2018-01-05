@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import datetime
 import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
@@ -12,30 +13,49 @@ class RecentHigh:
         self.preprocess1 = Preprocess(data='open_close')
         self.preprocess2 = Preprocess(data='high_low')
     
-    def prepData(self, tolerance=3, reference=26):
+    def prepData(self, tolerance=3):
         daily_price = self.preprocess1.get_data()
         recent_average = daily_price.tail(tolerance).mean(axis=0, skipna=True).to_frame(name="recent")
-        high, low = "", ""
-        if reference == 13:
-            low, high = "low13", "high13"
-        elif reference == 26:
-            low, high = "low26", "high26"
-        elif reference == 52:
-            low, high = "low52", "high52"
-        columns = [low, high]
-        high_low = self.preprocess2.get_data()[columns]
-        processed = pd.concat([high_low, recent_average], axis=1, join='inner')  # type: pd.DataFrame
-        processed["ratio"] = np.clip(np.divide(np.subtract(processed["recent"], processed[low]),
+        high_low = self.preprocess2.get_data()
+        return recent_average, high_low
+
+    def computeRatio(self, recent_average, high_low):
+        symbols = pd.concat([recent_average, high_low], axis=1, join='inner')  # type: pd.DataFrame
+        ratios = pd.DataFrame(index=symbols.index)  # type: pd.DataFrame
+        for reference in [13, 26, 52]:
+            high, low, column = "", "", ""
+            if reference == 13:
+                low, high, column = "low13", "high13", "ratio13"
+            elif reference == 26:
+                low, high, column = "low26", "high26", "ratio26"
+            elif reference == 52:
+                low, high, column = "low52", "high52", "ratio52"
+            columns = [low, high]
+            processed = pd.concat([high_low[columns], recent_average], axis=1, join='inner')  # type: pd.DataFrame
+            ratios[column] = np.clip(np.divide(np.subtract(processed["recent"], processed[low]),
                                                np.subtract(processed[high], processed[low])),
                                      0, 1)
-        processed["ratio"] = processed["ratio"].fillna(processed["ratio"].mean())  # fill missing values
+            ratios[column] = ratios[column].fillna(ratios[column].mean())  # fill missing values
+        ratios["sum"] = ratios.mean(axis=1, skipna=True)
+        return ratios
 
-        # the histogram of the data
-        plt.hist(x=processed["ratio"].values, bins=50, stacked=False, normed=1, facecolor='green', alpha=0.75)
-        plt.axis([0, 1, 0, 2])
+    def visualizeDistribution(self, ratios):
+        colors = ['red', 'green', 'blue', 'black']
+        for col in ratios:
+            if col != 'sum':
+                sorted_ratios = np.sort(ratios[col].values)
+                plt.plot([i for i in range(len(ratios))], sorted_ratios, label=col)
+        plt.axis([0, len(ratios), 0, 1])
+        plt.legend(prop={'size': 10}, loc=4)
+        today = datetime.date.today().isoformat()
+        plt.title(today)
+        filename = "/home/meng/Projects/ResultArchive/RecentHigh_" + today
+        plt.savefig(filename)
         plt.show()
 
 
 if __name__ == "__main__":
     rh = RecentHigh()
-    rh.prepData()        
+    r, hl = rh.prepData()
+    ratios = rh.computeRatio(r, hl)
+    rh.visualizeDistribution(ratios)
