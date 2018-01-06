@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KernelDensity
 
 
 class RecentHigh:
@@ -53,9 +54,26 @@ class RecentHigh:
         plt.savefig(filename)
         plt.show()
 
+    def visualizeKDE(self, ratios):
+        colors = ['red', 'green', 'blue']
+        for col in ratios:
+            if col != 'sum':
+                x = ratios[col].sort_values()[:, np.newaxis]
+                kde = KernelDensity(kernel='gaussian', bandwidth=0.1)
+                kde.fit(x)
+                log_dens = kde.score_samples(x)
+                plt.plot(x, np.exp(log_dens), label=col)
+        plt.legend(prop={'size': 10}, loc=4)
+        today = datetime.date.today().isoformat()
+        plt.title(today)
+        filename = "/home/meng/Projects/ResultArchive/RecentHigh_" + today
+        plt.savefig(filename)
+        plt.show()
+
 
 if __name__ == "__main__":
     rh = RecentHigh()
     r, hl = rh.prepData()
     ratios = rh.computeRatio(r, hl)
-    rh.visualizeDistribution(ratios)
+    #rh.visualizeDistribution(ratios)
+    rh.visualizeKDE(ratios)
