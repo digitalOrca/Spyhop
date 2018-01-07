@@ -132,6 +132,11 @@ class Preprocess:
         mktcap.set_index(pd.Series(data=mktcap.index).astype('category'))  # change index type to category
         return mktcap
 
+    def retrieve_symbol_sector(self):
+        symbolSector = self.db.query("SELECT symbol, sector FROM security")
+        symbolSector["sector"] = symbolSector["sector"].astype('category')
+        return symbolSector
+
     def compute_return(self, split=False, dset='train'):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)
