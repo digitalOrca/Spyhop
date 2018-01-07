@@ -1,4 +1,3 @@
-import enums.Exchange;
 import org.junit.jupiter.api.Test;
 import utils.DatabaseConn;
 import utils.Helper;
@@ -17,7 +16,7 @@ class EWrapperImplTest {
     void tickPrice_9() {
         EWrapperImpl client = new EWrapperImpl();
         int reqId = MainGateway.reqIdUpdateBase+1;
-        SocketComm.getInstance().registerSymbol(reqId, "TEST");
+        SocketComm.getInstance().registerRequest(reqId, "TEST");
         String today = Helper.today();
         // backup current entry
         String backup_query_template = "UPDATE open_close SET date='1990-10-03' WHERE date='%s'";
@@ -48,7 +47,7 @@ class EWrapperImplTest {
     void tickPrice_14() {
         EWrapperImpl client = new EWrapperImpl();
         int reqId = MainGateway.reqIdUpdateBase + 1;
-        SocketComm.getInstance().registerSymbol(reqId, "TEST");
+        SocketComm.getInstance().registerRequest(reqId, "TEST");
         String today = Helper.today();
         // backup current entry
         String backup_query_template = "UPDATE open_close SET date='1990-10-03' WHERE date='%s'";
@@ -80,7 +79,7 @@ class EWrapperImplTest {
         EWrapperImpl client = new EWrapperImpl();
         int reqId = MainGateway.reqIdUpdateBase + 1;
         //entry 1
-        SocketComm.getInstance().registerSymbol(reqId, "TEST1");
+        SocketComm.getInstance().registerRequest(reqId, "TEST1");
         for (int field= 15; field<22; field++) { // create row
             client.tickPrice(reqId, field, 1, null);
         }
@@ -89,7 +88,7 @@ class EWrapperImplTest {
         }
         //entry 2
         reqId++;
-        SocketComm.getInstance().registerSymbol(reqId, "TEST2");
+        SocketComm.getInstance().registerRequest(reqId, "TEST2");
         for (int field= 15; field<22; field++) { // create row
             client.tickPrice(reqId, field, 1, null);
         }
@@ -131,7 +130,7 @@ class EWrapperImplTest {
     @Test
     void tickPriceSize() {
         EWrapperImpl client = new EWrapperImpl();
-        SocketComm.getInstance().registerSymbol(1, "TEST");
+        SocketComm.getInstance().registerRequest(1, "TEST");
         client.tickPrice(1, 1, 0.1, null);
         client.tickSize(1, 0, 1);
         client.tickPrice(1, 2, 0.2, null);
@@ -171,7 +170,7 @@ class EWrapperImplTest {
     @Test
     void lastTime() {
         EWrapperImpl client = new EWrapperImpl();
-        SocketComm.getInstance().registerSymbol(14785, "TEST");
+        SocketComm.getInstance().registerRequest(14785, "TEST");
         client.tickPrice(14785, 4, 0.1, null);
         client.tickString(14785, 45, "654912000");
         client.tickPrice(14785, 4, 0.2, null);

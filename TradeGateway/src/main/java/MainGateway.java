@@ -96,7 +96,7 @@ public class MainGateway{
                         Helper.pauseMilli(1);
                     }
                     System.out.println("reqId:"+reqId);
-                    SocketComm.getInstance().registerSymbol(reqId, symbol);
+                    SocketComm.getInstance().registerRequest(reqId, symbol);
                     Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
                     pendingHistReq++;
                     client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
@@ -122,7 +122,7 @@ public class MainGateway{
                 //String genericTickList = "233";
                 //for (String symbol : symbols) {
                 //    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                //    SocketComm.getInstance().registerSymbol(reqId, symbol);
+                //    SocketComm.getInstance().registerRequest(reqId, symbol);
                 //    client.getClientSocket().reqMktData(reqId,contract, genericTickList, false, false, null);
                 //    System.out.println("[R] reqMktData: " + symbol);
                 //    client.getClientSocket().reqRealTimeBars(reqId, contract, 5, "TRADES", true, null);
@@ -143,7 +143,7 @@ public class MainGateway{
             //int period = 5;
             //for (String symbol : symbols) {
                 //Contract contract = OrderBuilder.makeContract(symbol, enums.SecType.STK, enums.Exchange.SMART, enums.Currency.USD);
-                //utils.SocketComm.getInstance().registerSymbol(reqId, symbol);
+                //utils.SocketComm.getInstance().registerRequest(reqId, symbol);
                 //client.getClientSocket().reqHistogramData(reqId, contract,useRTH, Integer.toString(period) + " mins");
                 //pauseSec(Math.max(10, period*60/numStock));
                 //reqId++;

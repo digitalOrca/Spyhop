@@ -19,9 +19,9 @@ final public class OrderBuilder { // Make final to prevent modification and exte
         return contract;
     }
 
-    public static Order createAuctionOrder(String action, int quantity, double price) {  //for pre-market opening period
+    public static Order createAuctionOrder(Action action, int quantity, double price) {  //for pre-market opening period
         Order order = new Order();
-        order.action(action);
+        order.action(action.toString());
         order.tif("AUC");
         order.orderType("MTL");
         order.totalQuantity(quantity);
@@ -29,9 +29,9 @@ final public class OrderBuilder { // Make final to prevent modification and exte
         return order;
     }
 
-    public static Order createDiscretionaryOrder(String action, int quantity, double price, double discretionaryAmt) {
+    public static Order createDiscretionaryOrder(Action action, int quantity, double price, double discretionaryAmt) {
         Order order = new Order();
-        order.action(action);
+        order.action(action.toString());
         order.orderType("LMT");
         order.totalQuantity(quantity);
         order.lmtPrice(price);
@@ -39,9 +39,9 @@ final public class OrderBuilder { // Make final to prevent modification and exte
         return order;
     }
 
-    public static Order createMarketOrder(String action, int quantity) {
+    public static Order createMarketOrder(Action action, int quantity) {
         Order order = new Order();
-        order.action(action);
+        order.action(action.toString());
         order.orderType("MKT");
         order.totalQuantity(quantity);
         return order;

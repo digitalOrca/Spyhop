@@ -37,7 +37,7 @@ class UpdateAction {
             MainGateway.client.getClientSocket().cancelMktData(reqIdUpdate); // error on first element: OK
             Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
             // increment reqId for new Id-symbol pair
-            SocketComm.getInstance().registerSymbol(++reqIdUpdate, symbol);
+            SocketComm.getInstance().registerRequest(++reqIdUpdate, symbol);
             Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
             //MainGateway.receivedFundRatio = false;
             MainGateway.callbackTracker = 0; //reset bit map tracker

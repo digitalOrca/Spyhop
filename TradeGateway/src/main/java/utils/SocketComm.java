@@ -19,23 +19,35 @@ public class SocketComm {
     private ServerSocket serverSocket;
     private java.net.Socket clientSocket;
     private DataOutputStream dataOutputStream;
-    private HashMap<Integer, String> map = new HashMap<>();
+    private HashMap<Integer, String> reqMap = new HashMap<>();
+    private HashMap<Integer, String> orderMap = new HashMap<>();
 
     private SocketComm() {
         port = 8888;
     }
 
-    public void registerSymbol(int reqId, String symbol) {
-        this.map.put(reqId, symbol);
+    public void registerRequest(int reqId, String symbol) {
+        this.reqMap.put(reqId, symbol);
     }
 
-    public void unregisterSymbol(int reqId) {
-        this.map.remove(reqId);
+    public void unregisterRequest(int reqId) {
+        this.reqMap.remove(reqId);
+    }
+
+    public void registerOrder(int orderId, String symbol) {
+        this.orderMap.put(orderId, symbol);
     }
 
     public String getSymbol(int reqId) {
-        if (this.map.containsKey(reqId)) {
-            return this.map.get(reqId);
+        if (this.reqMap.containsKey(reqId)) {
+            return this.reqMap.get(reqId);
+        }
+        return "INVALID";
+    }
+
+    public String getOrder(int orderId) {
+        if (this.orderMap.containsKey(orderId)) {
+            return this.orderMap.get(orderId);
         }
         return "INVALID";
     }
