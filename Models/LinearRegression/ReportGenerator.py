@@ -16,10 +16,11 @@ Description:
 def getChampion():
     return os.listdir("./progression/champions")[0].split(".")[0]
 
+
 """
 MAIN
 """
-if __name__=="__main__":
+if __name__ == "__main__":
     champion = getChampion()
     lr_model = mr.loadParameters(champion)
     lr_model.train(benchmark="snp500")

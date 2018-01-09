@@ -144,7 +144,8 @@ if __name__=="__main__":
     except:
         iteration = 1
     for i in range(iteration):
-        print("\n\n%s%s======================== GENERATION"%(fg("green"),attr("bold")), i+1, "=======================%s"%(attr("reset")))
+        print("\n\n%s%s======================== GENERATION" % (fg("green"), attr("bold")), i+1,
+              "=======================%s" % (attr("reset")))
         champion = fitnessTest()
         print("====================[CHAMPION]=====================")
         print(champion)

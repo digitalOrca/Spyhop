@@ -111,7 +111,7 @@ class Preprocess:
 
     def retrieve_high_low(self):
         selection = "SELECT * FROM high_low"
-        df = self.db.query(selection, index="symbol")  # Type: DataFrame
+        df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
         return df
 
     def retrieve_mkt_caps(self, symbols):
@@ -133,9 +133,15 @@ class Preprocess:
         return mktcap
 
     def retrieve_symbol_sector(self):
-        symbolSector = self.db.query("SELECT symbol, sector FROM security")
-        symbolSector["sector"] = symbolSector["sector"].astype('category')
-        return symbolSector
+        symbol_sector = self.db.query("SELECT symbol, sector FROM security")
+        symbol_sector["sector"] = symbol_sector["sector"].astype('category')
+        return symbol_sector
+
+    def retrieve_benchmark(self, benchmark):
+        start_date = (date.today() - timedelta(days=self.lag)).isoformat()
+        selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' ORDER BY date ASC" % (benchmark, start_date)
+        index_series = self.db.query(selection, index='date')  # type: pd.DataFrame
+        return index_series
 
     def compute_return(self, split=False, dset='train'):
         if self.frdate == "" or self.prdate == "":
