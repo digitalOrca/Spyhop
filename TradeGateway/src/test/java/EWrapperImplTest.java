@@ -15,7 +15,7 @@ class EWrapperImplTest {
     @Test
     void tickPrice_9() {
         EWrapperImpl client = new EWrapperImpl();
-        int reqId = MainGateway.reqIdUpdateBase+1;
+        int reqId = MainGateway.reqId_MktData +1;
         SocketComm.getInstance().registerRequest(reqId, "TEST");
         String today = Helper.today();
         // backup current entry
@@ -46,7 +46,7 @@ class EWrapperImplTest {
     @Test
     void tickPrice_14() {
         EWrapperImpl client = new EWrapperImpl();
-        int reqId = MainGateway.reqIdUpdateBase + 1;
+        int reqId = MainGateway.reqId_MktData + 1;
         SocketComm.getInstance().registerRequest(reqId, "TEST");
         String today = Helper.today();
         // backup current entry
@@ -77,7 +77,7 @@ class EWrapperImplTest {
     @Test
     void tickPrice_15_21() {
         EWrapperImpl client = new EWrapperImpl();
-        int reqId = MainGateway.reqIdUpdateBase + 1;
+        int reqId = MainGateway.reqId_MktData + 1;
         //entry 1
         SocketComm.getInstance().registerRequest(reqId, "TEST1");
         for (int field= 15; field<22; field++) { // create row

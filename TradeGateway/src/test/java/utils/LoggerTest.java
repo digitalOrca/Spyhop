@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LoggerTest {
     @Test
     void log() {
+        Logger.getInstance().setLogMode("TEST");
         Logger.getInstance().log(Log.ACTION, "UNITTEST ACTION LOG");
         Logger.getInstance().log(Log.CALLBACK, "UNITTEST CALLBACK LOG");
     }

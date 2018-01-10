@@ -1,4 +1,5 @@
 import org.junit.jupiter.api.Test;
+import utils.DatabaseConn;
 
 import java.util.LinkedList;
 
@@ -9,9 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CallbackActionTest {
     @Test
-    void selectActiveStocks() {
+    void test_selectActiveStocks() {
         LinkedList<String> symbols = CallbackAction.selectActiveStocks();
         assertEquals(symbols.size(), 95); //target depending on the database status column
     }
-
 }

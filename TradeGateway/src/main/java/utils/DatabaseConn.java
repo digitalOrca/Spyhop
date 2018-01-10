@@ -1,5 +1,4 @@
 package utils;
-
 import java.sql.*;
 
 /**
@@ -13,10 +12,16 @@ public class DatabaseConn {
     }
 
     private Connection connection = null;
+    private boolean simulated = false;
+
 
     private DatabaseConn() {
         this.connect("localhost", "interactive_brokers",
                 "neurotrader", "profit");
+    }
+
+    public void disableDB() {
+        this.simulated = true;
     }
 
     private void connect(String host, String database, String username, String password) {
@@ -36,6 +41,7 @@ public class DatabaseConn {
 
     public void execUpdate(String query) {
         System.out.println("[U] " + query);
+        if (simulated) return; // if doing simulated trading
         try {
             Statement statement = this.connection.createStatement();
             statement.executeUpdate(query);
@@ -47,6 +53,7 @@ public class DatabaseConn {
 
     public ResultSet execQuery(String query) {
         System.out.println("[Q] " + query);
+        if (simulated) return null; // if doing simulated trading
         try {
             Statement statement = this.connection.createStatement();
             return statement.executeQuery(query);

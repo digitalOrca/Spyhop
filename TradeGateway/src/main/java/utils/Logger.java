@@ -28,11 +28,12 @@ public class Logger {
     private BufferedWriter bufferedWriter = null;
     private FileWriter fileWriter = null;
 
-    private Logger() {
+    private Logger() {  }
+
+    private Logger(String prefix) {
         Date date = new Date();
         String timestamp = this.dateFormat.format(date);
-
-        this.logFileName = logRoot + timestamp + ".csv";
+        this.logFileName = logRoot + prefix + timestamp + ".csv";
         this.log = new File(this.logFileName);
         try {
             if (!this.log.exists()) {
@@ -45,11 +46,15 @@ public class Logger {
         this.bufferedWriter = new BufferedWriter(fileWriter);
     }
 
+    public void setLogMode(String mode) {
+        ourInstance = new Logger(mode);
+    }
+
     public void log(Log type, String entry) {
         String timestamp = this.timeFormat.format(new Date());
         try {
-            String category = String.format("%1$-10s","[" + type.toString() + "]");
-            this.bufferedWriter.write(category + "," + timestamp + "," + entry + "\n");
+            String logType = String.format("%1$-10s","[" + type.toString() + "]");
+            this.bufferedWriter.write(logType + "," + timestamp + "," + entry + "\n");
             this.bufferedWriter.flush();
         } catch (Exception e) {
             e.printStackTrace();

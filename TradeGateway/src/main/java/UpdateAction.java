@@ -32,22 +32,22 @@ class UpdateAction {
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(symbol_query);
         LinkedList<String> allSymbols = Helper.resultToList(resultSet, "symbol");
         String prevSymbol = "";
-        int reqIdUpdate = MainGateway.reqIdUpdateBase;
+        int reqId = MainGateway.reqId_MktData;
         for (String symbol : allSymbols) {
-            MainGateway.client.getClientSocket().cancelMktData(reqIdUpdate); // error on first element: OK
+            MainGateway.client.getClientSocket().cancelMktData(reqId); // error on first element: OK
             Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
             // increment reqId for new Id-symbol pair
-            SocketComm.getInstance().registerRequest(++reqIdUpdate, symbol);
+            SocketComm.getInstance().registerRequest(++reqId, symbol);
             Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
             //MainGateway.receivedFundRatio = false;
             MainGateway.callbackTracker = 0; //reset bit map tracker
-            MainGateway.client.getClientSocket().reqMktData(reqIdUpdate, contract, genericTicks, false, false, null);
+            MainGateway.client.getClientSocket().reqMktData(reqId, contract, genericTicks, false, false, null);
             prevSymbol = symbol;
             waitForFlag();
             Logger.getInstance().log(Log.ACTION, "[Request]," + symbol);
         }
 
-        MainGateway.client.getClientSocket().cancelMktData(reqIdUpdate);
+        MainGateway.client.getClientSocket().cancelMktData(reqId);
         Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
     }
 

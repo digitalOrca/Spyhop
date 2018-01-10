@@ -117,6 +117,8 @@ public class EWrapperImpl implements EWrapper {
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
         OrderTracer orderTracer = StrategyExecutor.orderBook.get(symbol);
+        String logEntry = String.format("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s", symbol, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+        Logger.getInstance().log(Log.CALLBACK, logEntry);
         switch (status) {
             case "PendingSubmit":
             case "PreSubmitted":
@@ -144,22 +146,12 @@ public class EWrapperImpl implements EWrapper {
                 StrategyExecutor.orderBook.put(symbol, orderTracer);
             default:
         }
-        //TODO: ADD LOG
-        /* Reference:
-        the current status of the order. Possible values:
-        PendingSubmit - indicates that you have transmitted the order, but have not yet received confirmation that it has been accepted by the order destination.
-        PendingCancel - indicates that you have sent a request to cancel the order but have not yet received cancel confirmation from the order destination. At this point, your order is not confirmed canceled. It is not guaranteed that the cancellation will be successful.
-        PreSubmitted - indicates that a simulated order type has been accepted by the IB system and that this order has yet to be elected. The order is held in the IB system until the election criteria are met. At that time the order is transmitted to the order destination as specified .
-        Submitted - indicates that your order has been accepted by the system.
-        ApiCanceled - after an order has been submitted and before it has been acknowledged, an API client client can request its cancelation, producing this state.
-        Cancelled - indicates that the balance of your order has been confirmed canceled by the IB system. This could occur unexpectedly when IB or the destination has rejected your order.
-        Filled - indicates that the order has been completely filled. Market orders executions will not always trigger a Filled status.
-        Inactive - indicates that the order was received by the system but is no longer active because it was rejected or canceled.
-        */
     }
 
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
-        System.out.println("TEST6");
+        String symbol = SocketComm.getInstance().getOrder(orderId);
+        String logEntry = String.format("%s, openOrder", symbol);
+        Logger.getInstance().log(Log.CALLBACK, logEntry);
     }
 
     public void openOrderEnd() {
@@ -335,14 +327,14 @@ public class EWrapperImpl implements EWrapper {
     public void error(int reqId, int errorCode, String errorMsg) {
         switch (errorCode) {
             case 162:
-                if(reqId > MainGateway.reqIdHistBarBase) {
+                if(reqId > MainGateway.reqId_HistData) {
                     MainGateway.pendingHistReq--;
                 }
                 break;
             case 200:
-                if(reqId > MainGateway.reqIdHistBarBase) {
+                if(reqId > MainGateway.reqId_HistData) {
                     MainGateway.pendingHistReq--; //receive error response from historical 1-min bar data request
-                }else if(reqId > MainGateway.reqIdUpdateBase) {
+                }else if(reqId > MainGateway.reqId_MktData) {
                     //MainGateway.receivedFundRatio = true; //received error response from fundamental ratios request, symbol ambiguous
                     MainGateway.callbackTracker = 0; //reset bit map tracker
                 }
@@ -351,9 +343,9 @@ public class EWrapperImpl implements EWrapper {
                 //ignored
                 break;
             case 354:
-                if(reqId > MainGateway.reqIdHistBarBase) {
+                if(reqId > MainGateway.reqId_HistData) {
                     //invalid case
-                }else if(reqId > MainGateway.reqIdUpdateBase) {
+                }else if(reqId > MainGateway.reqId_MktData) {
                     //MainGateway.receivedFundRatio = true; //received error response from fundamental ratios request, no data subscription
                     MainGateway.callbackTracker = 0; //reset bit map tracker
                 }

@@ -153,6 +153,7 @@ class CallbackAction {
             insertion += " RETURNING index";
             String statement = String.format(insertion, timestamp, symbol, event, values);
             ResultSet resultSet = DatabaseConn.getInstance().execQuery(statement);
+            if (resultSet == null) return; // this is triggered by using simulated trading
             try {
                 resultSet.next();
                 int index = resultSet.getInt("index");

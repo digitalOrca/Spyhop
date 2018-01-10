@@ -4,6 +4,7 @@ import enums.Currency;
 import enums.Exchange;
 import enums.Log;
 import enums.SecType;
+import utils.DatabaseConn;
 import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
@@ -16,14 +17,14 @@ import java.util.concurrent.TimeUnit;
 public class MainGateway{
 
     /* Running mode */
-    static boolean Live = true; //Live trading or Paper trading
-    static boolean RHT = true;  //if Paper trading, fake during RTH or off RTH
+    static boolean simulated = false; //NOTE: simulated trading cannot handle real-time ticks
+    static boolean regularTradingHour = true;  //if Paper trading, fake during RTH or off RTH
 
     /* Update flag */
     static int callbackTracker = 0; // flag from right to left: 47, 15-21
-    static int reqIdUpdateBase = 10000;
     static int updateTimeout = 3000; // 3 seconds timeout
-    static int reqIdHistBarBase = 20000;
+    static int reqId_MktData = 10000; // market data request starting id
+    static int reqId_HistData = 20000; // historic data request starting id
 
     /* API objects */
     static EWrapperImpl client;
@@ -32,6 +33,32 @@ public class MainGateway{
     static int pendingHistReq = 0;
 
     public static void main(String[] args) {
+
+        /* Determine the live or simulated trading */
+        switch (args[0]) {
+            case "live":
+                simulated = false;
+                Logger.getInstance().setLogMode("L");
+                System.out.println("===================================================\n" +
+                        "Running in Live Mode\n" +
+                        "===================================================\n");
+                break;
+            case "simulated":
+                simulated = true;
+                // Disable all database entries
+                DatabaseConn.getInstance().disableDB();
+                Logger.getInstance().setLogMode("S");
+                //Ensure there is no id collision with live session
+                reqId_MktData += 100000;
+                reqId_HistData += 100000;
+                System.out.println("===================================================\n" +
+                        "Running in Simulated Mode with Disabled Database\n" +
+                        "===================================================\n");
+                break;
+            default:
+                System.out.println("Invalid running mode! Valid arguments: [live / simulated]");
+                return;
+        }
 
         /* One-time request status */
         // boolean streaming = false;
@@ -48,7 +75,7 @@ public class MainGateway{
             while (!client.getClientSocket().isConnected()) {
                 System.out.println("Connecting InteractiveBrokers API...");
                 try {
-                    client.connect("localhost", Live?4001:4002, 0, false);
+                    client.connect("localhost", simulated ?4002:4001, 0, false);
                     if (client.getClientSocket().isConnected()) {
                         System.out.println("Connected to InteractiveBrokers API");
 
@@ -89,7 +116,7 @@ public class MainGateway{
                 Calendar cal = Calendar.getInstance();
                 SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
                 String formatted = form.format(cal.getTime());
-                int reqId = reqIdHistBarBase; //starting reqId for historical data request
+                int reqId = reqId_HistData; //starting reqId for historical data request
                 pendingHistReq = 0; //resetting pending request before
                 for (String symbol : allSymbols) {
                     while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
@@ -131,7 +158,7 @@ public class MainGateway{
             //    streaming = true;
             //}
 
-            /* Data Refresh */
+            /* Update fundamental ratios and high low data */
             if (!updated) {
                 UpdateAction.updateAllSecurities();
                 updated = true;
@@ -176,10 +203,10 @@ public class MainGateway{
                 return 0;
             } else if (now.isBefore(open)) {
                 System.out.println("Waiting for Market Opening [9:30 am - 4:00 pm EST]");
-                return Live?-1:(RHT?0:-1);
+                return simulated? (regularTradingHour? 0:-1):-1;
             } else {
                 System.out.println("Market is closed [9:30 am - 4:00 pm EST]");
-                return Live?1:(RHT?0:1);
+                return simulated? (regularTradingHour? 0:1):1;
             }
         } catch (Exception e) {
             e.printStackTrace();
