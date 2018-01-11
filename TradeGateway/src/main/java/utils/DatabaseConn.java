@@ -20,7 +20,7 @@ public class DatabaseConn {
                 "neurotrader", "profit");
     }
 
-    public void disableDB() {
+    public void disableWrite() {
         this.simulated = true;
     }
 
@@ -51,9 +51,20 @@ public class DatabaseConn {
         }
     }
 
+    public ResultSet execSync(String query) {  // an update statement with return
+        System.out.println("[S] " + query);
+        if (simulated) return null; // if doing simulated trading
+        try {
+            Statement statement = this.connection.createStatement();
+            return statement.executeQuery(query);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public ResultSet execQuery(String query) {
         System.out.println("[Q] " + query);
-        if (simulated) return null; // if doing simulated trading
         try {
             Statement statement = this.connection.createStatement();
             return statement.executeQuery(query);

@@ -152,7 +152,7 @@ class CallbackAction {
         if (field == 4) { //only update last index for last price
             insertion += " RETURNING index";
             String statement = String.format(insertion, timestamp, symbol, event, values);
-            ResultSet resultSet = DatabaseConn.getInstance().execQuery(statement);
+            ResultSet resultSet = DatabaseConn.getInstance().execSync(statement);
             if (resultSet == null) return; // this is triggered by using simulated trading
             try {
                 resultSet.next();

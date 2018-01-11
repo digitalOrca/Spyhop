@@ -8,6 +8,7 @@ import utils.DatabaseConn;
 import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
+
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
@@ -46,7 +47,7 @@ public class MainGateway{
             case "simulated":
                 simulated = true;
                 // Disable all database entries
-                DatabaseConn.getInstance().disableDB();
+                DatabaseConn.getInstance().disableWrite();
                 Logger.getInstance().setLogMode("S");
                 //Ensure there is no id collision with live session
                 reqId_MktData += 100000;
