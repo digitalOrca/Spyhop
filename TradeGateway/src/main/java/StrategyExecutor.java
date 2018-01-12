@@ -4,6 +4,8 @@ import enums.OrderStage;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
+import utils.Helper;
+import utils.Logger;
 import utils.SocketComm;
 
 import java.io.FileReader;
@@ -59,6 +61,7 @@ public class StrategyExecutor implements Runnable {
         orderBook.put(symbol, orderTracer); // update order book
         Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
         Order order = OrderBuilder.createMarketOrder(orderTracer.getAction(), orderTracer.getQuantity());
+        Logger.getInstance().log(Log.ACTION, "ORDER, Placed," + symbol + "," + orderTracer.getQuantity());
         MainGateway.client.getClientSocket().placeOrder(orderId, contract, order);
     }
 
@@ -66,24 +69,17 @@ public class StrategyExecutor implements Runnable {
     public void run() {
         MainGateway.client.nextValidId(0); //to retrieve next valid order id
         loadTask();
-        /*
-        ZonedDateTime now = ZonedDateTime.now();
-        String date = now.toString().split("T")[0];
-        ZonedDateTime hit = ZonedDateTime.parse(date+"T12:30:00.000-04:00[America/New_York]");
-        while(!buy_backlog.isEmpty() || !sell_backlog.isEmpty() || !buy_active.isEmpty() || !sell_active.isEmpty()) {
-            now = ZonedDateTime.now();
-            if (now.isAfter(hit)) {
-                for (String symbol : buy_backlog.keySet()) {
-                    trigger(orderId++, symbol, "BUY");
-                    Helper.pauseSec(60);
-                }
-                for (String symbol : sell_backlog.keySet()) {
-                    trigger(orderId++, symbol, "SELL");
-                    Helper.pauseSec(60);
+
+        if (MainGateway.simulated) { // paper trading
+            while (!orderBook.isEmpty()) {
+                for (OrderTracer ot : orderBook.values() ) {
+                    if (ot.getStatus() == OrderStage.BACKLOG ) {
+                        Logger.getInstance().log(Log.ACTION, "ORDER, Triggered," + ot.getSymbol());
+                        trigger(orderId++, ot.getSymbol());
+                        Helper.pauseSec(60);
+                    }
                 }
             }
-
         }
-        */
     }
 }

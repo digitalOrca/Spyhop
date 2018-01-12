@@ -107,7 +107,7 @@ public class MainGateway{
             }
 
             /* Check if the market is closed */
-            if (!beforeClose()) { //execute block after market close
+            if (!beforeClose() && !simulated) { //execute block after market close, only for live trade
                 /* Consolidate tick data */
                 System.out.println("=============Consolidate daily data==============");
                 CallbackAction.consolidateTicks("tick", "tick_history");
@@ -160,7 +160,7 @@ public class MainGateway{
             //}
 
             /* Update fundamental ratios and high low data */
-            if (!updated) {
+            if (!updated && !simulated) {  // update all securities, only for live trade
                 UpdateAction.updateAllSecurities();
                 updated = true;
             }

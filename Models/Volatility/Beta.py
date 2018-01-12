@@ -3,46 +3,19 @@
 import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
+import Postprocess as post
 from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
-
+import mpld3
+from mpld3 import plugins
 
 class Beta:
 
     def __init__(self):
         self.preprocess = Preprocess(data='open_close')
 
-    # TODO: put this in a common class
-    def compute_alpha(self):
-        self.preprocess.retrieve_fundamental_ratios(lag=True)  # set fr dates
-        start_date = self.preprocess.frdate
-        ArDf = self.preprocess.compute_return(split=False)
-        benchmark = self.preprocess.compute_benchmark("snp500")
-        ArDf = ArDf.dropna(axis=0, how='any')  # prevent arithmetic error
-        ArDf["return"] = np.log(np.divide(ArDf["return"], benchmark))
-        return ArDf
 
-    def compute_beta(self, benchmark):
-        index = self.preprocess.retrieve_benchmark(benchmark)
-        stock = self.preprocess.retrieve_open_close()
-        index_change = index[benchmark].pct_change()
-        stock_change = stock.pct_change()
-        for col in stock_change:
-            nan_count = stock_change[col].isnull().sum()
-            if nan_count > 3:
-                stock_change.drop([col], axis=1, inplace=True)
-        all_change = pd.concat([index_change, stock_change], axis=1, join='inner').fillna(0)
-        all_beta = pd.DataFrame(index=all_change.columns, columns=["beta"], dtype=np.float32)
-        all_beta.drop([benchmark], axis=0, inplace=True)  # remove benchmark column
-        for col in all_change:
-            if col != benchmark:
-                a = all_change[col].values
-                b = all_change[benchmark].values
-                beta = np.multiply(np.corrcoef(a, b), np.divide(np.std(a), np.std(b)))[0, 1]
-                all_beta["beta"].loc[col] = beta
-        all_beta.dropna(axis=0, how='any', inplace=True)
-        return all_beta
-
+    # make this per sector
     def visualize_beta_distribution(self, betas):
         sorted_beta = betas["beta"].sort_values()
         beta_stats = sorted_beta[:, np.newaxis]
@@ -55,9 +28,47 @@ class Beta:
 
 if __name__ == "__main__":
     sb = Beta()
-    betas = sb.compute_beta("snp500")
-    alphas = sb.compute_alpha()
-    #sb.visualize_beta_distribution(betas)
-    alpha_beta = pd.concat([alphas, betas], axis=1, join='inner')
-    plt.plot(alpha_beta["return"], alpha_beta["beta"], '.')
-    plt.show()
+    betas = post.compute_beta("snp500")
+    alphas = post.compute_alpha("snp500")
+    alpha_beta = pd.concat([alphas, betas], axis=1, join='inner')  # type: pd.DataFrame
+    preprocess = Preprocess(data="open_close")
+    symbolSector = preprocess.retrieve_symbol_sector()
+    # define sector color
+    colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
+              '#46f0f0', '#f032e6', '#d2f53c', '#fabebe', '#008080', '#e6beff']
+    sector_colors = dict(zip(symbolSector["sector"].unique(), colors))
+    symbolSector["color"] = symbolSector["sector"].astype(str).apply(lambda x: sector_colors[x])
+    # select sectors to show
+    print(symbolSector["sector"].unique())
+    show_section = [
+                    #"Consumer Services",
+                    #"Public Utilities",
+                    "Basic Industries",
+                    #"Capital Goods",
+                    #"Finance",
+                    "Consumer Non-Durables",
+                    "Technology",
+                    #"Health Care",
+                    "Energy",
+                    #"Consumer Durables",
+                    #"Miscellaneous",
+                    "Transportation"
+                    ]
+    symbolSector = symbolSector[symbolSector["sector"].isin(show_section)]
+
+
+    alpha_beta_sector = pd.concat([alpha_beta, symbolSector], axis=1, join='inner')  # type: pd.DataFrame
+
+    mktcap = preprocess.retrieve_mkt_caps(alpha_beta_sector.index)
+    print(mktcap)
+
+    # TODO: CONTINUE HERE
+
+    fig, ax = plt.subplots(subplot_kw=dict(axisbg='#EEEEEE'))
+    scatter = ax.scatter(alpha_beta["alpha"], alpha_beta["beta"], c=symbolSector["color"])
+    ax.grid(color='white', linestyle='solid')
+    ax.set_title("Alpha vs Beta", size=20)
+    labels = [str(label) for label in alpha_beta.index]
+    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
+    mpld3.plugins.connect(fig, tooltip)
+    mpld3.show()

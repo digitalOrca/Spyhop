@@ -117,7 +117,7 @@ public class EWrapperImpl implements EWrapper {
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
         OrderTracer orderTracer = StrategyExecutor.orderBook.get(symbol);
-        String logEntry = String.format("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s", symbol, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+        String logEntry = String.format("ORDER, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s", status, symbol, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
         switch (status) {
             case "PendingSubmit":
@@ -150,7 +150,7 @@ public class EWrapperImpl implements EWrapper {
 
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
-        String logEntry = String.format("%s, openOrder", symbol);
+        String logEntry = String.format("ORDER, %s, openOrder", symbol);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
     }
 

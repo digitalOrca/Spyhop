@@ -6,6 +6,7 @@ import pandas as pd
 from scipy import stats
 import datetime
 from Preprocess import Preprocess
+import Postprocess as post
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KernelDensity
 from scipy import integrate
@@ -34,7 +35,7 @@ class SectorNorm:
         sector_probability = pd.Series(index=sectorReturn.index)
         for sector in sectorReturn["sector"].unique():
             mask = sectorReturn["sector"]==sector
-            returnSeries = sectorReturn[sectorReturn["sector"]==sector]["return"].values
+            returnSeries = sectorReturn[sectorReturn["sector"] == sector]["return"].values
             mean = np.mean(returnSeries)
             stdev = np.std(returnSeries)
             z_value = mean / stdev
@@ -61,7 +62,7 @@ class SectorNorm:
                         "Transportation"]
         for sector in sectorReturn["sector"].unique():
             symbols = sectorReturn[sectorReturn["sector"] == sector].index
-            sector_ret = ArDf.loc[symbols.values]["return"].sort_values()
+            sector_ret = ArDf.loc[symbols.values]["alpha"].sort_values()
             sector_stats = sector_ret[:, np.newaxis]
             kde = KernelDensity(kernel='gaussian', bandwidth=0.025)
             kde.fit(sector_stats)
@@ -80,6 +81,6 @@ class SectorNorm:
 
 if __name__ == "__main__":
     s = SectorNorm()
-    ar = s.computeAlpha()
+    ar = post.compute_alpha("snp500")
     #s.computeSectorReturnProbability(ar)
     s.visualizeSectorKDE(ar)
