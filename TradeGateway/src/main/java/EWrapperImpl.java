@@ -13,7 +13,7 @@ public class EWrapperImpl implements EWrapper {
 
     private EReaderSignal readSignal;
     private EClientSocket clientSocket;
-    static Set<Integer> repeatTicks = new HashSet<>(Arrays.asList(0, 1, 2,3,4,5,32,33,45,84));
+    static Set<Integer> repeatTicks = new HashSet<>(Arrays.asList(0,1,2,3,4,5,32,33,45,84));
 
     EWrapperImpl(){
         readSignal = new EJavaSignal();
@@ -117,7 +117,7 @@ public class EWrapperImpl implements EWrapper {
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
         OrderTracer orderTracer = StrategyExecutor.orderBook.get(symbol);
-        String logEntry = String.format("ORDER, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s", status, symbol, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+        String logEntry = String.format("ORDER,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", status, symbol, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
         switch (status) {
             case "PendingSubmit":
@@ -150,7 +150,7 @@ public class EWrapperImpl implements EWrapper {
 
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
-        String logEntry = String.format("ORDER, %s, openOrder", symbol);
+        String logEntry = String.format("ORDER,openOrder,%s", symbol);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
     }
 
@@ -276,12 +276,13 @@ public class EWrapperImpl implements EWrapper {
         System.out.println("TEST33");
     }
 
-    public void position(String s, Contract contract, double v, double v1) {
-        System.out.println("TEST34");
+    public void position(String s, Contract contract, double position, double avgCost) {
+        String msg = String.format("POSITION,Update,%s,%s,%s", contract.symbol(), position, avgCost);
+        Logger.getInstance().log(Log.CALLBACK, msg);
     }
 
     public void positionEnd() {
-        System.out.println("TEST35");
+        Logger.getInstance().log(Log.CALLBACK, "POSITION,Cancel");
     }
 
     public void accountSummary(int i, String s, String s1, String s2, String s3) {

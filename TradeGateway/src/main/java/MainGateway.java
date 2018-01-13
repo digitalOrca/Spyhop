@@ -62,7 +62,7 @@ public class MainGateway{
         }
 
         /* One-time request status */
-        // boolean streaming = false;
+        boolean subscription = false;
         boolean updated = false;
 
         /* Update benchmark indices */
@@ -111,6 +111,8 @@ public class MainGateway{
                 /* Consolidate tick data */
                 System.out.println("=============Consolidate daily data==============");
                 CallbackAction.consolidateTicks("tick", "tick_history");
+                System.out.println("=============Cancel position subscription==============");
+                client.getClientSocket().cancelPositions();
 
                 /* Daily 1-min Bar Data Requests */
                 LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
@@ -143,7 +145,8 @@ public class MainGateway{
             }
             /* One-time requests */
             ///* Retrieve active stocks */
-            //if (!streaming) {
+            if (!subscription) {
+                client.getClientSocket().reqPositions();
                 //LinkedList<String> symbols = CallbackAction.selectActiveStocks();
                 //System.out.println("============Sending One-time Requests============");
                 //int reqId = 1;
@@ -156,8 +159,8 @@ public class MainGateway{
                 //    client.getClientSocket().reqRealTimeBars(reqId, contract, 5, "TRADES", true, null);
                 //    reqId++;
                 //}
-            //    streaming = true;
-            //}
+                subscription = true;
+            }
 
             /* Update fundamental ratios and high low data */
             if (!updated && !simulated) {  // update all securities, only for live trade
