@@ -7,7 +7,7 @@ import Postprocess as post
 from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
 import mpld3
-from mpld3 import plugins
+
 
 class Beta:
 
@@ -39,8 +39,7 @@ if __name__ == "__main__":
     sector_colors = dict(zip(symbolSector["sector"].unique(), colors))
     symbolSector["color"] = symbolSector["sector"].astype(str).apply(lambda x: sector_colors[x])
     # select sectors to show
-    print(symbolSector["sector"].unique())
-    show_section = [
+    show_sector = [
                     #"Consumer Services",
                     #"Public Utilities",
                     "Basic Industries",
@@ -54,21 +53,29 @@ if __name__ == "__main__":
                     #"Miscellaneous",
                     "Transportation"
                     ]
-    symbolSector = symbolSector[symbolSector["sector"].isin(show_section)]
-
-
+    symbolSector = symbolSector[symbolSector["sector"].isin(show_sector)]
     alpha_beta_sector = pd.concat([alpha_beta, symbolSector], axis=1, join='inner')  # type: pd.DataFrame
+    mktcap = preprocess.retrieve_mkt_caps(alpha_beta_sector.index).dropna(axis=0, how='any')
+    size = 16
+    mktcap["size"] = np.multiply(pd.Series(data=np.ones(len(mktcap)), index=mktcap.index), size)
+    mktcap["size"].loc[mktcap["mktcap"] > 2000] = 4 * size
+    mktcap["size"].loc[mktcap["mktcap"] > 10000] = 9 * size
 
-    mktcap = preprocess.retrieve_mkt_caps(alpha_beta_sector.index)
-    print(mktcap)
-
-    # TODO: CONTINUE HERE
-
+    show_mktcap = [
+                    size,  # small cap
+                    4*size,  # medium cap
+                    9*size  # large cap
+                  ]
+    mktcap = mktcap[mktcap["size"].isin(show_mktcap)]
+    alpha_beta_sector_mktcap = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')  # type: pd.DataFrame
+    #print(alpha_beta_sector_mktcap)
     fig, ax = plt.subplots(subplot_kw=dict(axisbg='#EEEEEE'))
-    scatter = ax.scatter(alpha_beta["alpha"], alpha_beta["beta"], c=symbolSector["color"])
+    #plt.figure(figsize=(720, 405))
+    scatter = ax.scatter(alpha_beta_sector_mktcap["alpha"], alpha_beta_sector_mktcap["beta"],
+                         s=alpha_beta_sector_mktcap["size"], c=alpha_beta_sector_mktcap["color"])
     ax.grid(color='white', linestyle='solid')
     ax.set_title("Alpha vs Beta", size=20)
-    labels = [str(label) for label in alpha_beta.index]
+    labels = [str(symbol)+"("+str(symbolSector["sector"].loc[symbol])+")" for symbol in alpha_beta_sector_mktcap.index]
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
     mpld3.show()
