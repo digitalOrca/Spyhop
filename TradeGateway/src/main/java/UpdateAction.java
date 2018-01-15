@@ -20,7 +20,7 @@ class UpdateAction {
 
     public static void waitForFlag() { // make it public so it can be tested
         int timeout = 0;
-        while(MainGateway.callbackTracker != 255 && timeout < MainGateway.updateTimeout) {
+        while(MainGateway.callbackTracker != 1023 && timeout < MainGateway.updateTimeout) {
             Helper.pauseMilli(1);
             timeout++;
         }

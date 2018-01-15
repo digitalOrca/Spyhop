@@ -59,5 +59,5 @@ if __name__ == "__main__":
     labels = [str(symbol)+"("+str(symbolSector["sector"].loc[symbol])+")" for symbol in alpha_beta_sector_mktcap.index]
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
-    #mpld3.show(fig=fig, ip='127.0.0.1', port=8888, open_browser=True)
-    mpld3.show()
+    mpld3.show(fig=fig, ip='192.168.0.88', port=8888, open_browser=True)
+    #mpld3.show()

@@ -111,12 +111,14 @@ public class MainGateway{
 
             /* Subscription request */
             if (!subscription) {
+                Logger.getInstance().log(Log.ACTION, "REQUEST,reqPosition");
                 client.getClientSocket().reqPositions();
                 subscription = true;
             }
 
             /* Update data */
             if (!updated && !simulated) {  // update all securities, only for live trade
+                Logger.getInstance().log(Log.ACTION, "UPDATE,updateAllSecurities");
                 UpdateAction.updateAllSecurities();
                 updated = true;
             }
@@ -177,14 +179,13 @@ public class MainGateway{
         System.exit(0);
     }
 
-    private static void waitForMarketOpen() {
+    public static void waitForMarketOpen() {
         while (RTHCheck() == -1) {
             Helper.pauseSec(1);
         }
     }
 
     private static boolean marketClosed() {
-        System.out.println("====>" + RTHCheck());
         return RTHCheck() == 1;
     }
 
@@ -194,14 +195,14 @@ public class MainGateway{
             String date = now.toString().split("T")[0];
             ZonedDateTime open = ZonedDateTime.parse(date+"T09:30:00.000-04:00[America/New_York]");
             ZonedDateTime close = ZonedDateTime.parse(date+"T16:05:00.000-04:00[America/New_York]"); //ADD 5 min for lag
-            if (now.isAfter(open) && now.isBefore(close)) {
-                return 0;
-            } else if (now.isBefore(open)) {
+            if (now.isBefore(open)) {
                 System.out.println("Waiting for Market Opening [9:30 am - 4:00 pm EST]");
                 return simulated? (realtime ? -1:0):-1;
-            } else {
+            } else if (now.isAfter(close)) {
                 System.out.println("Market is closed [9:30 am - 4:00 pm EST]");
                 return simulated? (realtime ? 1:0):1;
+            } else {
+                return 0;
             }
         } catch (Exception e) {
             e.printStackTrace();

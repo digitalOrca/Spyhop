@@ -25,7 +25,7 @@ public class StrategyExecutor implements Runnable {
     private StrategyExecutor() {
     }
 
-    public static int orderId;
+    public static int orderId = -1;
     public static HashMap<String, OrderTracer> orderBook = new HashMap<>();
 
     @SuppressWarnings("unchecked")
@@ -53,28 +53,31 @@ public class StrategyExecutor implements Runnable {
         }
     }
 
-    public static void trigger(int orderId, String symbol) {
-        SocketComm.getInstance().registerOrder(orderId, symbol);
+    public static void trigger(int id, String symbol) {
+        SocketComm.getInstance().registerOrder(id, symbol);
         OrderTracer orderTracer = orderBook.get(symbol);
-        orderTracer.setOrderId(orderId);
+        orderTracer.setOrderId(id);
         orderTracer.setStatus(OrderStage.SUBMITTED);
         orderBook.put(symbol, orderTracer); // update order book
         Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
         Order order = OrderBuilder.createMarketOrder(orderTracer.getAction(), orderTracer.getQuantity());
         Logger.getInstance().log(Log.ACTION, "ORDER, Placed," + symbol + "," + orderTracer.getQuantity());
-        MainGateway.client.getClientSocket().placeOrder(orderId, contract, order);
+        MainGateway.client.getClientSocket().placeOrder(id, contract, order);
     }
 
     @Override
     public void run() {
         MainGateway.client.nextValidId(0); //to retrieve next valid order id
+        while (orderId < 0) {  // make sure orderId is set before proceeding
+            Helper.pauseMilli(1);
+        }
         loadTask();
-
+        MainGateway.waitForMarketOpen();
         if (MainGateway.simulated) { // paper trading
             while (!orderBook.isEmpty()) {
                 for (OrderTracer ot : orderBook.values() ) {
                     if (ot.getStatus() == OrderStage.BACKLOG ) {
-                        Logger.getInstance().log(Log.ACTION, "ORDER, Triggered," + ot.getSymbol());
+                        Logger.getInstance().log(Log.ACTION, "ORDER, Triggered," + ot.getSymbol() + "," + orderId);
                         trigger(orderId++, ot.getSymbol());
                         Helper.pauseSec(60);
                     }

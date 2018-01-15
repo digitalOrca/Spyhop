@@ -42,9 +42,11 @@ public class EWrapperImpl implements EWrapper {
                 CallbackAction.updateTickPrice(symbol, field, price);
                 break;
             case 9: // previous day's close price
+                MainGateway.callbackTracker |= 256;
                 CallbackAction.updateOpenClose(false, symbol, price);
                 break;
             case 14: // today's opening price
+                MainGateway.callbackTracker |= 512;
                 CallbackAction.updateOpenClose(true, symbol, price);
                 break;
             case 15: //13-week low
@@ -150,7 +152,7 @@ public class EWrapperImpl implements EWrapper {
 
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
-        String logEntry = String.format("ORDER,openOrder,%s", symbol);
+        String logEntry = String.format("ORDER,openOrder,%s,%s", symbol, orderId);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
     }
 
