@@ -8,22 +8,20 @@ Description:
 
 import numpy as np
 import pandas as pd
-from DBUtils import DBConnect
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 
 
-class PortfolioOptimizer:
+class SharpeRatio:
 
     """constructor
     """
     def __init__(self, asset, risk_free=0):
-        self.db = DBConnect()
         self.preprocess = Preprocess(data='open_close')
         self.asset = asset
         self.risk_free = risk_free
         self.covariance = None  # type: pd.DataFrame
-        self.mean = pd.Series(index=asset)
+        self.mean = None  #pd.Series(index=asset)
         self.max_sharpe_comp = None  # maximum sharpe portfolio composition
         self.min_vol_comp = None  # minimum volatility portfolio composition
 
@@ -36,13 +34,11 @@ class PortfolioOptimizer:
             mean: mean daily return
     """
     def computeCovarMean(self):  # correlation matrix
-        if self.covariance is not None and not self.mean.empty:  # avoid duplicate query
-            return self.covariance, self.mean
-        else:
+        if self.covariance is None or self.mean is None:  # avoid duplicate query
             daily_change = self.preprocess.get_data()[self.asset].pct_change()
             self.covariance = daily_change.cov()
             self.mean = daily_change.mean().subtract(self.risk_free/252)
-            return self.covariance, self.mean
+        return self.covariance, self.mean
 
     """
         Description:
@@ -103,5 +99,5 @@ class PortfolioOptimizer:
 
 if __name__ == "__main__":
     stocks = ["NVDA", "AMZN", "GS", "ABT"]
-    po = PortfolioOptimizer(stocks)
-    po.searchReturnFrontier(50000)
+    sr = SharpeRatio(stocks)
+    sr.searchReturnFrontier(50000)

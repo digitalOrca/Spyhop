@@ -128,7 +128,7 @@ class EWrapperImplTest {
     }
 
     @Test
-    void tickPriceSize() {
+    void tickSize() {
         EWrapperImpl client = new EWrapperImpl();
         SocketComm.getInstance().registerRequest(1, "TEST");
         client.tickPrice(1, 1, 0.1, null);

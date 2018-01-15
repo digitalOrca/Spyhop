@@ -10,8 +10,7 @@ def compute_alpha(benchmark):
     preprocess.retrieve_fundamental_ratios(lag=True)  # set fr dates
     returns = preprocess.compute_return(split=False)
     index = preprocess.compute_benchmark(benchmark)
-    raw_alpha = np.divide(returns["return"], index).clip(lower=1e-8)  # 0 causes numeric error in np.log
-    returns["alpha"] = np.log(raw_alpha)
+    returns["alpha"] = np.subtract(returns["return"], index)
     return returns["alpha"].to_frame()
 
 

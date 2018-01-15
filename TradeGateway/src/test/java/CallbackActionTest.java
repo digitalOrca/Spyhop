@@ -10,6 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CallbackActionTest {
     @Test
+    void selectAllStocks() {
+        LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
+        assertTrue(true);
+    }
+
+    @Test
     void test_selectActiveStocks() {
         LinkedList<String> symbols = CallbackAction.selectActiveStocks();
         assertEquals(symbols.size(), 95); //target depending on the database status column

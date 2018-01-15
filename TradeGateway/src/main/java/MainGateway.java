@@ -19,7 +19,7 @@ public class MainGateway{
 
     /* Running mode */
     static boolean simulated = false; //NOTE: simulated trading cannot handle real-time ticks
-    static boolean regularTradingHour = true;  //if Paper trading, fake during RTH or off RTH
+    static boolean realtime = true;  //if Paper trading, fake during RTH or off RTH
 
     /* Update flag */
     static int callbackTracker = 0; // flag from right to left: 47, 15-21
@@ -106,66 +106,57 @@ public class MainGateway{
                 }
             }
 
+            // wait for market open
+            waitForMarketOpen();
+
+            /* Subscription request */
+            if (!subscription) {
+                client.getClientSocket().reqPositions();
+                subscription = true;
+            }
+
+            /* Update data */
+            if (!updated && !simulated) {  // update all securities, only for live trade
+                UpdateAction.updateAllSecurities();
+                updated = true;
+            }
+
             /* Check if the market is closed */
-            if (!beforeClose() && !simulated) { //execute block after market close, only for live trade
+            if (marketClosed()) { //execute block after market close
                 /* Consolidate tick data */
                 System.out.println("=============Consolidate daily data==============");
                 CallbackAction.consolidateTicks("tick", "tick_history");
                 System.out.println("=============Cancel position subscription==============");
                 client.getClientSocket().cancelPositions();
-
-                /* Daily 1-min Bar Data Requests */
-                LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
-                Calendar cal = Calendar.getInstance();
-                SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-                String formatted = form.format(cal.getTime());
-                int reqId = reqId_HistData; //starting reqId for historical data request
-                pendingHistReq = 0; //resetting pending request before
-                for (String symbol : allSymbols) {
-                    while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
-                        Helper.pauseMilli(1);
+                if (!simulated) { // update bar data only for live trade session
+                    /* Daily 1-min Bar Data Requests */
+                    LinkedList<String> allSymbols = CallbackAction.selectAllStocks();
+                    Calendar cal = Calendar.getInstance();
+                    SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+                    String formatted = form.format(cal.getTime());
+                    int reqId = reqId_HistData; //starting reqId for historical data request
+                    pendingHistReq = 0; //resetting pending request before
+                    for (String symbol : allSymbols) {
+                        while (pendingHistReq > 48) { // 50 simultaneous open historic data requests limitation
+                            Helper.pauseMilli(1);
+                        }
+                        System.out.println("reqId:" + reqId);
+                        SocketComm.getInstance().registerRequest(reqId, symbol);
+                        Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
+                        pendingHistReq++;
+                        client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
+                        String request = String.format("[R]pending: %d, id: %d", pendingHistReq, reqId);
+                        Logger.getInstance().log(Log.CALLBACK, request);
+                        reqId++;
+                        Helper.pauseMilli(50);
                     }
-                    System.out.println("reqId:"+reqId);
-                    SocketComm.getInstance().registerRequest(reqId, symbol);
-                    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                    pendingHistReq++;
-                    client.getClientSocket().reqHistoricalData(reqId, contract, formatted, "1 D", "1 min", "TRADES", 1, 1, false, null);
-                    String request = String.format("[R]pending: %d, id: %d", pendingHistReq, reqId);
-                    Logger.getInstance().log(Log.CALLBACK, request);
-                    reqId++;
-                    Helper.pauseMilli(50);
-                }
-
-                // make sure pending requests are processed before exiting
-                while (pendingHistReq > 0) {
-                    Helper.pauseSec(1);
+                    // make sure pending requests are processed before exiting
+                    while (pendingHistReq > 0) {
+                        Helper.pauseSec(1);
+                    }
                 }
                 Helper.pauseSec(60); // give 60s seconds of lag tolerance
                 break;
-            }
-            /* One-time requests */
-            ///* Retrieve active stocks */
-            if (!subscription) {
-                client.getClientSocket().reqPositions();
-                //LinkedList<String> symbols = CallbackAction.selectActiveStocks();
-                //System.out.println("============Sending One-time Requests============");
-                //int reqId = 1;
-                //String genericTickList = "233";
-                //for (String symbol : symbols) {
-                //    Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
-                //    SocketComm.getInstance().registerRequest(reqId, symbol);
-                //    client.getClientSocket().reqMktData(reqId,contract, genericTickList, false, false, null);
-                //    System.out.println("[R] reqMktData: " + symbol);
-                //    client.getClientSocket().reqRealTimeBars(reqId, contract, 5, "TRADES", true, null);
-                //    reqId++;
-                //}
-                subscription = true;
-            }
-
-            /* Update fundamental ratios and high low data */
-            if (!updated && !simulated) {  // update all securities, only for live trade
-                UpdateAction.updateAllSecurities();
-                updated = true;
             }
 
             /* Recurring requests */
@@ -186,15 +177,15 @@ public class MainGateway{
         System.exit(0);
     }
 
-    private static boolean beforeClose() {
+    private static void waitForMarketOpen() {
         while (RTHCheck() == -1) {
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            Helper.pauseSec(1);
         }
-        return RTHCheck() != 1;
+    }
+
+    private static boolean marketClosed() {
+        System.out.println("====>" + RTHCheck());
+        return RTHCheck() == 1;
     }
 
     private static int RTHCheck() {
@@ -207,10 +198,10 @@ public class MainGateway{
                 return 0;
             } else if (now.isBefore(open)) {
                 System.out.println("Waiting for Market Opening [9:30 am - 4:00 pm EST]");
-                return simulated? (regularTradingHour? 0:-1):-1;
+                return simulated? (realtime ? -1:0):-1;
             } else {
                 System.out.println("Market is closed [9:30 am - 4:00 pm EST]");
-                return simulated? (regularTradingHour? 0:1):1;
+                return simulated? (realtime ? 1:0):1;
             }
         } catch (Exception e) {
             e.printStackTrace();

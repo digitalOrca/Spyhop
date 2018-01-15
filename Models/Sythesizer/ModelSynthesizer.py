@@ -4,30 +4,11 @@ import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
 import Postprocess as post
-from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
 import mpld3
 
 
-class Beta:
-
-    def __init__(self):
-        self.preprocess = Preprocess(data='open_close')
-
-
-    # make this per sector
-    def visualize_beta_distribution(self, betas):
-        sorted_beta = betas["beta"].sort_values()
-        beta_stats = sorted_beta[:, np.newaxis]
-        kde = KernelDensity(kernel='gaussian', bandwidth=0.025)
-        kde.fit(beta_stats)
-        log_dens = kde.score_samples(beta_stats)
-        plt.plot(beta_stats, np.exp(log_dens))
-        plt.show()
-
-
 if __name__ == "__main__":
-    sb = Beta()
     betas = post.compute_beta("snp500")
     alphas = post.compute_alpha("snp500")
     alpha_beta = pd.concat([alphas, betas], axis=1, join='inner')  # type: pd.DataFrame
@@ -68,14 +49,15 @@ if __name__ == "__main__":
                   ]
     mktcap = mktcap[mktcap["size"].isin(show_mktcap)]
     alpha_beta_sector_mktcap = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')  # type: pd.DataFrame
-    #print(alpha_beta_sector_mktcap)
-    fig, ax = plt.subplots(subplot_kw=dict(axisbg='#EEEEEE'))
-    #plt.figure(figsize=(720, 405))
+    fig = plt.figure(figsize=(16, 9))
+    ax = fig.add_subplot(111)
     scatter = ax.scatter(alpha_beta_sector_mktcap["alpha"], alpha_beta_sector_mktcap["beta"],
                          s=alpha_beta_sector_mktcap["size"], c=alpha_beta_sector_mktcap["color"])
-    ax.grid(color='white', linestyle='solid')
+    ax.grid(color='grey', linestyle='solid')
     ax.set_title("Alpha vs Beta", size=20)
+
     labels = [str(symbol)+"("+str(symbolSector["sector"].loc[symbol])+")" for symbol in alpha_beta_sector_mktcap.index]
     tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
     mpld3.plugins.connect(fig, tooltip)
+    #mpld3.show(fig=fig, ip='127.0.0.1', port=8888, open_browser=True)
     mpld3.show()

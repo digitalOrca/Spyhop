@@ -10,4 +10,6 @@ class StrategyExecutorTest {
     void loadTask() {
         StrategyExecutor.loadTask();
     }
+
+
 }
