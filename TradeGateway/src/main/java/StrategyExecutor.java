@@ -55,29 +55,32 @@ public class StrategyExecutor implements Runnable {
 
     public static void trigger(int id, String symbol) {
         SocketComm.getInstance().registerOrder(id, symbol);
+        Logger.getInstance().log(Log.CALLBACK, symbol + "=" + id);
         OrderTracer orderTracer = orderBook.get(symbol);
         orderTracer.setOrderId(id);
         orderTracer.setStatus(OrderStage.SUBMITTED);
         orderBook.put(symbol, orderTracer); // update order book
         Contract contract = OrderBuilder.makeContract(symbol, SecType.STK, Exchange.SMART, Currency.USD);
         Order order = OrderBuilder.createMarketOrder(orderTracer.getAction(), orderTracer.getQuantity());
-        Logger.getInstance().log(Log.ACTION, "ORDER, Placed," + symbol + "," + orderTracer.getQuantity());
+        Logger.getInstance().log(Log.ACTION, "ORDER,Placed," + symbol + "," + orderTracer.getAction().toString() + "," + orderTracer.getQuantity());
         MainGateway.client.getClientSocket().placeOrder(id, contract, order);
     }
 
     @Override
     public void run() {
+        loadTask();
+        MainGateway.waitForMarketOpen();
         MainGateway.client.nextValidId(0); //to retrieve next valid order id
         while (orderId < 0) {  // make sure orderId is set before proceeding
             Helper.pauseMilli(1);
         }
-        loadTask();
-        MainGateway.waitForMarketOpen();
         if (MainGateway.simulated) { // paper trading
+            HashMap<String, OrderTracer> carbonCopy;
             while (!orderBook.isEmpty()) {
-                for (OrderTracer ot : orderBook.values() ) {
+                carbonCopy = orderBook; //iterate with a copy to void ConcurrentModificationException
+                for (OrderTracer ot : carbonCopy.values()) {
                     if (ot.getStatus() == OrderStage.BACKLOG ) {
-                        Logger.getInstance().log(Log.ACTION, "ORDER, Triggered," + ot.getSymbol() + "," + orderId);
+                        Logger.getInstance().log(Log.ACTION, "ORDER,Triggered," + ot.getSymbol() + "," + orderId);
                         trigger(orderId++, ot.getSymbol());
                         Helper.pauseSec(60);
                     }

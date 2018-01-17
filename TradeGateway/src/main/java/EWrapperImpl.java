@@ -118,6 +118,7 @@ public class EWrapperImpl implements EWrapper {
 
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
         String symbol = SocketComm.getInstance().getOrder(orderId);
+        Logger.getInstance().log(Log.CALLBACK, orderId + "->" + symbol);
         OrderTracer orderTracer = StrategyExecutor.orderBook.get(symbol);
         String logEntry = String.format("ORDER,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s", status, symbol, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
         Logger.getInstance().log(Log.CALLBACK, logEntry);
@@ -157,7 +158,7 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void openOrderEnd() {
-        System.out.println("TEST7");
+        System.out.println("Open order end");
     }
 
     public void updateAccountValue(String s, String s1, String s2, String s3) {
@@ -200,11 +201,13 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void execDetails(int i, Contract contract, Execution execution) {
-        System.out.println("TEST16");
+        System.out.println("Execution details:");
+        String message = String.format("symbol:%s, share:%s, price:%s" ,contract.symbol(), execution.shares(), execution.price());
+        System.out.println(message);
     }
 
     public void execDetailsEnd(int i) {
-        System.out.println("TEST17");
+        System.out.println("Execution Details End");
     }
 
     public void updateMktDepth(int i, int i1, int i2, int i3, double v, int i4) {
@@ -275,7 +278,9 @@ public class EWrapperImpl implements EWrapper {
     }
 
     public void commissionReport(CommissionReport commissionReport) {
-        System.out.println("TEST33");
+        System.out.println("Commission Report:");
+        String message = String.format("commission:%s, PnL:%s, yield:%s", commissionReport.m_commission, commissionReport.m_realizedPNL, commissionReport.m_yield);
+        System.out.println(message);
     }
 
     public void position(String s, Contract contract, double position, double avgCost) {
