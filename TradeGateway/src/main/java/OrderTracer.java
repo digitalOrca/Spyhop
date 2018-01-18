@@ -62,4 +62,10 @@ public class OrderTracer {
     public OrderStage getStatus() {
         return this.status;
     }
+
+    public String toString() {
+        String template = "orderId: %s, symbol:%s, action:%s, quantity:%s, status:%s";
+        String orderPrint = String.format(template, orderId, symbol, action, quantity, status);
+        return orderPrint;
+    }
 }

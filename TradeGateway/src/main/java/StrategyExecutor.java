@@ -45,7 +45,7 @@ public class StrategyExecutor implements Runnable {
             for (Object jsonObj : sellList) {
                 String symbol =  (String)((JSONObject)jsonObj).get("symbol");
                 Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
-                OrderTracer orderTracer = new OrderTracer(symbol, Action.BUY, quantity);
+                OrderTracer orderTracer = new OrderTracer(symbol, Action.SELL, quantity);
                 orderBook.put(symbol, orderTracer);
             }
         } catch (Exception e) {
@@ -70,7 +70,7 @@ public class StrategyExecutor implements Runnable {
     public void run() {
         loadTask();
         MainGateway.waitForMarketOpen();
-        MainGateway.client.nextValidId(0); //to retrieve next valid order id
+        MainGateway.client.getClientSocket().reqIds(-1); //to retrieve next valid order id
         while (orderId < 0) {  // make sure orderId is set before proceeding
             Helper.pauseMilli(1);
         }

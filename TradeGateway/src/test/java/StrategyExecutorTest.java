@@ -9,6 +9,9 @@ class StrategyExecutorTest {
     @Test
     void loadTask() {
         StrategyExecutor.loadTask();
+        for (OrderTracer ot: StrategyExecutor.orderBook.values()) {
+            System.out.println(ot.toString());
+        }
     }
 
 
