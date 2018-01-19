@@ -27,11 +27,14 @@ def compute_beta( benchmark):
     all_change = pd.concat([index_change, stock_change], axis=1, join='inner').fillna(0)
     volatility = pd.DataFrame(index=all_change.columns, columns=["beta"], dtype=np.float32)
     volatility.drop([benchmark], axis=0, inplace=True)  # remove benchmark column
+
     for col in all_change:
-        if col != benchmark:
-            a = all_change[col].values
-            b = all_change[benchmark].values
-            beta = np.multiply(np.corrcoef(a, b), np.divide(np.std(a), np.std(b)))[0, 1]
-            volatility["beta"].loc[col] = beta
+        b = all_change[benchmark].values
+        with np.errstate(invalid='ignore'):  # ignore runtime warning in np.corrcoef due to numeric instability
+            if col != benchmark:
+                a = all_change[col].values
+                np.corrcoef(a, b)
+                beta = np.multiply(np.corrcoef(a, b), np.divide(np.std(a), np.std(b)))[0, 1]
+                volatility["beta"].loc[col] = beta
     volatility.dropna(axis=0, how='any', inplace=True)
     return volatility

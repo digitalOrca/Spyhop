@@ -49,10 +49,12 @@ if __name__ == "__main__":
                   ]
     mktcap = mktcap[mktcap["size"].isin(show_mktcap)]
     alpha_beta_sector_mktcap = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')  # type: pd.DataFrame
+
+
     fig = plt.figure(figsize=(16, 9))
     ax = fig.add_subplot(111)
     scatter = ax.scatter(alpha_beta_sector_mktcap["alpha"], alpha_beta_sector_mktcap["beta"],
-                         s=alpha_beta_sector_mktcap["size"], c=alpha_beta_sector_mktcap["color"])
+                         s=alpha_beta_sector_mktcap["size"], c=alpha_beta_sector_mktcap["color"], alpha=0.75)
     ax.grid(color='grey', linestyle='solid')
     ax.set_title("Alpha vs Beta", size=20)
 

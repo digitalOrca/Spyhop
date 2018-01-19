@@ -77,7 +77,7 @@ public class StrategyExecutor implements Runnable {
         if (MainGateway.simulated) { // paper trading
             HashMap<String, OrderTracer> carbonCopy;
             while (!orderBook.isEmpty()) {
-                carbonCopy = orderBook; //iterate with a copy to void ConcurrentModificationException
+                carbonCopy = new HashMap<>(StrategyExecutor.orderBook); //iterate with a copy to void ConcurrentModificationException
                 for (OrderTracer ot : carbonCopy.values()) {
                     if (ot.getStatus() == OrderStage.BACKLOG ) {
                         Logger.getInstance().log(Log.ACTION, "ORDER,Triggered," + ot.getSymbol() + "," + orderId);
