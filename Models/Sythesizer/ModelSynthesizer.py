@@ -1,65 +1,42 @@
 #!/use/bin/python3
 
-import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
 import Postprocess as post
-import matplotlib.pyplot as plt
-import mpld3
+import plotly.offline as po
+import plotly.graph_objs as go
 
 
-if __name__ == "__main__":
-    betas = post.compute_beta("snp500")
-    alphas = post.compute_alpha("snp500")
-    alpha_beta = pd.concat([alphas, betas], axis=1, join='inner')  # type: pd.DataFrame
-    preprocess = Preprocess(data="open_close")
-    symbolSector = preprocess.retrieve_symbol_sector()
-    # define sector color
-    colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
-              '#46f0f0', '#f032e6', '#d2f53c', '#fabebe', '#008080', '#e6beff']
-    sector_colors = dict(zip(symbolSector["sector"].unique(), colors))
-    symbolSector["color"] = symbolSector["sector"].astype(str).apply(lambda x: sector_colors[x])
-    # select sectors to show
-    show_sector = [
-                    #"Consumer Services",
-                    #"Public Utilities",
-                    "Basic Industries",
-                    #"Capital Goods",
-                    #"Finance",
-                    "Consumer Non-Durables",
-                    "Technology",
-                    #"Health Care",
-                    "Energy",
-                    #"Consumer Durables",
-                    #"Miscellaneous",
-                    "Transportation"
-                    ]
-    symbolSector = symbolSector[symbolSector["sector"].isin(show_sector)]
-    alpha_beta_sector = pd.concat([alpha_beta, symbolSector], axis=1, join='inner')  # type: pd.DataFrame
-    mktcap = preprocess.retrieve_mkt_caps(alpha_beta_sector.index).dropna(axis=0, how='any')
-    size = 16
-    mktcap["size"] = np.multiply(pd.Series(data=np.ones(len(mktcap)), index=mktcap.index), size)
-    mktcap["size"].loc[mktcap["mktcap"] > 2000] = 4 * size
-    mktcap["size"].loc[mktcap["mktcap"] > 10000] = 9 * size
-
-    show_mktcap = [
-                    size,  # small cap
-                    4*size,  # medium cap
-                    9*size  # large cap
-                  ]
-    mktcap = mktcap[mktcap["size"].isin(show_mktcap)]
-    alpha_beta_sector_mktcap = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')  # type: pd.DataFrame
-
-
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.add_subplot(111)
-    scatter = ax.scatter(alpha_beta_sector_mktcap["alpha"], alpha_beta_sector_mktcap["beta"],
-                         s=alpha_beta_sector_mktcap["size"], c=alpha_beta_sector_mktcap["color"], alpha=0.75)
-    ax.grid(color='grey', linestyle='solid')
-    ax.set_title("Alpha vs Beta", size=20)
-
-    labels = [str(symbol)+"("+str(symbolSector["sector"].loc[symbol])+")" for symbol in alpha_beta_sector_mktcap.index]
-    tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
-    mpld3.plugins.connect(fig, tooltip)
-    mpld3.show(fig=fig, ip='192.168.0.88', port=8888, open_browser=True)
-    #mpld3.show()
+alphas = post.compute_alpha("snp500")
+betas = post.compute_beta("snp500")
+alpha_beta = pd.concat([alphas, betas], axis=1, join='inner')
+preprocess = Preprocess(data="open_close")
+symbolSector = preprocess.retrieve_symbol_sector()
+alpha_beta_sector = pd.concat([alpha_beta, symbolSector], axis=1, join='inner')  # type: pd.DataFrame
+mktcap = preprocess.retrieve_mkt_caps(alpha_beta_sector.index).dropna(axis=0, how='any')
+mktcap["size"] = pd.Series(data="small", index=mktcap.index)
+mktcap.loc[mktcap["mktcap"] > 2000, "size"] = "medium"
+mktcap.loc[mktcap["mktcap"] > 10000, "size"] = "large"
+summary = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')  # type: pd.DataFrame
+# define sector color
+colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
+          '#46f0f0', '#f032e6', '#d2f53c', '#fabebe', '#008080', '#e6beff']
+sector_colors = dict(zip(summary["sector"].unique(), colors))
+cap_sizes = {"large": 8, "medium": 5, "small": 3}
+data = []
+size_tiers = summary["size"].unique()
+for sector in summary["sector"].unique():
+    color = sector_colors[sector]
+    sector_set = summary[summary["sector"] == sector]
+    for cap in ["large", "medium", "small"]:
+        subset = sector_set[sector_set["size"] == cap]
+        group = go.Scatter(x=subset["alpha"], y=subset["beta"],
+                           name=sector+"("+cap+")",
+                           text=subset.index,
+                           mode='markers',
+                           marker=dict(size=cap_sizes[cap], color=color,
+                                       line=dict(width=1, color='rgb(0, 0, 0)')
+                                       )
+                           )
+        data.append(group)
+po.plot(data, filename='share.html')
