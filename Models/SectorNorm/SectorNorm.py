@@ -17,17 +17,6 @@ class SectorNorm:
     def __init__(self, lag=30):
         self.db = DBConnect()
         self.preprocess = Preprocess(data="fundamental_ratios", lag=lag)
-        
-        
-    def computeAlpha(self):
-        self.preprocess.retrieve_fundamental_ratios(lag=True)  # set fr dates
-        start_date = self.preprocess.frdate
-        ArDf = self.preprocess.compute_return(split=False)
-        benchmark = self.preprocess.compute_benchmark("snp500")
-        ArDf = ArDf.dropna(axis=0, how='any')  # prevent arithmetic error
-        ArDf["return"] = np.log(np.divide(ArDf["return"], benchmark))
-        return ArDf
-
 
     def computeSectorReturnProbability(self, ArDf):
         symbolSector = self.preprocess.retrieve_symbol_sector()
@@ -80,7 +69,10 @@ class SectorNorm:
 
 
 if __name__ == "__main__":
+    preprocess = Preprocess(data="open_close")
+    returns = preprocess.compute_return(split=False)
+    index = preprocess.compute_benchmark("snp500")
+    ar = post.compute_alpha(index, returns)
     s = SectorNorm()
-    ar = post.compute_alpha("snp500")
     #s.computeSectorReturnProbability(ar)
     s.visualizeSectorKDE(ar)

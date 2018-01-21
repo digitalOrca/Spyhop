@@ -2,24 +2,17 @@
 
 import numpy as np
 import pandas as pd
-from Preprocess import Preprocess
 
 
-def compute_alpha(benchmark):
-    preprocess = Preprocess(data="fundamental_ratios")
-    preprocess.retrieve_fundamental_ratios(lag=True)  # set fr dates
-    returns = preprocess.compute_return(split=False)
-    index = preprocess.compute_benchmark(benchmark)
+def compute_alpha(index, returns):
     returns["alpha"] = np.subtract(returns["return"], index)
     return returns["alpha"].to_frame()
 
 
-def compute_beta( benchmark):
-    preprocess = Preprocess(data="fundamental_ratios")
-    index = preprocess.retrieve_benchmark(benchmark)
-    stock = preprocess.retrieve_open_close()
-    index_change = index[benchmark].pct_change()
-    stock_change = stock.pct_change()
+def compute_beta(index, daily_price):
+    benchmark = index.columns.values[0]
+    index_change = index.pct_change()
+    stock_change = daily_price.pct_change()
     for col in stock_change:
         nan_count = stock_change[col].isnull().sum()
         if nan_count > 3:  # remove columns with insufficient data

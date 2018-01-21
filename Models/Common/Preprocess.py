@@ -97,7 +97,7 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
-    def retrieve_open_close(self):
+    def retrieve_open_close(self):  # daily price
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
         df = self.db.query(selection, index='date')  # Type: DataFrame
