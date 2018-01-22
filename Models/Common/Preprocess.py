@@ -137,17 +137,26 @@ class Preprocess:
         symbol_sector["sector"] = symbol_sector["sector"].astype('category')
         return symbol_sector
 
-    def retrieve_benchmark(self, benchmark):
-        start_date = (date.today() - timedelta(days=self.lag)).isoformat()
-        selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' ORDER BY date ASC" % (benchmark, start_date)
+    def retrieve_benchmark(self, benchmark, dates=None):
+        if dates is None:
+            start_date = (date.today() - timedelta(days=self.lag)).isoformat()
+            selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' ORDER BY date ASC" % (benchmark, start_date)
+        else:
+            selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' AND date <= '%s' ORDER BY date ASC"\
+                        % (benchmark, dates[0], dates[1])
         index_series = self.db.query(selection, index='date')  # type: pd.DataFrame
         return index_series
 
-    def compute_return(self, split=False, dset='train'):
+    def compute_return(self, split=False, dset='train', dates=None):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)
         splitPoint = (date.today() - timedelta(days=self.lag/2)).isoformat()
-        if not split:
+        if dates is not None:
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[0]
+            start_df = self.db.query(query1)
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[1]
+            end_df = self.db.query(query2)
+        elif not split:
             query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
             start_df = self.db.query(query1)
             query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
@@ -177,16 +186,22 @@ class Preprocess:
         ret.drop(['start', 'end'], axis=1, inplace=True)
         return ret
 
-    def compute_benchmark(self, benchmark):
-        if self.frdate == "" or self.prdate == "":
-            self.retrieve_fundamental_ratios(lag=True)
-        # get the date of fundamental ratio data
-        query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, self.frdate)
-        start_index = float(self.db.query(query1, index=None)[benchmark][0])
-        query2 = "SELECT date, %s FROM benchmark WHERE date= \
-            (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
-            % benchmark
-        end_index = float(self.db.query(query2, index=None)[benchmark][0])
+    def compute_benchmark(self, benchmark, dates=None):
+        if dates is None:
+            if self.frdate == "" or self.prdate == "":
+                self.retrieve_fundamental_ratios(lag=True)
+            # get the date of fundamental ratio data
+            query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, self.frdate)
+            start_index = float(self.db.query(query1, index=None)[benchmark][0])
+            query2 = "SELECT date, %s FROM benchmark WHERE date= \
+                     (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
+                     % benchmark
+            end_index = float(self.db.query(query2, index=None)[benchmark][0])
+        else:
+            query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, dates[0])
+            start_index = float(self.db.query(query1, index=None)[benchmark][0])
+            query2 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, dates[1])
+            end_index = float(self.db.query(query2, index=None)[benchmark][0])
         return end_index/start_index
 
     def filter_column(self, df):
