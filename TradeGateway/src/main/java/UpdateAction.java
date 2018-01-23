@@ -20,7 +20,7 @@ class UpdateAction {
 
     public static void waitForFlag() { // make it public so it can be tested
         int timeout = 0;
-        while(MainGateway.callbackTracker != 1023 && timeout < MainGateway.updateTimeout) {
+        while(MainGateway.callbackTracker != ((1<<11)-1) && timeout < MainGateway.updateTimeout) {
             Helper.pauseMilli(1);
             timeout++;
         }
@@ -28,7 +28,7 @@ class UpdateAction {
 
     static void updateAllSecurities() {
         String symbol_query = "SELECT symbol FROM security";
-        String genericTicks = "165, 258"; //165:high low  258:fundamental ratios
+        String genericTicks = "165, 258, 456"; //165:high low  258:fundamental ratios  456: IB dividends
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(symbol_query);
         LinkedList<String> allSymbols = Helper.resultToList(resultSet, "symbol");
         String prevSymbol = "";

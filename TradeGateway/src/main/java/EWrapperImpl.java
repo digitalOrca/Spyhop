@@ -42,11 +42,11 @@ public class EWrapperImpl implements EWrapper {
                 CallbackAction.updateTickPrice(symbol, field, price);
                 break;
             case 9: // previous day's close price
-                MainGateway.callbackTracker |= 256;
+                MainGateway.callbackTracker |= (1<<0);
                 CallbackAction.updateOpenClose(false, symbol, price);
                 break;
             case 14: // today's opening price
-                MainGateway.callbackTracker |= 512;
+                MainGateway.callbackTracker |= (1<<1);
                 CallbackAction.updateOpenClose(true, symbol, price);
                 break;
             case 15: //13-week low
@@ -56,7 +56,7 @@ public class EWrapperImpl implements EWrapper {
             case 19: //52-week low
             case 20: //52-week high
             case 21: //90-days average daily volume(mutiple of 100)
-                MainGateway.callbackTracker |= (int)Math.pow(2, (field-14));
+                MainGateway.callbackTracker |= (1<<(field-13));
                 CallbackAction.updateHighLow(symbol, field, price);
                 break;
             default:
@@ -92,7 +92,7 @@ public class EWrapperImpl implements EWrapper {
         switch (field) {
             case 47: // fundamental ratio
                 CallbackAction.updateFundamentalRatios(symbol, value);
-                MainGateway.callbackTracker |= 1;
+                MainGateway.callbackTracker |= (1<<9);
                 break;
             case 32: //bid exchange
                 CallbackAction.updateTickExchange(symbol, "bid_exchange", value);
@@ -102,6 +102,10 @@ public class EWrapperImpl implements EWrapper {
                 break;
             case 45: //last time
                 CallbackAction.updateTickLastTime(symbol, value);
+                break;
+            case 59: // IB dividends
+                Logger.getInstance().log(Log.ACTION, value);
+                MainGateway.callbackTracker |= (1<<10);
                 break;
             case 84: //last exchange
                 CallbackAction.updateTickExchange(symbol, "last_exchange", value);

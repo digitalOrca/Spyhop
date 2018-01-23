@@ -22,7 +22,8 @@ public class MainGateway{
     static boolean realtime = true;  //if Paper trading, fake during RTH or off RTH
 
     /* Update flag */
-    static int callbackTracker = 0; // flag from right to left: 47, 15-21
+    static int callbackTracker = 0; // flag from low to high bit: 9, 14, 15-21, 47, 59
+                                    // 1,1,1,1,1,1,1,1,1,1,1
     static int updateTimeout = 3000; // 3 seconds timeout
     static int reqId_MktData = 10000; // market data request starting id
     static int reqId_HistData = 20000; // historic data request starting id
