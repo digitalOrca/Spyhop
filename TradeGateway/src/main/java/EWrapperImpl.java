@@ -104,7 +104,7 @@ public class EWrapperImpl implements EWrapper {
                 CallbackAction.updateTickLastTime(symbol, value);
                 break;
             case 59: // IB dividends
-                Logger.getInstance().log(Log.ACTION, value);
+                CallbackAction.updateDividend(symbol, value);
                 MainGateway.callbackTracker |= (1<<10);
                 break;
             case 84: //last exchange

@@ -3,13 +3,18 @@
  */
 
 import com.ib.client.HistogramEntry;
+import enums.Log;
 import utils.DatabaseConn;
 import utils.Helper;
+import utils.Logger;
 
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.Date;
 
 class CallbackAction {
 
@@ -296,6 +301,32 @@ class CallbackAction {
         }
         String update = "INSERT INTO high_low(symbol, %s) VALUES('%s', %s) ON CONFLICT (symbol) DO UPDATE SET %s = %s";
         String statement = String.format(update, column, symbol, price, column, price);
+        DatabaseConn.getInstance().execUpdate(statement);
+    }
+
+    static void updateDividend(String symbol, String dividends) {
+        String[] values = dividends.trim().split(",");
+        if (values.length != 4) {
+            Logger.getInstance().log(Log.ERROR, "Incorrect array length:," + dividends);
+            return;
+        }
+        double past_yr = Double.parseDouble(values[0]);
+        double next_yr = Double.parseDouble(values[1]);
+        SimpleDateFormat parser = new SimpleDateFormat("yyyyMMdd");
+        String next_date;
+        try {
+            Date date = parser.parse(values[2]);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            next_date = formatter.format(date);
+        } catch (ParseException e) {
+            Logger.getInstance().log(Log.ERROR, "Invalid date");
+            next_date = "NULL";
+        }
+        double next_amount = Double.parseDouble(values[3]);
+
+        String update = "INSERT INTO dividend (symbol, past_yr, next_yr, next_date, next_amount) " +
+                        "VALUES ('%s', %s, %s, '%s', %s)";
+        String statement = String.format(update, symbol, past_yr, next_yr, next_date, next_amount);
         DatabaseConn.getInstance().execUpdate(statement);
     }
 }
