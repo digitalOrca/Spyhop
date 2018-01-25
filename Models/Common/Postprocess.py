@@ -31,3 +31,20 @@ def compute_beta(index, daily_price):
                 volatility["beta"].loc[col] = beta
     volatility.dropna(axis=0, how='any', inplace=True)
     return volatility
+
+
+def compute_required_return(ret_rf, ret_mkt, beta):
+    req_ret = np.add(np.multiply(beta, (ret_mkt - ret_rf)), ret_rf)
+    return req_ret
+
+
+def compute_dividend_growth(dividends_df):
+    prev_dividends = dividends_df["past_yr"]
+    next_dividends = dividends_df["next_yr"]
+    dividends_df["growth"] = np.multiply(np.subtract(next_dividends, prev_dividends), prev_dividends)
+    return dividends_df["growth"].to_frame()
+
+
+def compute_average_dividend(dividends_df):
+    dividends_df["dividend"] = dividends_df[["past_yr", "next_yr"]].mean(axis=1)  # type:pd.DataFrame
+    return dividends_df["dividend"].to_frame()

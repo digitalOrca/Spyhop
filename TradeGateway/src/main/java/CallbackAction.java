@@ -325,8 +325,11 @@ class CallbackAction {
         double next_amount = Double.parseDouble(values[3]);
 
         String update = "INSERT INTO dividend (symbol, past_yr, next_yr, next_date, next_amount) " +
-                        "VALUES ('%s', %s, %s, '%s', %s)";
-        String statement = String.format(update, symbol, past_yr, next_yr, next_date, next_amount);
+                        "VALUES ('%s', %s, %s, '%s', %s) " +
+                        "ON CONFLICT (symbol) " +
+                        "DO UPDATE SET past_yr = %s, next_yr = %s, next_date = '%s', next_amount = %s";
+        String statement = String.format(update, symbol, past_yr, next_yr, next_date, next_amount,
+                                                         past_yr, next_yr, next_date, next_amount);
         DatabaseConn.getInstance().execUpdate(statement);
     }
 }

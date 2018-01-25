@@ -147,6 +147,11 @@ class Preprocess:
         index_series = self.db.query(selection, index='date')  # type: pd.DataFrame
         return index_series
 
+    def retrieve_dividends(self):
+        selection = "SELECT * FROM dividend"
+        df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
+        return df
+
     def compute_return(self, split=False, dset='train', dates=None):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)
@@ -238,8 +243,8 @@ class Preprocess:
                 outlier_upper = mean + self.outlier * stdev
                 outlier_lower = mean - self.outlier * stdev
                 outlier_counter = ((df[column] > outlier_upper) | (df[column] < outlier_lower)).sum()
-                df[column][df[column] > outlier_upper] = upper
-                df[column][df[column] < outlier_lower] = lower
+                df.loc[df[column] > outlier_upper, column] = upper
+                df.loc[df[column] < outlier_lower, column] = lower
         return df
 
     def scale_data(self, data):

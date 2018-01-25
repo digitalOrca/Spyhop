@@ -26,6 +26,7 @@ class CallbackActionTest {
     @Test
     void test_updateDividend() {
         CallbackAction.updateDividend("TEST", "0.83,0.92,20130219,0.23");
+        CallbackAction.updateDividend("TEST", "0.84,0.91,20130220,0.24");
         String validate_query = "SELECT COUNT(*) FROM dividend WHERE symbol='TEST'";
         ResultSet resultSet = DatabaseConn.getInstance().execQuery(validate_query);
         try {

@@ -54,4 +54,9 @@ class updateActionTest {
         }
     }
 
+    @Test
+    void updateBenchmark() {
+        UpdateAction.updateBenchmark();
+    }
+
 }

@@ -61,6 +61,22 @@ class UpdateAction {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
+
+    static void updateBenchmark() {
+        try {
+            Document doc = Jsoup.connect("https://finance.yahoo.com/quote/%5EGSPC?p=%5EGSPC").get();
+            String[] data = doc.getElementsByAttributeValue("class", "Trsdu(0.3s) ").text().replace(",", "").split(" ");
+            double prev_close = Double.parseDouble(data[0]);
+            double open = Double.parseDouble(data[1]);
+            System.out.println(prev_close + "," + open);
+            String update = "INSERT INTO benchmarks (date, snp500_prev_close, snp500_open) VALUES ('%s', %s, %s) " +
+                            "ON CONFLICT (date) DO UPDATE set snp500_prev_close=%s, snp500_open=%s";
+            String query = String.format(update, Helper.today(), prev_close, open, prev_close, open);
+            DatabaseConn.getInstance().execUpdate(query);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

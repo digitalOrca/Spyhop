@@ -175,6 +175,8 @@ public class MainGateway{
             //}
             Helper.pauseSec(1);
         }
+        System.out.println("============Updating Benchmarks============");
+        UpdateAction.updateBenchmark();
         Logger.getInstance().close();
         System.out.println("============Main Gateway Disconnected============");
         System.exit(0);
