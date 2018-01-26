@@ -82,7 +82,7 @@ class TestPreprocess(TestCase):
         except:
             self.fail()
 
-    def test_compute_benchmark(self):
+    def test_compute_benchmarks(self):
         self.preprocess = Preprocess(data="", lag=7)
         try:
             change = self.preprocess.compute_benchmark("snp500")
@@ -136,3 +136,4 @@ class TestPreprocess(TestCase):
 
     def test_get_data(self):
         pass  # this method is composed of other tested methods
+

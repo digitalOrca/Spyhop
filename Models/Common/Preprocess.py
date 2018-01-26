@@ -101,12 +101,34 @@ class Preprocess:
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
         df = self.db.query(selection, index='date')  # Type: DataFrame
-        df["average"] = df[["lastclose", "open"]].mean(axis=1, skipna=True, numeric_only=True)
+        df["close"] = df["lastclose"].shift(periods=-1)
+        df["average"] = df[["close", "open"]].mean(axis=1, skipna=True, numeric_only=True)  # average of open and close
         df['symbol'] = df['symbol'].astype('category')
         symbols = df["symbol"].unique()
         daily_price = pd.DataFrame(index=df.index.unique())
         for symbol in symbols:
             daily_price[symbol] = df[df["symbol"] == symbol]["average"]
+        return daily_price
+
+    def retrieve_open_close_new(self):  # daily price
+        start_date = (date.today() - timedelta(days=self.lag)).isoformat()
+        selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
+        df = self.db.query(selection, index='date')  # Type: DataFrame
+        df['symbol'] = df['symbol'].astype('category')
+        symbols = df["symbol"].unique()
+        multi_columns = []
+        for symbol in symbols:
+            for col in ["open", "close", "average"]:
+                multi_columns.append((symbol, col))
+        columns = pd.MultiIndex.from_tuples(multi_columns, names=["symbol", "field"])
+        daily_price = pd.DataFrame(columns=columns)
+        for symbol in symbols:
+            filtered = df.loc[df["symbol"] == symbol]
+            filtered["close"] = filtered["lastclose"].shift(-1)
+            daily_price[(symbol, "open")] = filtered["open"]
+            daily_price[(symbol, "close")] = filtered["close"]  # shifted close
+            daily_price[(symbol, "average")] = filtered[["open", "close"]].mean(axis=1)
+        print(daily_price)  #TODO: IMCOMPLETE
         return daily_price
 
     def retrieve_high_low(self):
@@ -138,14 +160,20 @@ class Preprocess:
         return symbol_sector
 
     def retrieve_benchmark(self, benchmark, dates=None):
+        col_close = benchmark + "_prev_close"
+        col_open = benchmark + "_open"
         if dates is None:
             start_date = (date.today() - timedelta(days=self.lag)).isoformat()
-            selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' ORDER BY date ASC" % (benchmark, start_date)
+            selection = "SELECT date, %s, %s FROM benchmarks WHERE date >= '%s' ORDER BY date ASC"\
+                        % (col_close, col_open, start_date)
         else:
-            selection = "SELECT date, %s FROM benchmark WHERE date >= '%s' AND date <= '%s' ORDER BY date ASC"\
-                        % (benchmark, dates[0], dates[1])
+            selection = "SELECT date, %s, %s FROM benchmarks WHERE date >= '%s' AND date <= '%s' ORDER BY date ASC"\
+                        % (col_close, col_open, dates[0], dates[1])
         index_series = self.db.query(selection, index='date')  # type: pd.DataFrame
-        return index_series
+        index_series["open"] = index_series[col_open]
+        index_series["close"] = index_series[col_close].shift(periods=-1)
+        index_series.dropna(axis=0, how='any', inplace=True)
+        return index_series[["open", "close"]]
 
     def retrieve_dividends(self):
         selection = "SELECT * FROM dividend"
@@ -187,26 +215,27 @@ class Preprocess:
         start_df.drop(["lastclose", "open"], axis=1, inplace=True)
         end_df.drop(["lastclose", "open"], axis=1, inplace=True)
         ret = pd.concat([start_df, end_df], axis=1, join="inner")  # type: pd.DataFrame
-        ret["return"] = (ret["end"] / ret["start"])
+        ret["return"] = np.divide(ret["end"], ret["start"])
         ret.drop(['start', 'end'], axis=1, inplace=True)
         return ret
 
     def compute_benchmark(self, benchmark, dates=None):
+        col_close = benchmark + "_prev_close"
+        col_open = benchmark + "_open"
         if dates is None:
             if self.frdate == "" or self.prdate == "":
                 self.retrieve_fundamental_ratios(lag=True)
             # get the date of fundamental ratio data
-            query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, self.frdate)
-            start_index = float(self.db.query(query1, index=None)[benchmark][0])
-            query2 = "SELECT date, %s FROM benchmark WHERE date= \
-                     (SELECT DISTINCT date FROM benchmark ORDER BY date DESC LIMIT 1)"\
-                     % benchmark
-            end_index = float(self.db.query(query2, index=None)[benchmark][0])
+            query1 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_close, self.frdate)
+            start_index = float(self.db.query(query1, index=None)[col_close][0])
+            query2 = "SELECT date, %s FROM benchmarks WHERE date= \
+                     (SELECT DISTINCT date FROM benchmarks ORDER BY date DESC LIMIT 1)" % col_open
+            end_index = float(self.db.query(query2, index=None)[col_open][0])
         else:
-            query1 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, dates[0])
-            start_index = float(self.db.query(query1, index=None)[benchmark][0])
-            query2 = "SELECT date, %s FROM benchmark WHERE date='%s'" % (benchmark, dates[1])
-            end_index = float(self.db.query(query2, index=None)[benchmark][0])
+            query1 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_close, dates[0])
+            start_index = float(self.db.query(query1, index=None)[col_close][0])
+            query2 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_open, dates[1])
+            end_index = float(self.db.query(query2, index=None)[col_open][0])
         return end_index/start_index
 
     def filter_column(self, df):
