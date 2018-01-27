@@ -11,8 +11,9 @@ def compute_alpha(index, returns):
 
 def compute_beta(index, daily_price):
     index_change = np.subtract(np.divide(index["close"], index["open"]), 1).to_frame(name="benchmark")
-    stock_change = daily_price.pct_change()
-    #stock_change = daily_price.loc[:, (slice(None), ["open", "close"])]
+    stock_change = np.subtract(np.divide(daily_price.xs('close', level='field', axis=1),
+                                         daily_price.xs('open', level='field', axis=1)),
+                               1)
 
     for col in stock_change:
         nan_count = stock_change[col].isnull().sum()

@@ -97,7 +97,7 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
-    def retrieve_open_close(self):  # daily price
+    def retrieve_open_close_old(self):  # daily price
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
         df = self.db.query(selection, index='date')  # Type: DataFrame
@@ -110,7 +110,7 @@ class Preprocess:
             daily_price[symbol] = df[df["symbol"] == symbol]["average"]
         return daily_price
 
-    def retrieve_open_close_new(self):  # daily price
+    def retrieve_open_close(self):  # daily price
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
         df = self.db.query(selection, index='date')  # Type: DataFrame
@@ -123,12 +123,10 @@ class Preprocess:
         columns = pd.MultiIndex.from_tuples(multi_columns, names=["symbol", "field"])
         daily_price = pd.DataFrame(columns=columns)
         for symbol in symbols:
-            filtered = df.loc[df["symbol"] == symbol]
-            filtered["close"] = filtered["lastclose"].shift(-1)
-            daily_price[(symbol, "open")] = filtered["open"]
-            daily_price[(symbol, "close")] = filtered["close"]  # shifted close
-            daily_price[(symbol, "average")] = filtered[["open", "close"]].mean(axis=1)
-        print(daily_price)  #TODO: IMCOMPLETE
+            mask = df["symbol"] == symbol
+            daily_price[(symbol, "close")] = df.loc[mask, "lastclose"].shift(-1)
+            daily_price[(symbol, "open")] = df.loc[mask, "open"]
+            daily_price[(symbol, "average")] = daily_price.loc[:, (symbol, ["open", "close"])].mean(axis=1)
         return daily_price
 
     def retrieve_high_low(self):
@@ -183,33 +181,27 @@ class Preprocess:
     def compute_return(self, split=False, dset='train', dates=None):
         if self.frdate == "" or self.prdate == "":
             self.retrieve_fundamental_ratios(lag=True)
-        splitPoint = (date.today() - timedelta(days=self.lag/2)).isoformat()
+        split_point = (date.today() - timedelta(days=self.lag/2)).isoformat()
         if dates is not None:
             query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[0]
-            start_df = self.db.query(query1)
             query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[1]
-            end_df = self.db.query(query2)
         elif not split:
             query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
-            start_df = self.db.query(query1)
             query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
                 (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-            end_df = self.db.query(query2)
         elif dset == 'train':
             query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
-            start_df = self.db.query(query1)
             query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                     (SELECT DISTINCT date FROM open_close WHERE date < '%s' ORDER BY date DESC LIMIT 1)" % splitPoint
-            end_df = self.db.query(query2)
+                     (SELECT DISTINCT date FROM open_close WHERE date < '%s' ORDER BY date DESC LIMIT 1)" % split_point
         elif dset == 'predict':  # predict
             query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                     (SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % splitPoint
-            start_df = self.db.query(query1)
+                     (SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % split_point
             query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
                             (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-            end_df = self.db.query(query2)
         else:
             raise Exception('Invalid value for dset[train/predict] parameter!')
+        start_df = self.db.query(query1)
+        end_df = self.db.query(query2)
         start_df['start'] = start_df.mean(axis=1, numeric_only=True)
         end_df['end'] = end_df.mean(axis=1, numeric_only=True)
         start_df.drop(["lastclose", "open"], axis=1, inplace=True)

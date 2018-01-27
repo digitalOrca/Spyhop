@@ -19,7 +19,7 @@ duration = len(daily_price)
 symbolSector = preprocess.retrieve_symbol_sector()
 sectors = symbolSector["sector"].unique()
 # load market caps
-mktcap = preprocess.retrieve_mkt_caps(daily_price.columns).dropna(axis=0, how='any')
+mktcap = preprocess.retrieve_mkt_caps(daily_price.columns.get_level_values("symbol").values).dropna(axis=0, how='any')
 mktcap["size"] = pd.Series(data="small", index=mktcap.index)
 mktcap.loc[mktcap["mktcap"] > 2000, "size"] = "medium"
 mktcap.loc[mktcap["mktcap"] > 10000, "size"] = "large"
@@ -105,6 +105,7 @@ sliders_dict = {
 
 summaries = []
 for i in range(steps):
+    print("summarizing step:", i)
     start = i
     end = -steps + 1 + i if (steps - i > 1) else duration
     price_frame = daily_price.iloc[start: end]
@@ -128,16 +129,18 @@ for i in range(steps):
 valid_index = summaries[0].index.values
 i = 1  # keep track of summaries index
 for summary in summaries[1:]:
+    print("post-processing summaries:", i)
     drop_list = list(set(summary.index.values) - set(valid_index))
     append_list = list(set(valid_index) - set(summary.index.values))
     summary.drop(labels=drop_list, axis=0, inplace=True)
     summary = summary.append(summaries[i - 1].reindex(append_list))  # loc deprecatede by reindex
-    summary = summary.reindex(valid_index)  # garantee index order
+    summary = summary.reindex(valid_index)  # guarantee index order
     summaries[i] = summary
     i += 1
 
 i = 0
 for summary in summaries:
+    print("Framing summary:", i)
     frame = {'data': [], 'name': str(i)}
     for sector in sectors:
         color = sector_colors[sector]
@@ -149,7 +152,8 @@ for summary in summaries:
                                text=subset.index,
                                mode='markers',
                                marker=dict(size=cap_sizes[cap], color=color,
-                                           line=dict(width=1, color='#EEEEEE')
+                                           opacity=0.75
+                                           #line=dict(width=1, color='#EEEEEE')
                                            )
                                )
             frame['data'].append(group)
