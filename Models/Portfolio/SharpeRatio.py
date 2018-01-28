@@ -35,7 +35,13 @@ class SharpeRatio:
     """
     def computeCovarMean(self):  # correlation matrix
         if self.covariance is None or self.mean is None:  # avoid duplicate query
-            daily_change = self.preprocess.get_data()[self.asset].pct_change()
+
+            asset_data = self.preprocess.retrieve_open_close()[self.asset]
+            daily_change = np.subtract(np.divide(asset_data.xs("close", level="field", axis=1),
+                                                 asset_data.xs("open", level="field", axis=1)), 1)
+            #print(stock_change)
+            #daily_change = self.preprocess.get_data()[self.asset].pct_change()
+
             self.covariance = daily_change.cov()
             self.mean = daily_change.mean().subtract(self.risk_free/252)
         return self.covariance, self.mean

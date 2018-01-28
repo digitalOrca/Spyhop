@@ -12,13 +12,16 @@ preprocess = Preprocess(data="open_close", lag=45)
 benchmark = "snp500"
 
 # pre-load all data
+print("retrieving open_close data...")
 daily_price = preprocess.retrieve_open_close()
 dates = daily_price.index.values
 duration = len(daily_price)
 # sectors
+print("retrieving symbol sectors data...")
 symbolSector = preprocess.retrieve_symbol_sector()
 sectors = symbolSector["sector"].unique()
 # load market caps
+print("retrieving market caps data...")
 mktcap = preprocess.retrieve_mkt_caps(daily_price.columns.get_level_values("symbol").values).dropna(axis=0, how='any')
 mktcap["size"] = pd.Series(data="small", index=mktcap.index)
 mktcap.loc[mktcap["mktcap"] > 2000, "size"] = "medium"
@@ -42,8 +45,8 @@ figure = {
 }
 
 # fill in most of layout
-figure['layout']['xaxis'] = {'title': 'Alpha'}
-figure['layout']['yaxis'] = {'title': 'Beta'}
+figure['layout']['xaxis'] = {'title': 'Alpha', 'range': [-0.5, 0.5]}
+figure['layout']['yaxis'] = {'title': 'Beta', 'range': [-5, 5]}
 figure['layout']['hovermode'] = 'closest'
 figure['layout']['sliders'] = {
     'args': [

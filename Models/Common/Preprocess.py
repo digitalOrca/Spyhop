@@ -10,7 +10,7 @@ from datetime import timedelta
 
 class Preprocess:
 
-    def __init__(self, data, lag=30, density=0.75, limit=3, outlier=4):
+    def __init__(self, data=None, lag=30, density=0.75, limit=3, outlier=4):
         self.db = DBConnect()
         self.data = data
         self.lag = lag
@@ -97,19 +97,6 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
-    def retrieve_open_close_old(self):  # daily price
-        start_date = (date.today() - timedelta(days=self.lag)).isoformat()
-        selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
-        df = self.db.query(selection, index='date')  # Type: DataFrame
-        df["close"] = df["lastclose"].shift(periods=-1)
-        df["average"] = df[["close", "open"]].mean(axis=1, skipna=True, numeric_only=True)  # average of open and close
-        df['symbol'] = df['symbol'].astype('category')
-        symbols = df["symbol"].unique()
-        daily_price = pd.DataFrame(index=df.index.unique())
-        for symbol in symbols:
-            daily_price[symbol] = df[df["symbol"] == symbol]["average"]
-        return daily_price
-
     def retrieve_open_close(self):  # daily price
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
@@ -126,7 +113,9 @@ class Preprocess:
             mask = df["symbol"] == symbol
             daily_price[(symbol, "close")] = df.loc[mask, "lastclose"].shift(-1)
             daily_price[(symbol, "open")] = df.loc[mask, "open"]
-            daily_price[(symbol, "average")] = daily_price.loc[:, (symbol, ["open", "close"])].mean(axis=1)
+            daily_price[(symbol, "average")] = pd.concat([df.loc[mask, "lastclose"].shift(-1),
+                                                          df.loc[mask, "open"]], axis=1).mean(axis=1, skipna=True)
+        daily_price.sort_index(axis=0, level=0)
         return daily_price
 
     def retrieve_high_low(self):
