@@ -7,7 +7,7 @@ from SharpeRatio import SharpeRatio
 from InformationRation import InformationRatio
 
 if __name__ == "__main__":
-    asset = ["NVDA", "AMZN", "GS", "ABT"]
+    asset = ["SSL", "CAH", "STX", "PCLN", "IT"]
     samples = 50000
     result = pd.DataFrame(index=range(samples), columns=["return", "stdev", "IR"])
     sharpe = SharpeRatio(asset)

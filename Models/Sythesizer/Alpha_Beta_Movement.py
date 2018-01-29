@@ -136,7 +136,7 @@ for summary in summaries[1:]:
     drop_list = list(set(summary.index.values) - set(valid_index))
     append_list = list(set(valid_index) - set(summary.index.values))
     summary.drop(labels=drop_list, axis=0, inplace=True)
-    summary = summary.append(summaries[i - 1].reindex(append_list))  # loc deprecatede by reindex
+    summary = summary.append(summaries[i - 1].reindex(append_list))  # loc deprecated by reindex
     summary = summary.reindex(valid_index)  # guarantee index order
     summaries[i] = summary
     i += 1

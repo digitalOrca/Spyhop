@@ -9,7 +9,8 @@ Description:
 import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
-import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+import plotly.offline as po
 
 
 class SharpeRatio:
@@ -39,9 +40,6 @@ class SharpeRatio:
             asset_data = self.preprocess.retrieve_open_close()[self.asset]
             daily_change = np.subtract(np.divide(asset_data.xs("close", level="field", axis=1),
                                                  asset_data.xs("open", level="field", axis=1)), 1)
-            #print(stock_change)
-            #daily_change = self.preprocess.get_data()[self.asset].pct_change()
-
             self.covariance = daily_change.cov()
             self.mean = daily_change.mean().subtract(self.risk_free/252)
         return self.covariance, self.mean
@@ -68,42 +66,64 @@ class SharpeRatio:
     def searchReturnFrontier(self, iters):
         results = np.zeros((3, iters))
         compositions = {}
+        labels = []
         for i in range(iters):
             w = np.random.random(len(self.asset))
             w /= np.sum(w)
             random_portfolio = pd.Series(w, index=self.asset)
             compositions[i] = random_portfolio
+            labels.append(random_portfolio.to_string())
             ret, stdev = self.evaluatePortfolio(random_portfolio)
             results[0, i] = ret
             results[1, i] = stdev
             results[2, i] = ret / stdev
             print("evaluate portfolio:", i, " ret:", ret, "stdev:", stdev)
         results_frame = pd.DataFrame(results.T, columns=['ret', 'stdev', 'sharpe'])
-        plt.scatter(results_frame.stdev, results_frame.ret, c=results_frame.sharpe, cmap='RdYlBu')
-        plt.colorbar()
 
         max_sharpe_index = results_frame['sharpe'].idxmax()
-        max_sharpe_port = results_frame.iloc[max_sharpe_index]
-        self.max_sharpe_comp = compositions[max_sharpe_index]
         min_vol_index = results_frame['stdev'].idxmin()
-        min_vol_port = results_frame.iloc[min_vol_index]
-        self.min_vol_comp = compositions[min_vol_index]
-        print("==========Stock Stats==========")
-        print(self.mean)
-        print("==========Maximum Sharpe Ratio Portfolio==========")
-        print("Sharpe: ", results_frame['sharpe'].iloc[max_sharpe_index])
-        print(self.max_sharpe_comp)
-        print("==========Minimum Volatility Portfolio==========")
-        print("Sharpe: ", results_frame['sharpe'].iloc[min_vol_index])
-        print(self.min_vol_comp)
-        # plot red star to highlight position of portfolio with highest Sharpe Ratio
-        plt.scatter(max_sharpe_port[1], max_sharpe_port[0], marker=(5, 1, 0), color='r', s=250)
-        # plot green star to highlight position of minimum variance portfolio
-        plt.scatter(min_vol_port[1], min_vol_port[0], marker=(5, 1, 0), color='g', s=250)
-        plt.show()
+        markers = results_frame.iloc[[max_sharpe_index, min_vol_index]]
+        return markers, labels, results_frame
 
 
 if __name__ == "__main__":
-    stocks = ["NVDA", "AMZN", "GS", "ABT"]
+    stocks = ["SSL", "CAH", "STX", "PCLN", "IT"]
     sr = SharpeRatio(stocks)
-    sr.searchReturnFrontier(50000)
+    markers, labels, result = sr.searchReturnFrontier(50000)
+
+    dist = go.Scatter(x=result["stdev"], y=result["ret"],
+                      name="all samples",
+                      mode='markers',
+                      marker=dict(
+                          size=5,
+                          color='#2E86C1',
+                      ),
+                      text=labels)
+
+    highlight = go.Scatter(x=markers["stdev"], y=markers["ret"],
+                           name="max sharpe, min volatility",
+                           mode='markers',
+                           marker=dict(
+                               size=10,
+                               color='#E74C3C',
+                           ),
+                           text=labels)
+
+    data = [dist, highlight]
+
+    layout = go.Layout(
+        title='Portfolio Composition',
+        hovermode='closest',
+        xaxis=dict(
+            title='Risk',
+        ),
+        yaxis=dict(
+            title='Return',
+        ),
+        showlegend=False
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+
+    po.plot(fig, filename="/home/meng/Projects/ResultArchive/Portfolio_Sharpe.html")
+
