@@ -34,7 +34,7 @@ mktcap.loc[mktcap["mktcap"] > 2000, "size"] = "medium"
 mktcap.loc[mktcap["mktcap"] > 10000, "size"] = "large"
 
 print("computing summary...")
-summary = pd.concat([beta["reqRet"], growth, dividend, trade_price, symbolSector], axis=1, join='inner')
+summary = pd.concat([beta["reqRet"], growth, dividend, trade_price, symbolSector, mktcap], axis=1, join='inner')
 summary["ddm"] = np.divide(summary["dividend"], np.subtract(summary["reqRet"], summary["growth"]))  # dividend discount
 print(summary)
 
@@ -43,17 +43,22 @@ colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
           '#46f0f0', '#f032e6', '#d2f53c', '#fabebe', '#008080', '#e6beff']
 sector_colors = dict(zip(sectors, colors))
 
+# marker size
+cap_sizes = {"large": 8, "medium": 5, "small": 3}
+
 data = []
 for sector in sectors:
     sector_set = summary[summary["sector"] == sector]
     color = sector_colors[sector]
-    group = go.Scatter(x=sector_set["ddm"].values, y=sector_set["trade_price"].values,
-                       name=sector,
-                       text=summary.index.values,
-                       mode='markers',
-                       marker=dict(size=10, color=color)
-                       )
-    data.append(group)
+    for cap in ["large", "medium", "small"]:
+        subset = sector_set[sector_set["size"] == cap]
+        group = go.Scatter(x=subset["ddm"].values, y=subset["trade_price"].values,
+                           name=sector,
+                           text=summary.index.values,
+                           mode='markers',
+                           marker=dict(size=cap_sizes[cap], color=color)
+                           )
+        data.append(group)
 
 
 layout = go.Layout(

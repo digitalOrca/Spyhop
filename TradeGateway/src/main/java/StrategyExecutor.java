@@ -8,8 +8,9 @@ import utils.Helper;
 import utils.Logger;
 import utils.SocketComm;
 
-import java.io.FileReader;
+import java.io.*;
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Created by meng on 6/7/17.
@@ -36,18 +37,28 @@ public class StrategyExecutor implements Runnable {
                     new FileReader("/home/meng/Projects/NeuroTrader/TradeQueue.json"));
             JSONArray buyList = (JSONArray)jsonObject.get("BUY");
             JSONArray sellList = (JSONArray)jsonObject.get("SELL");
-            for (Object jsonObj : buyList) {
+            //for (Object jsonObj : buyList) {
+            for (Iterator<Object> iter = buyList.iterator(); iter.hasNext();) {
+                Object jsonObj = iter.next();
                 String symbol =  (String)((JSONObject)jsonObj).get("symbol");
                 Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
                 OrderTracer orderTracer = new OrderTracer(symbol, Action.BUY, quantity);
                 orderBook.put(symbol, orderTracer);
+                iter.remove();  // clear queue
             }
-            for (Object jsonObj : sellList) {
+            //for (Object jsonObj : sellList) {
+            for (Iterator<Object> iter = sellList.iterator(); iter.hasNext();) {
+                Object jsonObj = iter.next();
                 String symbol =  (String)((JSONObject)jsonObj).get("symbol");
                 Integer quantity = (int)(long)((JSONObject)jsonObj).get("quantity");
                 OrderTracer orderTracer = new OrderTracer(symbol, Action.SELL, quantity);
                 orderBook.put(symbol, orderTracer);
+                iter.remove(); // clear queue
             }
+            FileWriter fw = new FileWriter("/home/meng/Projects/NeuroTrader/TradeQueue.json");
+            fw.write(jsonObject.toJSONString());
+            fw.flush();
+            fw.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -65,6 +76,7 @@ public class StrategyExecutor implements Runnable {
         Logger.getInstance().log(Log.ACTION, "ORDER,Placed," + symbol + "," + orderTracer.getAction().toString() + "," + orderTracer.getQuantity());
         MainGateway.client.getClientSocket().placeOrder(id, contract, order);
     }
+
 
     @Override
     public void run() {
