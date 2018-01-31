@@ -70,7 +70,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_compute_return(self):
-        self.preprocess = Preprocess(data="", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df1 = self.preprocess.compute_return(split=False)  # non-split is a super set of split returns
             df2 = self.preprocess.compute_return(split=True, dset='train')
@@ -83,7 +83,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_compute_benchmarks(self):
-        self.preprocess = Preprocess(data="", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             change = self.preprocess.compute_benchmark("snp500")
             if not isinstance(change, float):
@@ -92,7 +92,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_filter_column(self):
-        self.preprocess = Preprocess(data="", density=0.5, lag=7)
+        self.preprocess = Preprocess(density=0.5, lag=7)
         data = [('symbol', ['A', 'B', 'C', 'D']),
                 ('index', [150, 200, 50, 10]),
                 ('date', [200, 210, 90, 20]),
@@ -105,7 +105,7 @@ class TestPreprocess(TestCase):
         self.assertEqual(len(filtered.columns), 2)  # only symbol and dense will survive
 
     def test_fill_missing_value(self):
-        self.preprocess = Preprocess(data="", lag=7)
+        self.preprocess = Preprocess(lag=7)
         data = [('x', [40, 30, np.NaN, np.NaN]),
                 ('y', [np.NaN, 60, 50, 60])]
         df = pd.DataFrame.from_items(data)
@@ -113,7 +113,7 @@ class TestPreprocess(TestCase):
         self.assertFalse(filled.isnull().values.any())
 
     def test_cap_outlier(self):
-        self.preprocess = Preprocess(data="", lag=7, limit=3, outlier=4)
+        self.preprocess = Preprocess(lag=7, limit=3, outlier=4)
         data = [('x', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 8]),
                 ('y', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 50]),
                 ('z', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 10000])]
@@ -124,7 +124,7 @@ class TestPreprocess(TestCase):
         self.assertTrue(capped['z'].max() < dfc['z'].max())
 
     def test_scale_data(self):
-        self.preprocess = Preprocess(data="", lag=7)
+        self.preprocess = Preprocess(lag=7)
         data = [('x', [1, 2, 3, 4]),
                 ('y', [51, -6, 43, -8])]
         df = pd.DataFrame.from_items(data)

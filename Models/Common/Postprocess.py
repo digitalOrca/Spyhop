@@ -12,9 +12,7 @@ def compute_alpha(index, returns):
 def compute_beta(index, daily_price):
     index_change = np.subtract(np.divide(index["close"], index["open"]), 1).to_frame(name="benchmark")
     stock_change = np.subtract(np.divide(daily_price.xs('close', level='field', axis=1),
-                                         daily_price.xs('open', level='field', axis=1)),
-                               1)
-
+                                         daily_price.xs('open', level='field', axis=1)), 1)
     for col in stock_change:
         nan_count = stock_change[col].isnull().sum()
         if nan_count > 3:  # remove columns with insufficient data

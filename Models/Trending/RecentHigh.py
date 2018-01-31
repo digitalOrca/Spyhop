@@ -11,13 +11,12 @@ from sklearn.neighbors import KernelDensity
 class RecentHigh:
 
     def __init__(self):
-        self.preprocess1 = Preprocess(data='open_close')
-        self.preprocess2 = Preprocess(data='high_low')
-    
+        self.preprocess = Preprocess(data='open_close')
+
     def prepData(self, tolerance=3):
-        daily_price = self.preprocess1.get_data()
-        recent_average = daily_price.tail(tolerance).mean(axis=0, skipna=True).to_frame(name="recent")
-        high_low = self.preprocess2.get_data()
+        daily_price = self.preprocess.get_data()
+        recent_average = daily_price.iloc[-1].xs("average", level="field", axis=0).transpose().to_frame(name="recent")
+        high_low = self.preprocess.retrieve_high_low()
         return recent_average, high_low
 
     def computeRatio(self, recent_average, high_low):
@@ -74,6 +73,8 @@ class RecentHigh:
 if __name__ == "__main__":
     rh = RecentHigh()
     r, hl = rh.prepData()
+    print(r)
+    print(hl)
     ratios = rh.computeRatio(r, hl)
     #rh.visualizeDistribution(ratios)
     rh.visualizeKDE(ratios)
