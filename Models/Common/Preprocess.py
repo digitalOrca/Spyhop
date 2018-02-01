@@ -309,6 +309,3 @@ class Preprocess:
         elif self.data == 'open_close':
             raw_data = self.retrieve_open_close()
             return raw_data
-        elif self.data == 'high_low':
-            raw_data = self.retrieve_high_low()
-            return raw_data

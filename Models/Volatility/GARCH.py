@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from scipy import optimize
 from scipy import stats
 from Preprocess import Preprocess
+import Postprocess as post
 
 
 class GARCH:
@@ -19,7 +20,7 @@ class GARCH:
     """constructor
     """
     def __init__(self, p, q):
-        self.preprocess = Preprocess(data='open_close')
+        self.preprocess = Preprocess(lag=60)
         self.p = p  # order of residual term
         self.q = q  # order of variance term
         self.omega = np.array([])
@@ -33,9 +34,10 @@ class GARCH:
             formatedData: the DataFrame with processed residual data
     """
     def prepData(self):
-        daily_log_change = self.preprocess.get_data().pct_change().fillna(0).add(1).applymap(lambda x: np.log(x))
-        mu = daily_log_change.mean()
-        residual = daily_log_change.subtract(mu)
+        daily_price = self.preprocess.retrieve_open_close()
+        daily_change = post.compute_daily_change(daily_price).fillna(0)
+        mu = daily_change.mean()
+        residual = daily_change.subtract(mu)
         return residual
 
     """
@@ -113,7 +115,7 @@ class GARCH:
 
 
 if __name__ == "__main__":
-    garch = GARCH(2, 2)
+    garch = GARCH(1, 1)
     data = garch.prepData()
     garch.optimizeParameters(data)
     plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")

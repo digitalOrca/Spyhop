@@ -8,7 +8,7 @@ import plotly.offline as po
 import plotly.graph_objs as go
 
 
-preprocess = Preprocess(data="open_close", lag=45)
+preprocess = Preprocess(lag=60)
 benchmark = "snp500"
 
 # pre-load all data
