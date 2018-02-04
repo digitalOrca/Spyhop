@@ -18,7 +18,7 @@ class SharpeRatio:
     """constructor
     """
     def __init__(self, asset, risk_free=0):
-        self.preprocess = Preprocess(data='open_close')
+        self.preprocess = Preprocess()
         self.asset = asset
         self.risk_free = risk_free
         self.covariance = None  # type: pd.DataFrame

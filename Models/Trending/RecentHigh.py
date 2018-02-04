@@ -11,7 +11,7 @@ from sklearn.neighbors import KernelDensity
 class RecentHigh:
 
     def __init__(self):
-        self.preprocess = Preprocess(data='open_close')
+        self.preprocess = Preprocess()
 
     def prepData(self, tolerance=3):
         daily_price = self.preprocess.get_data()
