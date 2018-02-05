@@ -16,7 +16,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_ticks(self):
-        self.preprocess = Preprocess(data="ticks", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df = self.preprocess.retrieve_ticks(lag=True)
             if not isinstance(df, pd.DataFrame) and not df.empty:
@@ -34,7 +34,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_open_close(self):
-        self.preprocess = Preprocess(data="open_close", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df = self.preprocess.retrieve_open_close()
             if not isinstance(df, pd.DataFrame) and not df.empty:
@@ -52,7 +52,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_dividends(self):
-        self.preprocess = Preprocess(data="open_close", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df = self.preprocess.retrieve_dividends()
             if not isinstance(df, pd.DataFrame) and not df.empty:
@@ -61,7 +61,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_benchmark(self):
-        self.preprocess = Preprocess(data="open_close", lag=30)
+        self.preprocess = Preprocess(lag=30)
         try:
             df = self.preprocess.retrieve_benchmark("snp500")
             if not isinstance(df, pd.DataFrame) and not df.empty:
