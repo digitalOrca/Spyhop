@@ -21,7 +21,7 @@ class MoneyFlow:
     Constructor
     """
     def __init__(self, lag=30):
-        self.preprocess = Preprocess(data='bars', lag=lag)
+        self.preprocess = Preprocess(lag=lag)
 
     """prepareData
     Description:
@@ -33,7 +33,7 @@ class MoneyFlow:
     """
     def prepareData(self, lag=True):
         print("retrieving bar data...")
-        df = self.preprocess.get_data(lag=lag, dset="train_validate")
+        df = self.preprocess.retrieve_bars(split=True, lag=lag)
         sequences = {}
         count = 0
         for symbol in (df.index).unique().values:

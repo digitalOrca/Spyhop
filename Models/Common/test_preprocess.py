@@ -25,7 +25,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_bars(self):
-        self.preprocess = Preprocess(data="bars", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df = self.preprocess.retrieve_bars()
             if not isinstance(df, pd.DataFrame) and not df.empty:
@@ -43,7 +43,7 @@ class TestPreprocess(TestCase):
             self.fail()
 
     def test_retrieve_mkt_caps(self):
-        self.preprocess = Preprocess(data="mktcaps", lag=7)
+        self.preprocess = Preprocess(lag=7)
         try:
             df = self.preprocess.retrieve_mkt_caps(["GE", "MMM", "APPL"])
             if not isinstance(df, pd.DataFrame) and not df.empty:
