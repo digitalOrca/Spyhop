@@ -14,7 +14,7 @@ class InformationRatio:
         self.index = None
 
     def computeInformationRatio(self, portfolio):
-        returns = self.preprocess.compute_return(split=False)
+        returns = self.preprocess.retrieve_return()
         index = self.preprocess.compute_benchmark("snp500")
         if self.alpha is None:
             alpha = post.compute_alpha(index, returns).loc[portfolio.keys()]["alpha"].values

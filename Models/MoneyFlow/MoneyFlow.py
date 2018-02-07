@@ -88,7 +88,8 @@ class MoneyFlow:
         visualize normalized money flow imbalance and the return
     """
     def visualizeFlowReturn(self, normalizedFlow):
-        ar = self.preprocess.compute_return(split=True, dset='train')  # stock return during next period
+        #ar = self.preprocess.compute_return(split=True, dset='train')  # stock return during next period
+        ar = self.preprocess.retrieve_return()
         ar.set_index(pd.Series(data=ar.index).astype('category'))
         print(ar)
         flow_return = pd.concat([normalizedFlow, ar], axis=1, join='inner')

@@ -69,15 +69,11 @@ class TestPreprocess(TestCase):
         except:
             self.fail()
 
-    def test_compute_return(self):
+    def test_retrieve_return(self):
         self.preprocess = Preprocess(lag=7)
         try:
-            df1 = self.preprocess.compute_return(split=False)  # non-split is a super set of split returns
-            df2 = self.preprocess.compute_return(split=True, dset='train')
-            df3 = self.preprocess.compute_return(split=True, dset='predict')
-            if not isinstance(df1, pd.DataFrame) and not df1.empty and \
-                    not isinstance(df2, pd.DataFrame) and not df2.empty and \
-                    not isinstance(df3, pd.DataFrame) and not df3.empty:
+            df1 = self.preprocess.retrieve_return()  # non-split is a super set of split returns
+            if not isinstance(df1, pd.DataFrame) and not df1.empty:
                 raise Exception
         except:
             self.fail()

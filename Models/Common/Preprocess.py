@@ -167,28 +167,21 @@ class Preprocess:
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
         return df
 
-    def compute_return(self, split=False, dset='train', dates=None):
-        if self.frdate == "" or self.prdate == "":
-            self.retrieve_fundamental_ratios(lag=True)
-        split_point = (date.today() - timedelta(days=self.lag/2)).isoformat()
-        if dates is not None:
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[0]
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % dates[1]
-        elif not split:
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-        elif dset == 'train':
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % self.frdate
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                     (SELECT DISTINCT date FROM open_close WHERE date < '%s' ORDER BY date DESC LIMIT 1)" % split_point
-        elif dset == 'predict':  # predict
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                     (SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % split_point
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date=\
-                            (SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+    def retrieve_return(self, date1=None, date2=None):
+        if date1 is None:
+            start = (date.today() - timedelta(days=self.lag)).isoformat()
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
+                     "(SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" \
+                     % start
         else:
-            raise Exception('Invalid value for dset[train/predict] parameter!')
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date1
+
+        if date2 is None:
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
+                     "(SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+        else:
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date2
+
         start_df = self.db.query(query1)
         end_df = self.db.query(query2)
         start_df['start'] = start_df.mean(axis=1, numeric_only=True)

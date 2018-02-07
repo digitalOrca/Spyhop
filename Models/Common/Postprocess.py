@@ -4,6 +4,18 @@ import numpy as np
 import pandas as pd
 
 
+def drop_sparse_columns(df, threshold):
+    rows_count = len(df)
+    weak_columns = []
+    for column in df:
+        missing = df[column].isnull().sum()
+        density = 1.0 - (float(missing) / float(rows_count))
+        if density < threshold:
+            weak_columns.append(column)
+    df.drop(weak_columns, axis=1, inplace=True)
+    return df
+
+
 def compute_alpha(index, returns):
     returns["alpha"] = np.subtract(returns["return"], index)
     return returns["alpha"].to_frame()

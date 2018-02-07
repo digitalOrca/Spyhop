@@ -100,7 +100,7 @@ class LinearRegression:
         groupAR: group average returns
     """
     def computeAR(self, groupDf, benchmark):
-        ArDf = self.preprocess.compute_return()
+        ArDf = self.preprocess.retrieve_return()
         benchmarkAR = self.preprocess.compute_benchmark(benchmark)
         ArDf["return"] = ArDf["return"]/benchmarkAR - 1.0
         # remove outlier returns

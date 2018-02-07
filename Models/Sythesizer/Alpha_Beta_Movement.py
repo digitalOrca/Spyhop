@@ -115,7 +115,7 @@ for i in range(steps):
     start_date = dates[start]
     end_index = duration - steps + i if end < 0 else duration - 1
     end_date = dates[end_index]
-    return_frame = preprocess.compute_return(split=False, dates=[start_date, end_date])
+    return_frame = preprocess.retrieve_return(date1=start_date, date2=end_date)
 
     index_change = preprocess.compute_benchmark(benchmark, dates=[start_date, end_date])
     alpha = post.compute_alpha(index_change, return_frame)

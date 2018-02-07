@@ -19,7 +19,7 @@ def preprocessData():
     print("retrieving fundamental ratios...")
     fr_train, fr_validate = preprocessing.get_data(dataType="scaled", dset="train_validate")
     print("retrieving returns...")
-    ar = preprocessing.compute_return(split=False)
+    ar = preprocessing.retrieve_return()
     print("split returns...")
     ar_train = ar[ar.index.isin(fr_train.index)]
     ar_validate = ar[ar.index.isin(fr_validate.index)]
