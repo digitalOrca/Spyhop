@@ -7,7 +7,7 @@ import pandas as pd
 class TestPreprocess(TestCase):
 
     def test_retrieve_fundamental_ratios(self):
-        self.preprocess = Preprocess(data="fundamental_ratios")
+        self.preprocess = Preprocess()
         try:
             df = self.preprocess.retrieve_fundamental_ratios()
             if not isinstance(df, pd.DataFrame) and not df.empty:

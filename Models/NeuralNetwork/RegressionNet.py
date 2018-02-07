@@ -11,6 +11,8 @@ from torch.nn import functional
 from torch import autograd
 from torch import cuda
 
+# THIS IS A DUMMY PROGRAM FOR NOW
+
 
 def preprocessData():
     preprocessing = Preprocess(data="fundamental_ratios")

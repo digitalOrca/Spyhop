@@ -52,7 +52,7 @@ class LinearRegression:
         rowsCount = len(df)
         groupSize = np.ceil(float(rowsCount)/float(self.groupNum))
         for column in df:
-            sortedColumn = df[column].sort_values(ascending=True) # sort based on ratio values
+            sortedColumn = df[column].sort_values(ascending=True)  # sort based on ratio values
             currGroup, currStock = 0, 0
             fGroup_temp = [[] for i in range(self.groupNum)]
             symbols = list(sortedColumn.index)
