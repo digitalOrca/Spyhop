@@ -118,6 +118,32 @@ class Preprocess:
         daily_price.sort_index(axis=0, level=0)
         return daily_price
 
+    def retrieve_return(self, date1=None, date2=None):
+        if date1 is None:
+            start = (date.today() - timedelta(days=self.lag)).isoformat()
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
+                     "(SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" \
+                     % start
+        else:
+            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date1
+
+        if date2 is None:
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
+                     "(SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
+        else:
+            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date2
+
+        start_df = self.db.query(query1)
+        end_df = self.db.query(query2)
+        start_df['start'] = start_df.mean(axis=1, numeric_only=True)
+        end_df['end'] = end_df.mean(axis=1, numeric_only=True)
+        start_df.drop(["lastclose", "open"], axis=1, inplace=True)
+        end_df.drop(["lastclose", "open"], axis=1, inplace=True)
+        ret = pd.concat([start_df, end_df], axis=1, join="inner")  # type: pd.DataFrame
+        ret["return"] = np.divide(ret["end"], ret["start"])
+        ret.drop(['start', 'end'], axis=1, inplace=True)
+        return ret
+
     def retrieve_high_low(self):
         selection = "SELECT * FROM high_low"
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
@@ -162,55 +188,32 @@ class Preprocess:
         index_series.dropna(axis=0, how='any', inplace=True)
         return index_series[["open", "close"]]
 
+    def retrieve_benchmark_change(self, benchmark, date1=None, date2=None):
+        col_close = benchmark + "_prev_close"
+        col_open = benchmark + "_open"
+        if date1 is None:
+            start = (date.today() - timedelta(days=self.lag)).isoformat()
+            query1 = "SELECT date, %s FROM benchmarks WHERE date = " \
+                     "(SELECT DISTINCT date FROM benchmarks WHERE date > '%s' ORDER BY date ASC LIMIT 1)" \
+                     % (col_close, start)
+        else:
+            query1 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_close, date1)
+
+        if date2 is None:
+            query2 = "SELECT date, %s FROM benchmarks WHERE date= \
+                     (SELECT DISTINCT date FROM benchmarks ORDER BY date DESC LIMIT 1)"\
+                     % col_open
+        else:
+            query2 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_open, date2)
+
+        start_index = float(self.db.query(query1, index=None)[col_close][0])
+        end_index = float(self.db.query(query2, index=None)[col_open][0])
+        return end_index/start_index
+
     def retrieve_dividends(self):
         selection = "SELECT * FROM dividend"
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
         return df
-
-    def retrieve_return(self, date1=None, date2=None):
-        if date1 is None:
-            start = (date.today() - timedelta(days=self.lag)).isoformat()
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
-                     "(SELECT DISTINCT date FROM open_close WHERE date > '%s' ORDER BY date ASC LIMIT 1)" \
-                     % start
-        else:
-            query1 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date1
-
-        if date2 is None:
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date = " \
-                     "(SELECT DISTINCT date FROM open_close ORDER BY date DESC LIMIT 1)"
-        else:
-            query2 = "SELECT symbol, lastclose, open FROM open_close WHERE date='%s'" % date2
-
-        start_df = self.db.query(query1)
-        end_df = self.db.query(query2)
-        start_df['start'] = start_df.mean(axis=1, numeric_only=True)
-        end_df['end'] = end_df.mean(axis=1, numeric_only=True)
-        start_df.drop(["lastclose", "open"], axis=1, inplace=True)
-        end_df.drop(["lastclose", "open"], axis=1, inplace=True)
-        ret = pd.concat([start_df, end_df], axis=1, join="inner")  # type: pd.DataFrame
-        ret["return"] = np.divide(ret["end"], ret["start"])
-        ret.drop(['start', 'end'], axis=1, inplace=True)
-        return ret
-
-    def compute_benchmark(self, benchmark, dates=None):
-        col_close = benchmark + "_prev_close"
-        col_open = benchmark + "_open"
-        if dates is None:
-            if self.frdate == "" or self.prdate == "":
-                self.retrieve_fundamental_ratios(lag=True)
-            # get the date of fundamental ratio data
-            query1 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_close, self.frdate)
-            start_index = float(self.db.query(query1, index=None)[col_close][0])
-            query2 = "SELECT date, %s FROM benchmarks WHERE date= \
-                     (SELECT DISTINCT date FROM benchmarks ORDER BY date DESC LIMIT 1)" % col_open
-            end_index = float(self.db.query(query2, index=None)[col_open][0])
-        else:
-            query1 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_close, dates[0])
-            start_index = float(self.db.query(query1, index=None)[col_close][0])
-            query2 = "SELECT date, %s FROM benchmarks WHERE date='%s'" % (col_open, dates[1])
-            end_index = float(self.db.query(query2, index=None)[col_open][0])
-        return end_index/start_index
 
     def filter_column(self, df):
         df = df.drop(['index', 'date', 'currency', 'latestadate'], axis=1)

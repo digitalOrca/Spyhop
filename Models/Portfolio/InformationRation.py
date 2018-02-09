@@ -15,7 +15,7 @@ class InformationRatio:
 
     def computeInformationRatio(self, portfolio):
         returns = self.preprocess.retrieve_return()
-        index = self.preprocess.compute_benchmark("snp500")
+        index = self.preprocess.retrieve_benchmark_change("snp500")
         if self.alpha is None:
             alpha = post.compute_alpha(index, returns).loc[portfolio.keys()]["alpha"].values
             self.alpha = alpha
@@ -29,7 +29,7 @@ class InformationRatio:
         volatility = np.std(alpha)
         #print("volatility", volatility)
         if self.index is None:
-            index = self.preprocess.compute_benchmark(self.benchmark) - 1
+            index = self.preprocess.retrieve_benchmark_change(self.benchmark) - 1
             self.index = index
         else:
             index = self.index

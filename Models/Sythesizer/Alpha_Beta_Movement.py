@@ -117,7 +117,7 @@ for i in range(steps):
     end_date = dates[end_index]
     return_frame = preprocess.retrieve_return(date1=start_date, date2=end_date)
 
-    index_change = preprocess.compute_benchmark(benchmark, dates=[start_date, end_date])
+    index_change = preprocess.retrieve_benchmark_change(benchmark, date1=start_date, date2=end_date)
     alpha = post.compute_alpha(index_change, return_frame)
 
     index_series = preprocess.retrieve_benchmark(benchmark, dates=[start_date, end_date])

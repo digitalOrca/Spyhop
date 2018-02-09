@@ -101,7 +101,7 @@ class LinearRegression:
     """
     def computeAR(self, groupDf, benchmark):
         ArDf = self.preprocess.retrieve_return()
-        benchmarkAR = self.preprocess.compute_benchmark(benchmark)
+        benchmarkAR = self.preprocess.retrieve_benchmark_change(benchmark)
         ArDf["return"] = ArDf["return"]/benchmarkAR - 1.0
         # remove outlier returns
         bull = ArDf[ArDf['return'] > self.retMax]

@@ -78,10 +78,10 @@ class TestPreprocess(TestCase):
         except:
             self.fail()
 
-    def test_compute_benchmarks(self):
+    def test_retrieve_benchmark_change(self):
         self.preprocess = Preprocess(lag=7)
         try:
-            change = self.preprocess.compute_benchmark("snp500")
+            change = self.preprocess.retrieve_benchmark_change("snp500")
             if not isinstance(change, float):
                 raise Exception
         except:

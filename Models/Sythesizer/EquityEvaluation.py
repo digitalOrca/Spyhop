@@ -16,7 +16,7 @@ end_date = dates[len(dates)-1]
 index_series = preprocess.retrieve_benchmark("snp500", dates=[start_date, end_date])
 beta = post.compute_beta(index_series, daily_price)
 risk_free_return = 0
-market_return = preprocess.compute_benchmark("snp500")
+market_return = preprocess.retrieve_benchmark_change("snp500")
 beta["reqRet"] = post.compute_required_return(risk_free_return, market_return, beta)
 print("retrieve dividends...")
 dividend_df = preprocess.retrieve_dividends()
