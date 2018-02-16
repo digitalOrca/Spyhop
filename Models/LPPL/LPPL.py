@@ -3,8 +3,10 @@
 import sys
 import numpy as np
 from Preprocess import Preprocess
-from scipy import optimize
 
+
+# reference: https://arxiv.org/pdf/1003.2920.pdf
+# https://arxiv.org/pdf/1002.1010.pdf
 
 def get_series(benchmark="snp500"):
     preprocess = Preprocess(lag=360)
@@ -12,45 +14,31 @@ def get_series(benchmark="snp500"):
     return index_series["close"]
 
 
-# reference: https://arxiv.org/pdf/1003.2920.pdf
-# https://arxiv.org/pdf/1002.1010.pdf
-"""
-def LogPeriodicPowerLaw(series, A, B, Tc, beta, C, omega, phi):
-    dT = list(range(len(series), 0, -1))
-    exponential_term = np.multiply(np.power(dT, beta), B)
-    periodic_term = np.cos(np.add(np.multiply(np.log(dT), omega), phi))
-    oscillatory_term = np.multiply(periodic_term, C)
-    fitted = A + np.multiply(exponential_term, np.add(oscillatory_term, 1))
-    residual = np.subtract(series, fitted)  # use raw price, not log price (10)
-    return residual
-"""
-
 def precompute_constant(series, omega, Tc, beta, phi):
     dT = [d+Tc for d in list(range(len(series), 0, -1))]
-    exponential_term = np.power(dT, beta)
-    periodic_term = np.cos(np.add(np.multiply(np.log(dT), omega), phi))
-    return exponential_term, periodic_term
-
-
-def lppl_eval(params, series, exponential_term, periodic_term):
-    A = params[0]
-    B = params[1]
-    C = params[2]
-    fitted = A + np.multiply(np.multiply(exponential_term, B), np.add(np.multiply(periodic_term, C), 1))
-    residual = np.subtract(series, fitted)  # use raw price, not log price (10)
-    mse = np.sum(np.power(residual, 2))
-    return mse
+    f = np.power(dT, beta)
+    g = np.multiply(f, np.cos(np.add(np.multiply(np.log(dT), omega), phi)))
+    return f, g
 
 
 def optimize_ABC(series, omega, Tc, beta, phi):
-    exponential_term, periodic_term = precompute_constant(series, omega, Tc, beta, phi)
-    params0 = [0, 0, 0]  # TODO: FIND A GOOD INITIAL GUESS
-    xopt = optimize.fmin(func=lppl_eval, x0=params0, args=(series, exponential_term, periodic_term,), xtol=0.0001, disp=False)
-    fopt = lppl_eval(xopt, series, exponential_term, periodic_term)
-    return xopt, fopt
+    f, g = precompute_constant(series, omega, Tc, beta, phi)
+    #y = np.add(A, np.add(np.multiply(B, f), np.multiply(C, g)))
+    y = series
+    y_matrix = np.array([y.sum(), np.multiply(y, f).sum(), np.multiply(y, g).sum()])
+    x_matrix = np.array([[len(series), f.sum(), g.sum()],
+                         [f.sum(), np.multiply(f, f).sum(), np.multiply(f, g).sum()],
+                         [g.sum(), np.multiply(f, g).sum(), np.multiply(g, g).sum()]])
+    try:
+        opt_abc = np.dot(np.linalg.inv(x_matrix), y_matrix)
+    except:
+        return [0,0,0], sys.maxsize
+    residual = np.subtract(series, y)  # use raw price, not log price (10)
+    mse = np.sum(np.power(residual, 2))
+    return opt_abc, mse
 
 
-def search_beta_phi(series, omega, Tc, grid_size=21, beta_range=[0.15, 0.51], phi_range=[0, 6.28]):
+def search_beta_phi(series, omega, Tc, grid_size=50, beta_range=[0.15, 0.51], phi_range=[0, 6.28]):
     opt_beta, opt_phi = 0, 0
     opt_mse = sys.maxsize
     opt_abc = []
@@ -65,16 +53,16 @@ def search_beta_phi(series, omega, Tc, grid_size=21, beta_range=[0.15, 0.51], ph
     return opt_mse, opt_abc, opt_beta, opt_phi
 
 
-def search_omega_tc(series, grid_size=21, Tc_range=[1, 260], omega_range=[4.8, 7.92]):
+def search_omega_tc(series, grid_size=50, Tc_range=[1, 260], omega_range=[4.8, 7.92]):
     fit_abc = []
     fit_Tc, fit_omega, fit_beta, fit_phi = 0, 0, 0, 0
     fit_mse = sys.maxsize
     count_Tc = 0
-    count_omega = 0
     for Tc in [i * (Tc_range[1]-Tc_range[0])/grid_size for i in range(grid_size)]:
         count_Tc += 1
+        count_omega = 0
         for omega in [i * (omega_range[1] - omega_range[0]) / grid_size for i in range(grid_size)]:
-            count_omega += 1
+            count_omega +=1
             print("optimizing >> Tc:%s, omega:%s" % (count_Tc, count_omega))
             opt_mse, opt_abc, opt_beta, opt_phi = search_beta_phi(series, omega, Tc)
             if opt_mse < fit_mse:
@@ -90,7 +78,14 @@ def search_omega_tc(series, grid_size=21, Tc_range=[1, 260], omega_range=[4.8, 7
 if __name__ == "__main__":
     series = get_series(benchmark="snp500").values
     fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = search_omega_tc(series)
-    print(fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
+    print("MSE:", fit_mse)
+    print("A:", fit_abc[0])
+    print("B:", fit_abc[1])
+    print("C:", fit_abc[2])
+    print("Tc:", fit_Tc)
+    print("omega:", fit_omega)
+    print("beta:", fit_beta)
+    print("phi:", fit_phi)
 
 
 
