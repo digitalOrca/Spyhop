@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 # reference: https://arxiv.org/pdf/1003.2920.pdf
 # https://arxiv.org/pdf/1002.1010.pdf
 
+
 def get_series(benchmark="snp500"):
     preprocess = Preprocess(lag=360)
     index_series = preprocess.retrieve_benchmark(benchmark)
@@ -20,6 +21,9 @@ def precompute_constant(series, omega, Tc, beta, phi):
     g = np.multiply(f, np.cos(np.add(np.multiply(np.log(dT), omega), phi)))
     return f, g
 
+
+def predict_fit(series, A, B, C, Tc, omega, beta, phi):
+    pass
 
 def eval_lppl(series, Tc, omega, beta, phi):
     f, g = precompute_constant(series, omega, Tc, beta, phi)
@@ -39,7 +43,6 @@ def eval_lppl(series, Tc, omega, beta, phi):
 
 def optimize_ABC(series, omega, Tc, beta, phi):
     f, g = precompute_constant(series, omega, Tc, beta, phi)
-    #y = np.add(A, np.add(np.multiply(B, f), np.multiply(C, g)))
     y = series
     n = len(series)
     y_matrix = np.array([y.sum(), np.multiply(y, f).sum(), np.multiply(y, g).sum()])
@@ -49,7 +52,7 @@ def optimize_ABC(series, omega, Tc, beta, phi):
     try:
         opt_abc = np.dot(np.linalg.inv(x_matrix), y_matrix)
     except:
-        return [0,0,0], sys.maxsize
+        return [0, 0, 0], sys.maxsize
     fit = np.add(opt_abc[0], np.add(np.multiply(opt_abc[1], f), np.multiply(opt_abc[2], g)))
     residual = np.subtract(series, fit)  # use raw price, not log price (10)
     mse = np.sum(np.power(residual, 2))
@@ -89,11 +92,11 @@ def search_omega_tc(series, Tc_grid=259, omega_grid=50, Tc_range=[1, 260], omega
             opt_mse, opt_abc, opt_beta, opt_phi = search_beta_phi(series, omega, Tc)
 
             fit = eval_lppl(series, Tc, omega, opt_beta, opt_phi)
-            if fit is not None:
-                ax1.clear()
-                ax1.plot(x, series, 'b--')
-                ax1.plot(x, fit, 'r--')
-                ax1.plot(x, best_fit, 'g--')
+            if fit is not None and fig is not None:
+                ax.clear()
+                ax.plot(x, series, 'b--')
+                ax.plot(range(len(fit)), fit, 'r--')
+                ax.plot(range(len(best_fit)), best_fit, 'g--')
                 plt.pause(0.01)
 
             if opt_mse < fit_mse:
