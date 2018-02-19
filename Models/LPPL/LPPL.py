@@ -15,43 +15,47 @@ def get_series(benchmark="snp500"):
     return index_series["close"]
 
 
-def precompute_constant(series, omega, Tc, beta, phi):
-    dT = [d+Tc for d in list(range(len(series), 0, -1))]
+def precompute_constant(length, omega, Tc, beta, phi):
+    dT = [d+Tc for d in list(range(int(length), 0, -1))]
     f = np.power(dT, beta)
     g = np.multiply(f, np.cos(np.add(np.multiply(np.log(dT), omega), phi)))
     return f, g
 
 
-def predict_fit(series, A, B, C, Tc, omega, beta, phi):
-    pass
-
-def eval_lppl(series, Tc, omega, beta, phi):
-    f, g = precompute_constant(series, omega, Tc, beta, phi)
-    y = series
-    n = len(series)
+def compute_abc(y, f, g, n):
     y_matrix = np.array([y.sum(), np.multiply(y, f).sum(), np.multiply(y, g).sum()])
-    x_matrix = np.array([[n,       f.sum(),                 g.sum()],
+    x_matrix = np.array([[n, f.sum(), g.sum()],
                          [f.sum(), np.multiply(f, f).sum(), np.multiply(f, g).sum()],
                          [g.sum(), np.multiply(f, g).sum(), np.multiply(g, g).sum()]])
     try:
-        opt_abc = np.dot(np.linalg.inv(x_matrix), y_matrix)
+        return np.dot(np.linalg.inv(x_matrix), y_matrix)
     except:
+        return None
+
+
+def eval_lppl(series, Tc, omega, beta, phi):
+    f, g = precompute_constant(len(series), omega, Tc, beta, phi)
+    y = series
+    n = len(series)
+    opt_abc = compute_abc(y, f, g, n)
+    if opt_abc is None:
         return None
     fit = np.add(opt_abc[0], np.add(np.multiply(opt_abc[1], f), np.multiply(opt_abc[2], g)))
     return fit
 
 
-def optimize_ABC(series, omega, Tc, beta, phi):
-    f, g = precompute_constant(series, omega, Tc, beta, phi)
+def extended_fit(series, abc, Tc, omega, beta, phi):
+    f, g = precompute_constant(len(series)+Tc, omega, Tc, beta, phi)
+    ext_fit = np.add(abc[0], np.add(np.multiply(abc[1], f), np.multiply(abc[2], g)))
+    return ext_fit
+
+
+def optimize_abc(series, omega, Tc, beta, phi):
+    f, g = precompute_constant(len(series), omega, Tc, beta, phi)
     y = series
     n = len(series)
-    y_matrix = np.array([y.sum(), np.multiply(y, f).sum(), np.multiply(y, g).sum()])
-    x_matrix = np.array([[n,       f.sum(),                 g.sum()],
-                         [f.sum(), np.multiply(f, f).sum(), np.multiply(f, g).sum()],
-                         [g.sum(), np.multiply(f, g).sum(), np.multiply(g, g).sum()]])
-    try:
-        opt_abc = np.dot(np.linalg.inv(x_matrix), y_matrix)
-    except:
+    opt_abc = compute_abc(y, f, g, n)
+    if opt_abc is None:
         return [0, 0, 0], sys.maxsize
     fit = np.add(opt_abc[0], np.add(np.multiply(opt_abc[1], f), np.multiply(opt_abc[2], g)))
     residual = np.subtract(series, fit)  # use raw price, not log price (10)
@@ -65,7 +69,7 @@ def search_beta_phi(series, omega, Tc, beta_grid=50, phi_grid=50, beta_range=[0.
     opt_abc = []
     for beta in [i * (beta_range[1]-beta_range[0])/beta_grid for i in range(beta_grid)]:
         for phi in [i * (phi_range[1] - phi_range[0])/phi_grid for i in range(phi_grid)]:
-            xopt, fopt = optimize_ABC(series, omega, Tc, beta, phi)
+            xopt, fopt = optimize_abc(series, omega, Tc, beta, phi)
             if fopt < opt_mse:
                 opt_mse = fopt
                 opt_abc = xopt
@@ -90,8 +94,7 @@ def search_omega_tc(series, Tc_grid=259, omega_grid=50, Tc_range=[1, 260], omega
             print("    current best--> MSE:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
                   % (fit_mse, fit_Tc, fit_omega, fit_beta, fit_phi))
             opt_mse, opt_abc, opt_beta, opt_phi = search_beta_phi(series, omega, Tc)
-
-            fit = eval_lppl(series, Tc, omega, opt_beta, opt_phi)
+            fit = extended_fit(series, opt_abc, Tc, omega, opt_beta, opt_phi)
             if fit is not None and fig is not None:
                 ax.clear()
                 ax.plot(x, series, 'b--')
