@@ -2,6 +2,7 @@
 
 import sys
 import numpy as np
+import pandas as pd
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 
@@ -10,9 +11,11 @@ import matplotlib.pyplot as plt
 
 
 def get_series(benchmark="snp500"):
-    preprocess = Preprocess(lag=360)
-    index_series = preprocess.retrieve_benchmark(benchmark)
-    return index_series["close"]
+    #preprocess = Preprocess(lag=360)
+    #index_series = preprocess.retrieve_benchmark(benchmark)
+    #return index_series["close"]
+    #--------------------------------------------------------
+    return pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
 
 
 def precompute_constant(length, omega, Tc, beta, phi):
@@ -78,39 +81,42 @@ def search_beta_phi(series, omega, Tc, beta_grid=50, phi_grid=50, beta_range=[0.
     return opt_mse, opt_abc, opt_beta, opt_phi
 
 
-def search_omega_tc(series, Tc_grid=259, omega_grid=50, Tc_range=[1, 260], omega_range=[4.8, 7.92], fig=None, ax=None):
+def search_omega_tc(series, Tc_grid=259, omega_grid=50, beta_grid=50, phi_grid=50,
+                    Tc_range=[1, 260], omega_range=[4.8, 7.92], beta_range=[0.15, 0.51], phi_range=[0, 6.28],
+                    fig=None, ax=None):
     fit_abc = []
     fit_Tc, fit_omega, fit_beta, fit_phi = 0, 0, 0, 0
     fit_mse = sys.maxsize
-    count_Tc = 0
     best_fit = series
     x = range(len(series))
-    for Tc in [i * (Tc_range[1]-Tc_range[0])/Tc_grid for i in range(Tc_grid)]:
-        count_Tc += 1
-        count_omega = 0
-        for omega in [i * (omega_range[1] - omega_range[0])/omega_grid for i in range(omega_grid)]:
-            count_omega += 1
-            print("optimizing >> Tc:%s, omega:%s" % (count_Tc, count_omega))
-            print("    current best--> MSE:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
-                  % (fit_mse, fit_Tc, fit_omega, fit_beta, fit_phi))
-            opt_mse, opt_abc, opt_beta, opt_phi = search_beta_phi(series, omega, Tc)
-            fit = extended_fit(series, opt_abc, Tc, omega, opt_beta, opt_phi)
-            if fit is not None and fig is not None:
-                ax.clear()
-                ax.plot(x, series, 'b--')
-                ax.plot(range(len(fit)), fit, 'r--')
-                ax.plot(range(len(best_fit)), best_fit, 'g--')
-                plt.pause(0.01)
+    for Tc in [i * (Tc_range[1]-Tc_range[0])/Tc_grid + Tc_range[0] for i in range(Tc_grid)]:
+        for beta in [(i+1) * (beta_range[1] - beta_range[0]) / beta_grid + beta_range[0] for i in range(beta_grid)]:
+            for omega in [i * (omega_range[1] - omega_range[0]) / omega_grid + omega_range[0] for i in range(omega_grid)]:
+                for phi in [i * (phi_range[1] - phi_range[0]) / phi_grid + phi_range[0] for i in range(phi_grid)]:
+                    print("optimizing >>> Tc:%s, beta:%s, omega:%s, phi:%s" % (Tc, beta, omega, phi))
+                    #print("    current best--> MSE:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
+                    #      % (fit_mse, fit_Tc, fit_omega, fit_beta, fit_phi))
+                    sys.stdout.flush()
+                    abc, mse = optimize_abc(series, omega, Tc, beta, phi)
+                    fit = extended_fit(series, abc, Tc, omega, beta, phi)
 
-            if opt_mse < fit_mse:
-                fit_mse = opt_mse
-                fit_Tc = Tc
-                fit_omega = omega
-                fit_abc = opt_abc
-                fit_beta = opt_beta
-                fit_phi = opt_phi
-                if fit is not None:
-                    best_fit = fit
+                    if mse < fit_mse:
+                        fit_mse = mse
+                        fit_Tc = Tc
+                        fit_omega = omega
+                        fit_abc = abc
+                        fit_beta = beta
+                        fit_phi = phi
+                        if fit is not None:
+                            best_fit = fit
+
+                    if fit is not None and fig is not None:
+                        ax.clear()
+                        ax.plot(x, series, 'b--')
+                        ax.plot(range(len(fit)), fit, 'r--')
+                        ax.plot(range(len(best_fit)), best_fit, 'g--')
+                        #ax.set_ylim([np.min(series)-100, np.max(series)+100])
+                        plt.pause(0.001)
 
     return fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi
 
