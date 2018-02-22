@@ -17,8 +17,6 @@ class Preprocess:
         self.density = density
         self.limit = limit
         self.outlier = outlier
-        self.frdate = ""
-        self.prdate = ""
 
     def retrieve_fundamental_ratios(self, lag=True):
         if lag:
@@ -29,9 +27,6 @@ class Preprocess:
             query = "SELECT * FROM fundamental_ratios WHERE date = \
                     (SELECT DISTINCT date FROM fundamental_ratios WHERE date > '%s' ORDER BY date ASC LIMIT 1)" % start
             df = self.db.query(query)
-            
-            self.frdate = df.date[0]
-            self.prdate = end 
         else:
             query = "SELECT * FROM fundamental_ratios WHERE date = \
                     (SELECT DISTINCT date FROM fundamental_ratios ORDER BY date DESC LIMIT 1)"
@@ -215,6 +210,10 @@ class Preprocess:
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
         return df
 
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
+
     def filter_column(self, df):
         df = df.drop(['index', 'date', 'currency', 'latestadate'], axis=1)
         rows_count = len(df)
@@ -292,13 +291,3 @@ class Preprocess:
                 capped_data = self.cap_outlier(filled_data)
                 scaled_data = self.scale_data(capped_data)
                 return scaled_data  # dataType == 'scaled'
-        elif self.data == "ticks":
-            raw_data = self.retrieve_ticks(lag)
-            return raw_data
-        elif self.data == "bars":
-            if dset == "train_validate":
-                split_data = self.retrieve_bars(split=True, lag=lag)
-                return split_data
-            else:
-                whole_data = self.retrieve_bars(split=False, lag=lag)
-                return whole_data

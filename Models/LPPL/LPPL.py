@@ -56,8 +56,8 @@ def optimize_abc(series, omega, Tc, beta, phi):
     return opt_abc, mse
 
 
-def optimize_parameters(series, Tc_grid=259, omega_grid=50, beta_grid=50, phi_grid=50,
-                        Tc_range=[1, 260], omega_range=[4.8, 7.92], beta_range=[0.15, 0.51], phi_range=[0, 6.28],
+def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_grid=30,
+                        Tc_range=[1, 180], omega_range=[4.8, 7.92], beta_range=[0.15, 0.51], phi_range=[0, 6.28],
                         fig=None, ax=None):
     fit_abc = []
     fit_Tc, fit_omega, fit_beta, fit_phi = 0, 0, 0, 0
@@ -69,10 +69,10 @@ def optimize_parameters(series, Tc_grid=259, omega_grid=50, beta_grid=50, phi_gr
         for beta in [(i+1) * (beta_range[1] - beta_range[0]) / beta_grid + beta_range[0] for i in range(beta_grid)]:
             for omega in [i * (omega_range[1] - omega_range[0]) / omega_grid + omega_range[0] for i in range(omega_grid)]:
                 for phi in [i * (phi_range[1] - phi_range[0]) / phi_grid + phi_range[0] for i in range(phi_grid)]:
-                    err = np.sqrt(np.divide(fit_mse, n))
+                    std_err = np.sqrt(np.divide(fit_mse, n))
                     print("optimizing >>> Tc:%s, beta:%s, omega:%s, phi:%s" % (Tc, beta, omega, phi))
                     print("                                  current best--> error:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
-                          % (err, fit_Tc, fit_omega, fit_beta, fit_phi))
+                          % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi))
                     sys.stdout.flush()
                     abc, mse = optimize_abc(series, omega, Tc, beta, phi)
                     #if beta != trigger:  # select trigger for updating plot
@@ -93,8 +93,8 @@ def optimize_parameters(series, Tc_grid=259, omega_grid=50, beta_grid=50, phi_gr
                                 ax.plot(x, series, 'b--')
                                 ax.plot(range(len(best_fit)), best_fit, 'r--')
                                 #ax.set_ylim([np.min(series)-100, np.max(series)+100])
-                                title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
-                                        % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
+                                title = "Best fit: [error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
+                                        % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi)
                                 plt.xlabel('Time (Trading-days)')
                                 plt.title(title)
                                 plt.ylabel('Benchmark Index')
@@ -116,6 +116,18 @@ if __name__ == "__main__":
     print("omega:", fit_omega)
     print("beta:", fit_beta)
     print("phi:", fit_phi)
+
+    best_fit = extended_fit(series, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
+    ax1.clear()
+    ax1.plot(range(len(series)), series, 'b--')
+    ax1.plot(range(len(best_fit)), best_fit, 'r--')
+    err = np.sqrt(np.divide(fit_mse, len(series)))
+    title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
+            % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
+    plt.xlabel('Time (Trading-days)')
+    plt.title(title)
+    plt.ylabel('Benchmark Index')
+    plt.show()
 
 
 
