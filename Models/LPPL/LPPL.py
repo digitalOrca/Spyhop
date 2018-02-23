@@ -18,6 +18,19 @@ def get_series(benchmark="snp500"):
     return pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
 
 
+def segment_series(series, num_segments=100):
+    progression = []
+    n = len(series)
+    baseline = series[:int(n/2)]
+    extended = series[int(n/2):]
+    progression.append(baseline)
+    for i in range(1, num_segments+1):
+        ext = extended[:int((i/num_segments)*len(extended))]
+        new_series = baseline + ext
+        progression.append(new_series)
+    return progression
+
+
 def precompute_constant(length, omega, Tc, beta, phi):
     dT = [d+Tc for d in list(range(int(length), 0, -1))]
     f = np.power(dT, beta)
@@ -75,9 +88,6 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
                           % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi))
                     sys.stdout.flush()
                     abc, mse = optimize_abc(series, omega, Tc, beta, phi)
-                    #if beta != trigger:  # select trigger for updating plot
-                    #    fit = extended_fit(series, abc, Tc, omega, beta, phi)
-
                     if mse < fit_mse:
                         fit_mse = mse
                         fit_Tc = Tc
@@ -117,10 +127,10 @@ if __name__ == "__main__":
     print("beta:", fit_beta)
     print("phi:", fit_phi)
 
-    best_fit = extended_fit(series, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
+    opt_fit = extended_fit(series, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
     ax1.clear()
     ax1.plot(range(len(series)), series, 'b--')
-    ax1.plot(range(len(best_fit)), best_fit, 'r--')
+    ax1.plot(range(len(opt_fit)), opt_fit, 'r--')
     err = np.sqrt(np.divide(fit_mse, len(series)))
     title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
             % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
@@ -128,6 +138,7 @@ if __name__ == "__main__":
     plt.title(title)
     plt.ylabel('Benchmark Index')
     plt.show()
+
 
 
 
