@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KernelDensity
 
 # reference: https://arxiv.org/pdf/1003.2920.pdf
 # https://arxiv.org/pdf/1002.1010.pdf
@@ -26,7 +27,7 @@ def segment_series(series, num_segments=100):
     progression.append(baseline)
     for i in range(1, num_segments+1):
         ext = extended[:int((i/num_segments)*len(extended))]
-        new_series = baseline + ext
+        new_series = np.concatenate((baseline, ext), axis=0)
         progression.append(new_series)
     return progression
 
@@ -114,30 +115,59 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
 
 
 if __name__ == "__main__":
-    series = get_series(benchmark="snp500").values
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=series, fig=fig, ax=ax1)
-    print("MSE:", fit_mse)
-    print("A:", fit_abc[0])
-    print("B:", fit_abc[1])
-    print("C:", fit_abc[2])
-    print("Tc:", fit_Tc)
-    print("omega:", fit_omega)
-    print("beta:", fit_beta)
-    print("phi:", fit_phi)
+    if len(sys.argv) < 2:
+        print("too few argument")
+    elif sys.argv[1] == "direct":
+        series = get_series(benchmark="snp500").values
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot(111)
+        fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=series, fig=fig1, ax=ax1)
+        print("MSE:", fit_mse)
+        print("A:", fit_abc[0])
+        print("B:", fit_abc[1])
+        print("C:", fit_abc[2])
+        print("Tc:", fit_Tc)
+        print("omega:", fit_omega)
+        print("beta:", fit_beta)
+        print("phi:", fit_phi)
 
-    opt_fit = extended_fit(series, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
-    ax1.clear()
-    ax1.plot(range(len(series)), series, 'b--')
-    ax1.plot(range(len(opt_fit)), opt_fit, 'r--')
-    err = np.sqrt(np.divide(fit_mse, len(series)))
-    title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
-            % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
-    plt.xlabel('Time (Trading-days)')
-    plt.title(title)
-    plt.ylabel('Benchmark Index')
-    plt.show()
+        opt_fit = extended_fit(series, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi)
+        ax1.clear()
+        ax1.plot(range(len(series)), series, 'b--')
+        ax1.plot(range(len(opt_fit)), opt_fit, 'r--')
+        err = np.sqrt(np.divide(fit_mse, len(series)))
+        title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
+                % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
+        plt.xlabel('Time (Trading-days)')
+        plt.title(title)
+        plt.ylabel('Benchmark Index')
+        plt.show()
+    elif sys.argv[1] == "staggered":
+        series = get_series(benchmark="snp500").values
+        progression = segment_series(series, num_segments=100)
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot(111)
+        crash_vote = []
+        for s in progression:
+            fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=s, fig=fig1, ax=ax1)
+            crash_date = s[-1] + fit_Tc
+            crash_vote.append(crash_date)
+        plt.close()  # close fig1
+        # crash likelihood plot
+        kde = KernelDensity(kernel='gaussian', bandwidth=0.2)
+        crash_dist = np.array(crash_vote)[:, np.newaxis]
+        kde.fit(crash_dist)
+        log_dens = kde.score_samples(crash_dist)
+        fig2, ax1 = plt.subplots()
+        ax1.plot(range(len(series)), series, 'b--')
+        ax1.set_xlabel('Trading Days')
+        ax1.set_ylabel('Benchmark')
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('Crash Likelyhood')
+        ax2.plot(crash_dist, np.exp(log_dens), 'r--')
+        plt.show()
+    else:
+        print("invalid argument")
 
 
 
