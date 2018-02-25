@@ -19,11 +19,11 @@ def get_series(benchmark="snp500"):
     return pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
 
 
-def segment_series(series, num_segments=100):
+def segment_series(series, base_frac=0.5, num_segments=100):
     progression = []
-    n = len(series)
-    baseline = series[:int(n/2)]
-    extended = series[int(n/2):]
+    base = int(len(series)*base_frac)
+    baseline = series[:base]
+    extended = series[base:]
     progression.append(baseline)
     for i in range(1, num_segments+1):
         ext = extended[:int((i/num_segments)*len(extended))]
@@ -32,6 +32,7 @@ def segment_series(series, num_segments=100):
     return progression
 
 
+# cache constants for faster computation
 Tc_cache, beta_cache, omega_cache, phi_cache = 0, 0, 0, 0
 dT_cache, p_cache, f_cache = 0, 0, 0
 
@@ -116,9 +117,9 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
             for omega in [i * (omega_range[1] - omega_range[0]) / omega_grid + omega_range[0] for i in range(omega_grid)]:
                 for phi in [i * (phi_range[1] - phi_range[0]) / phi_grid + phi_range[0] for i in range(phi_grid)]:
                     std_err = np.sqrt(np.divide(fit_mse, n))
-                    print("optimizing >>> Tc:%s, beta:%s, omega:%s, phi:%s" % (Tc, beta, omega, phi))
-                    print("                                  current best--> error:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
-                          % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi))
+                    #print("optimizing >>> Tc:%s, beta:%s, omega:%s, phi:%s" % (Tc, beta, omega, phi))
+                    #print("                                  current best--> error:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
+                    #      % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi))
                     #sys.stdout.flush()
                     abc, mse = optimize_abc(series, omega, Tc, beta, phi)
                     if mse < fit_mse:
@@ -176,14 +177,18 @@ if __name__ == "__main__":
         plt.show()
     elif sys.argv[1] == "staggered":
         series = get_series(benchmark="snp500").values
-        progression = segment_series(series, num_segments=100)
+        progression = segment_series(series, base_frac=0.8, num_segments=100)
         fig1 = plt.figure()
         ax1 = fig1.add_subplot(111)
         crash_vote = []
         for s in progression:
+            print("Staggered size:", len(s))
             fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=s, fig=fig1, ax=ax1)
             crash_date = s[-1] + fit_Tc
             crash_vote.append(crash_date)
+        print("Voting Results:")
+        for v in crash_vote:
+            print(v)
         plt.close()  # close fig1
         # crash likelihood plot
         kde = KernelDensity(kernel='gaussian', bandwidth=0.2)
