@@ -27,7 +27,7 @@ mktcap["size"] = pd.Series(data="small", index=mktcap.index)
 mktcap.loc[mktcap["mktcap"] > 2000, "size"] = "medium"
 mktcap.loc[mktcap["mktcap"] > 10000, "size"] = "large"
 # marker size
-cap_sizes = {"large": 8, "medium": 5, "small": 3}
+cap_sizes = {"large": 13, "medium": 8, "small": 5}
 size_tiers = cap_sizes.keys()
 # define sector color
 colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
