@@ -32,23 +32,55 @@ def segment_series(series, num_segments=100):
     return progression
 
 
-def precompute_constant(length, omega, Tc, beta, phi):
-    dT = [d+Tc for d in list(range(int(length), 0, -1))]
-    f = np.power(dT, beta)
-    g = np.multiply(f, np.cos(np.add(np.multiply(np.log(dT), omega), phi)))
+Tc_cache, beta_cache, omega_cache, phi_cache = 0, 0, 0, 0
+dT_cache, p_cache, f_cache = 0, 0, 0
+
+
+def precompute_constant(length, Tc, beta, omega, phi):
+    global Tc_cache, beta_cache, omega_cache, phi_cache, dT_cache, p_cache, f_cache
+
+    if Tc == Tc_cache:
+        dT = dT_cache
+        if beta == beta_cache:
+            f = f_cache
+        else:
+            beta_cache = beta
+            f = np.power(dT, beta)
+            f_cache = f
+
+        if omega == omega_cache:
+            p = p_cache
+        else:
+            omega_cache = omega
+            p = np.multiply(np.log(dT), omega)
+            p_cache = p
+        g = np.multiply(f, np.cos(np.add(p, phi)))  # always re-compute g
+    else:
+        dT = np.add(np.array([d for d in list(range(int(length), 0, -1))]), Tc)
+        f = np.power(dT, beta)
+        p = np.multiply(np.log(dT), omega)
+        g = np.multiply(f, np.cos(np.add(p, phi)))
+        # update all cache values
+        Tc_cache = Tc
+        beta_cache = beta
+        omega_cache = omega
+        phi_cache = phi
+        dT_cache = dT
+        p_cache = p
+        f_cache = f
     return f, g
 
 
 def extended_fit(series, abc, Tc, omega, beta, phi):
-    f, g = precompute_constant(len(series)+Tc, omega, Tc, beta, phi)
+    f, g = precompute_constant(len(series)+Tc, Tc, beta, omega, phi)
     ext_fit = np.add(abc[0], np.add(np.multiply(abc[1], f), np.multiply(abc[2], g)))
     return ext_fit
 
 
 def optimize_abc(series, omega, Tc, beta, phi):
-    f, g = precompute_constant(len(series), omega, Tc, beta, phi)
+    n = series.size  # len(series)
+    f, g = precompute_constant(n, Tc, beta, omega, phi)
     y = series
-    n = len(series)
     y_matrix = np.array([y.sum(), np.multiply(y, f).sum(), np.multiply(y, g).sum()])
     f_sum = f.sum()
     g_sum = g.sum()
@@ -87,7 +119,7 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
                     print("optimizing >>> Tc:%s, beta:%s, omega:%s, phi:%s" % (Tc, beta, omega, phi))
                     print("                                  current best--> error:%s, Tc:%s, omega:%s, beta:%s, phi:%s"
                           % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi))
-                    sys.stdout.flush()
+                    #sys.stdout.flush()
                     abc, mse = optimize_abc(series, omega, Tc, beta, phi)
                     if mse < fit_mse:
                         fit_mse = mse
