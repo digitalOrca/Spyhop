@@ -33,6 +33,8 @@ size_tiers = cap_sizes.keys()
 colors = ['#e6194b', '#3cb44b', '#ffe119', '#0082c8', '#f58231', '#911eb4',
           '#46f0f0', '#f032e6', '#d2f53c', '#fabebe', '#008080', '#e6beff']
 sector_colors = dict(zip(sectors, colors))
+# starred stocks
+stars = ["GE", "MMM", "NVDA", "AMZN", "BA", "TGT"]
 
 steps = 10
 transition = 1000
@@ -126,9 +128,11 @@ for i in range(steps):
     alpha_beta = pd.concat([alpha, beta], axis=1, join='inner')
     alpha_beta_sector = pd.concat([alpha_beta, symbolSector], axis=1, join='inner')  # type: pd.DataFrame
     summary = pd.concat([alpha_beta_sector, mktcap["size"]], axis=1, join='inner')
+    summary["symbol"] = "circle"  # set default symbol
+    summary.loc[summary.index.isin(stars), "symbol"] = "star"  # mark selected stocks as star
     summaries.append(summary)
 
-# process summaries for index alignment
+# process summaries for index alignment (showing the same data throughout animation)
 valid_index = summaries[0].index.values
 i = 1  # keep track of summaries index
 for summary in summaries[1:]:
@@ -152,10 +156,9 @@ for summary in summaries:
             subset = sector_set[sector_set["size"] == cap]
             group = go.Scatter(x=subset["alpha"], y=subset["beta"],
                                name=sector + "(" + cap + ")",
-                               text=subset.index,
-                               mode='markers',
+                               text=subset.index, mode='markers',
                                marker=dict(size=cap_sizes[cap], color=color,
-                                           opacity=0.75
+                                           opacity=0.75, symbol=subset["symbol"]
                                            #line=dict(width=1, color='#EEEEEE')
                                            )
                                )
