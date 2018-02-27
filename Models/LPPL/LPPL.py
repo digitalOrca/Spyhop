@@ -200,7 +200,7 @@ if __name__ == "__main__":
         ax1.set_xlabel('Trading Days')
         ax1.set_ylabel('Benchmark')
         ax2 = ax1.twinx()
-        ax2.set_ylabel('Crash Likelyhood')
+        ax2.set_ylabel('Crash Likelihood')
         ax2.plot(crash_dist, np.exp(log_dens), 'r--')
         plt.show()
     else:

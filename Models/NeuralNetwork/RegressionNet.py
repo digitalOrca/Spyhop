@@ -54,8 +54,8 @@ def createBatch(input, target, batch_size):
     batch_index = random.sample(range(len(input)), batch_size)
     batch_input = input.iloc[batch_index].as_matrix().astype(np.float32)
     batch_target = target.iloc[batch_index].as_matrix().astype(np.float32)
-    batch_input = torch.from_numpy(batch_input)
-    batch_target = torch.from_numpy(batch_target)
+    batch_input = torch.from_numpy(batch_input).cuda()
+    batch_target = torch.from_numpy(batch_target).cuda()
     return autograd.Variable(batch_input), autograd.Variable(batch_target)
 
 
@@ -69,6 +69,7 @@ train_in, train_out = train
 validate_in, validate_out = validate
 
 net = createModel(len(train_in.columns))
+net.cuda()
 
 #fig1 = plt.figure()
 #ax1 = fig1.add_subplot(111)
@@ -94,7 +95,7 @@ for i in count(1):
         param.data.add_(-0.01 * param.grad.data)
 
     #predict = net(autograd.Variable(torch.from_numpy(validate_in.as_matrix().astype(np.float32))))
-    result = net(autograd.Variable(torch.from_numpy(train_in.as_matrix().astype(np.float32))))
+    result = net(autograd.Variable(torch.from_numpy(train_in.as_matrix().astype(np.float32)).cuda()))
 
     plt.clf()
     #x = range(len(validate_in))
@@ -103,7 +104,7 @@ for i in count(1):
     #plt.plot(x, predict.data.numpy(), 'r-')
     x = range(len(train_in))
     plt.plot(x, train_out["return"].values, 'b-')
-    plt.plot(x, result.data.numpy(), 'r-')
+    plt.plot(x, result.cpu().data.numpy(), 'r-')
 
     title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
     plt.title(title)
