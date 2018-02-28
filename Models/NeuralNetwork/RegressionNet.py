@@ -50,78 +50,66 @@ def createModel(input_size):
     return model
 
 
-def createBatch(input, target, batch_size):
-    batch_index = random.sample(range(len(input)), batch_size)
-    batch_input = input.iloc[batch_index].as_matrix().astype(np.float32)
-    batch_target = target.iloc[batch_index].as_matrix().astype(np.float32)
-    batch_input = torch.from_numpy(batch_input).cuda()
-    batch_target = torch.from_numpy(batch_target).cuda()
-    return autograd.Variable(batch_input), autograd.Variable(batch_target)
+def createBatch(data_input, target, batch_size, gpu=False):
+    # generate random batch index
+    batch_index = random.sample(range(len(data_input)), batch_size)
+    # compute batch input/output
+    data_input = data_input.iloc[batch_index].as_matrix().astype(np.float32)
+    data_target = target.iloc[batch_index].as_matrix().astype(np.float32)
+    if gpu:
+        data_input = torch.from_numpy(data_input).cuda()
+        data_target = torch.from_numpy(data_target).cuda()
+    return autograd.Variable(data_input), autograd.Variable(data_target)
 
 
-if cuda.is_available():
-    gpu_count = cuda.device_count()
-    print("%s CUDA enabled GPU(s) available..." % gpu_count)
+if __name__ == "__main__":
+    gpu = True
+    if cuda.is_available():
+        gpu_count = cuda.device_count()
+        if gpu_count < 1:
+            gpu = False
+        print("%s CUDA enabled GPU(s) available..." % gpu_count)
 
+    # define training and validation data set
+    train, validate = preprocessData()
+    train_in, train_out = train
+    validate_in, validate_out = validate
+    # pre-compute training input data
+    train_all = torch.from_numpy(train_in.as_matrix().astype(np.float32))
+    if gpu:
+        train_all = train_all.cuda()
+    # define model
+    net = createModel(len(train_in.columns))
+    if gpu:
+        net.cuda()
 
-train, validate = preprocessData()
-train_in, train_out = train
-validate_in, validate_out = validate
+    epoch, residual = [], []
+    for i in count(1):
+        # Get batch data
+        batch_input, batch_target = createBatch(train_in, train_out, 256, gpu)
+        # Reset gradients
+        net.zero_grad()
+        # Forward pass
+        output = functional.mse_loss(net.forward(batch_input), batch_target)
+        loss = output.data[0]
+        # Backward pass
+        output.backward()
+        # Apply gradients
+        for param in net.parameters():
+            param.data.add_(-0.01 * param.grad.data)
 
-net = createModel(len(train_in.columns))
-net.cuda()
+        # compute result for training visualization
+        result = net(autograd.Variable(train_all))
 
-#fig1 = plt.figure()
-#ax1 = fig1.add_subplot(111)
-#fig2 = plt.figure()
-#ax2 = fig2.add_subplot(111)
+        plt.clf()
+        x = range(len(train_in))
+        plt.plot(x, train_out["return"].values, 'b-')
+        plt.plot(x, result.cpu().data.numpy(), 'r-')
 
-epoch, residual = [], []
+        title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
+        plt.title(title)
+        plt.pause(0.01)
 
-for i in count(1):
-    # Get data
-    batch_input, batch_target = createBatch(train_in, train_out, 256)
-    # Reset gradients
-    net.zero_grad()
-    # Forward pass
-    output = functional.mse_loss(net.forward(batch_input), batch_target)
-    loss = output.data[0]
-
-    # Backward pass
-    output.backward()
-
-    # Apply gradients
-    for param in net.parameters():
-        param.data.add_(-0.01 * param.grad.data)
-
-    #predict = net(autograd.Variable(torch.from_numpy(validate_in.as_matrix().astype(np.float32))))
-    result = net(autograd.Variable(torch.from_numpy(train_in.as_matrix().astype(np.float32)).cuda()))
-
-    plt.clf()
-    #x = range(len(validate_in))
-    #plt.plot(x, validate_out["return"].values, 'b-')
-    #plt.plot(x, [1 for i in x], 'y.-')
-    #plt.plot(x, predict.data.numpy(), 'r-')
-    x = range(len(train_in))
-    plt.plot(x, train_out["return"].values, 'b-')
-    plt.plot(x, result.cpu().data.numpy(), 'r-')
-
-    title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
-    plt.title(title)
-    plt.pause(0.01)
-
-    #epoch.append(i)
-    #residual.append(loss)
-    #ax1.clear()
-    #ax1.plot(epoch, residual)
-    #title = "Iteration:{:5d} Loss:{:0.9f}".format(i, loss)
-    #ax1.set_title(title)
-    #plt.pause(0.1)
-
-    # Stop criterion
-    if loss < 1e-3:
-        break
-
-
-
-
+        # Stop criterion
+        if loss < 1e-3:
+            break
