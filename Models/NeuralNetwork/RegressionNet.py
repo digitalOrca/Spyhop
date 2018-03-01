@@ -26,6 +26,10 @@ def preprocessData():
     print("trim fundamental ratios...")
     fr_train = fr_train[fr_train.index.isin(ar_train.index)]
     fr_validate = fr_validate[fr_validate.index.isin(ar_validate.index)]
+    # remove boundary values
+    print(ar_train)
+    ar_train.drop(ar_train.nlargest(50, "return").index, axis=0, inplace=True)
+    ar_train.drop(ar_train.nsmallest(50, "return").index, axis=0, inplace=True)
     # re-order train set for visualization
     ar_train = ar_train.sort_values("return")
     fr_train = fr_train.loc[ar_train.index]
@@ -40,6 +44,12 @@ def preprocessData():
 def createModel(input_size):
     model = nn.Sequential(
         nn.Linear(input_size, 5000),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
         nn.Linear(5000, 5000),
         nn.ReLU(),
         nn.Linear(5000, 2500),
