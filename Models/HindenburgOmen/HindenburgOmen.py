@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import KernelDensity
 
 
-class RecentHigh:
+class HindenburgOmen:
 
     def __init__(self):
         self.preprocess = Preprocess()
 
-    def prepData(self, tolerance=3):
-        daily_price = self.preprocess.get_data()
+    def prepData(self):
+        daily_price = self.preprocess.retrieve_open_close()
         recent_average = daily_price.iloc[-1].xs("average", level="field", axis=0).transpose().to_frame(name="recent")
         high_low = self.preprocess.retrieve_high_low()
         return recent_average, high_low
@@ -36,32 +36,16 @@ class RecentHigh:
                                                np.subtract(processed[high], processed[low])),
                                      0, 1)
             ratios[column] = ratios[column].fillna(ratios[column].mean())  # fill missing values
-        ratios["sum"] = ratios.mean(axis=1, skipna=True)
         return ratios
-
-    def visualizeDistribution(self, ratios):
-        colors = ['red', 'green', 'blue', 'black']
-        for col in ratios:
-            if col != 'sum':
-                sorted_ratios = np.sort(ratios[col].values)
-                plt.plot([i for i in range(len(ratios))], sorted_ratios, label=col)
-        plt.axis([0, len(ratios), 0, 1])
-        plt.legend(prop={'size': 10}, loc=4)
-        today = datetime.date.today().isoformat()
-        plt.title(today)
-        filename = "/home/meng/Projects/ResultArchive/RecentHigh_" + today
-        plt.savefig(filename)
-        plt.show()
 
     def visualizeKDE(self, ratios):
         colors = ['red', 'green', 'blue']
         for col in ratios:
-            if col != 'sum':
-                x = ratios[col].sort_values()[:, np.newaxis]
-                kde = KernelDensity(kernel='gaussian', bandwidth=0.1)
-                kde.fit(x)
-                log_dens = kde.score_samples(x)
-                plt.plot(x, np.exp(log_dens), label=col)
+            x = ratios[col].sort_values()[:, np.newaxis]
+            kde = KernelDensity(kernel='gaussian', bandwidth=0.1)
+            kde.fit(x)
+            log_dens = kde.score_samples(x)
+            plt.plot(x, np.exp(log_dens), label=col)
         plt.legend(prop={'size': 10}, loc=4)
         today = datetime.date.today().isoformat()
         plt.title(today)
@@ -71,10 +55,8 @@ class RecentHigh:
 
 
 if __name__ == "__main__":
-    rh = RecentHigh()
+    rh = HindenburgOmen()
     r, hl = rh.prepData()
-    print(r)
-    print(hl)
     ratios = rh.computeRatio(r, hl)
-    #rh.visualizeDistribution(ratios)
-    rh.visualizeKDE(ratios)
+    print(len(ratios[ratios["ratio52"] > 0.9999].index))
+    print(len(ratios[ratios["ratio52"] < 0.0001].index))
