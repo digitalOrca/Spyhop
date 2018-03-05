@@ -44,24 +44,25 @@ class HindenburgOmen:
             ratios[column] = ratios[column].fillna(ratios[column].mean())  # fill missing values
         return ratios
 
-    def highLowerCriteria(self, highlow52ratio=0.028):
+    def highLowCriteria(self, highlow52ratio=0.028):
         # highlow52ratio: The daily number of new 52-week highs and new 52-week lows are both greater than a threshold
         r, hl = self.computePriceHighLow()
         ratios = rh.computeRatio(r, hl)
         total = len(ratios.index)
-        high52ratio = len(ratios[ratios["ratio52"] > 0.999].index) / total
-        low52ratio =  len(ratios[ratios["ratio52"] < 0.001].index) / total
+        high52count = len(ratios[ratios["ratio52"] > 0.999].index)
+        low52count = len(ratios[ratios["ratio52"] < 0.001].index)
+        dif = high52count - low52count
+        high52ratio = high52count / total
+        low52ratio = low52count / total
         print("52-week-high:", high52ratio, "52-week-low:", low52ratio)
-        return high52ratio > highlow52ratio and low52ratio > highlow52ratio
+        return high52ratio > highlow52ratio and low52ratio > highlow52ratio and high52ratio/low52ratio < 2
 
 
 if __name__ == "__main__":
-    # Hindenburg Omen Criteria
-    highlow52ratio = 0.028  # The daily number of new 52-week highs and new 52-week lows are both greater than a threshold
-
     rh = HindenburgOmen()
-    c1 = rh.highLowerCriteria()
+    c1 = rh.highLowCriteria(highlow52ratio=0.028)
     c2 = rh.benchmarkCriteria()
+    #TODO: implement smoothed DIF (DIF alreay computed in highLowCriteria)
 
 
 
