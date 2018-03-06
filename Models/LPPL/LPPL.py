@@ -26,7 +26,8 @@ def segment_series(series, base_frac=0.5, num_segments=100):
     extended = series[base:]
     progression.append(baseline)
     for i in range(1, num_segments+1):
-        ext = extended[:int((i/num_segments)*len(extended))]
+        cutoff = int((i/num_segments)*len(extended))
+        ext = extended[:cutoff]
         new_series = np.concatenate((baseline, ext), axis=0)
         progression.append(new_series)
     return progression
@@ -182,9 +183,9 @@ if __name__ == "__main__":
         ax1 = fig1.add_subplot(111)
         crash_vote = []
         for s in progression:
-            print("Staggered size:", len(s))
             fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=s, fig=fig1, ax=ax1)
-            crash_date = s[-1] + fit_Tc
+            crash_date = len(s) + fit_Tc
+            print("Staggered size:", len(s), "Crash vote:", crash_date)
             crash_vote.append(crash_date)
         print("Voting Results:")
         for v in crash_vote:
