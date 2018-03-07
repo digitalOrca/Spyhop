@@ -28,8 +28,8 @@ def preprocessData():
     fr_validate = fr_validate[fr_validate.index.isin(ar_validate.index)]
     # remove boundary values
     print(ar_train)
-    ar_train.drop(ar_train.nlargest(50, "return").index, axis=0, inplace=True)
-    ar_train.drop(ar_train.nsmallest(50, "return").index, axis=0, inplace=True)
+    ar_train.drop(ar_train.nlargest(250, "return").index, axis=0, inplace=True)
+    ar_train.drop(ar_train.nsmallest(250, "return").index, axis=0, inplace=True)
     # re-order train set for visualization
     ar_train = ar_train.sort_values("return")
     fr_train = fr_train.loc[ar_train.index]
@@ -44,6 +44,12 @@ def preprocessData():
 def createModel(input_size):
     model = nn.Sequential(
         nn.Linear(input_size, 5000),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
+        nn.Linear(5000, 5000),
+        nn.ReLU(),
         nn.Linear(5000, 5000),
         nn.ReLU(),
         nn.Linear(5000, 5000),
@@ -96,7 +102,7 @@ if __name__ == "__main__":
     epoch, residual = [], []
     for i in count(1):
         # Get batch data
-        batch_input, batch_target = createBatch(train_in, train_out, 256, gpu)
+        batch_input, batch_target = createBatch(train_in, train_out, 512, gpu)
         # Reset gradients
         net.zero_grad()
         # Forward pass

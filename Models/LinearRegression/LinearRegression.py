@@ -177,7 +177,7 @@ class LinearRegression:
         for column in groupAR:
             x = [i for i in range(self.groupNum)]
             y = groupAR[column].astype(float)
-            slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+            slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
             if p_value < self.p_value:
                 # looking for definitive strong slope
                 coefDf["corrcoef"][column] = slope/std_err
