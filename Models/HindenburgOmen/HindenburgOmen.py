@@ -12,6 +12,7 @@ class HindenburgOmen:
 
     def __init__(self):
         self.preprocess = Preprocess(lag=80)
+        self.daily_price = None
 
     def benchmarkCriteria(self):
         benchmark = self.preprocess.retrieve_benchmark("snp500")
@@ -20,8 +21,9 @@ class HindenburgOmen:
         return latest > prev50
 
     def computePriceHighLow(self):
-        daily_price = self.preprocess.retrieve_open_close()
-        recent_average = daily_price.iloc[-1].xs("average", level="field", axis=0).transpose().to_frame(name="recent")
+        if self.daily_price is None:
+            self.daily_price = self.preprocess.retrieve_open_close()
+        recent_average = self.daily_price.iloc[-1].xs("average", level="field", axis=0).transpose().to_frame(name="recent")
         high_low = self.preprocess.retrieve_high_low()
         return recent_average, high_low
 
@@ -51,18 +53,39 @@ class HindenburgOmen:
         total = len(ratios.index)
         high52count = len(ratios[ratios["ratio52"] > 0.999].index)
         low52count = len(ratios[ratios["ratio52"] < 0.001].index)
-        dif = high52count - low52count
         high52ratio = high52count / total
         low52ratio = low52count / total
         print("52-week-high:", high52ratio, "52-week-low:", low52ratio)
         return high52ratio > highlow52ratio and low52ratio > highlow52ratio and high52ratio/low52ratio < 2
+
+    def mclCriteria(self):  # McClellan Oscillator
+        if self.daily_price is None:
+            self.daily_price = self.preprocess.retrieve_open_close()
+
+        dif_series = []
+        for i in range(-2, -41, -1):  # last day's closing price is not collected, so, forward shift 1 day
+            open = self.daily_price.iloc[i].xs("open", level="field", axis=0)
+            close = self.daily_price.iloc[i].xs("close", level="field", axis=0)
+            change = (close-open).values
+            upw = sum(i > 0 for i in change)
+            dpw = sum(i < 0 for i in change)
+            dif_series.append(upw - dpw)
+        ad = sum(dif_series[:19])/19
+        bd = sum(dif_series[:39])/39
+        print("AD(19):", ad)
+        print("BD(39)", bd)
+        mcl = ad - bd
+        return mcl < 0
 
 
 if __name__ == "__main__":
     rh = HindenburgOmen()
     c1 = rh.highLowCriteria(highlow52ratio=0.028)
     c2 = rh.benchmarkCriteria()
-    #TODO: implement smoothed DIF (DIF alreay computed in highLowCriteria)
+    c3 = rh.mclCriteria()
+    print("New High, New Low Criteria (>2.8%, new_high<2*new_low)", c1)
+    print("Benchmark 50-day Criteria (rising)", c2)
+    print("McClellan Oscillator (<0)", c3)
 
 
 
