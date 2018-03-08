@@ -3,6 +3,7 @@
 from Preprocess import Preprocess
 import Postprocess as post
 
+
 class OptionPair:
 
     def __init__(self):
@@ -13,7 +14,7 @@ class OptionPair:
         daily_change = post.compute_daily_change(daily_price)
         return daily_change.corr(method='pearson', min_periods=30)
 
-    def findPairs(self, corr, threshold=0.85):
+    def findPairs(self, corr, threshold=0.9):
         pairs = []
         for symbol in corr:
             for (i, v) in corr[symbol].iteritems():

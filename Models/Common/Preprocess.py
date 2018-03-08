@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+"""Preprocess.py
+Description:
+    data pre-processing utility class
+"""
+
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -10,6 +15,8 @@ from datetime import timedelta
 
 class Preprocess:
 
+    """constructor
+    """
     def __init__(self, data=None, lag=30, density=0.75, limit=3, outlier=4):
         self.db = DBConnect()
         self.data = data
@@ -18,6 +25,12 @@ class Preprocess:
         self.limit = limit
         self.outlier = outlier
 
+    """retrieve_fundamental_ratios
+        Description:
+            retrieve all fundamental ratios in a recent date (specified by lag)
+        Input:
+            lag: number of calendar date before today
+    """
     def retrieve_fundamental_ratios(self, lag=True):
         if lag:
             # get time window
@@ -33,6 +46,12 @@ class Preprocess:
             df = self.db.query(query)
         return df.fillna(value=np.nan)
 
+    """retrieve_ticks
+        Description:
+            retrieve tick data (data collection is discontinued in trade gateway)
+        Input:
+            lag: number of calendar date before today
+    """
     def retrieve_ticks(self, lag=True):
         if lag:
             # get time window
@@ -60,6 +79,13 @@ class Preprocess:
             df = self.db.query(query)
             return df[df["event"] == "last"][["timestamp", "last_price", "last_size"]]
 
+    """retrieve_bars
+        Description:
+            retrieve 1-min bar data for all stocks
+        Input:
+            split: whether to split the dataset for training and validation
+            lag: number of calendar date before today
+    """
     def retrieve_bars(self, split=True, lag=True):
         if split:
             if lag:
@@ -92,6 +118,10 @@ class Preprocess:
             df = self.db.query(query)[["timestamp", "wap", "volume"]]            
             return df
 
+    """retrieve_open_close
+        Description:
+            retrieve daily open close price for all stocks
+    """
     def retrieve_open_close(self):  # daily price
         start_date = (date.today() - timedelta(days=self.lag)).isoformat()
         selection = "SELECT * FROM open_close WHERE date >= '%s' ORDER BY index ASC" % start_date
@@ -113,6 +143,13 @@ class Preprocess:
         daily_price.sort_index(axis=0, level=0)
         return daily_price
 
+    """retrieve_return
+        Description:
+            retrieve accumulated return for all stocks over specified date range
+        Input:
+            data1: date range start
+            date2: date range end
+     """
     def retrieve_return(self, date1=None, date2=None):
         if date1 is None:
             start = (date.today() - timedelta(days=self.lag)).isoformat()
@@ -139,11 +176,21 @@ class Preprocess:
         ret.drop(['start', 'end'], axis=1, inplace=True)
         return ret
 
+    """retrieve_high_low
+        Description:
+            retrieve the 13, 26, 52 weeks high/low data for all stocks
+    """
     def retrieve_high_low(self):
         selection = "SELECT * FROM high_low"
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
         return df
 
+    """retrieve_mkt_caps
+        Description:
+            retrieve market capitalization data
+        Input:
+            symbols: list of symbols to retrieve market caps for
+    """
     def retrieve_mkt_caps(self, symbols):
         start = (date.today() - timedelta(days=self.lag)).isoformat()
         end = (date.today() - timedelta(days=self.lag/2)).isoformat()
@@ -162,11 +209,21 @@ class Preprocess:
         mktcap.set_index(pd.Series(data=mktcap.index).astype('category'))  # change index type to category
         return mktcap
 
+    """retrieve_symbol_sector
+        Description:
+            retrieve sector information for all stocks
+    """
     def retrieve_symbol_sector(self):
         symbol_sector = self.db.query("SELECT symbol, sector FROM security")
         symbol_sector["sector"] = symbol_sector["sector"].astype('category')
         return symbol_sector
 
+    """retrieve_benchmark
+        Description:
+            retrieve historic benchmark data
+        Input:
+            dates: date range for retrieve benchmark data
+    """
     def retrieve_benchmark(self, benchmark, dates=None):
         col_close = benchmark + "_prev_close"
         col_open = benchmark + "_open"
@@ -183,6 +240,14 @@ class Preprocess:
         index_series.dropna(axis=0, how='any', inplace=True)
         return index_series[["open", "close"]]
 
+    """retrieve_benchmark_change
+        Description:
+            retrieve accumulative benchmark changes
+        Input:
+            benchmark: name of benchmark
+            date1: date range start
+            date2: date range end
+    """
     def retrieve_benchmark_change(self, benchmark, date1=None, date2=None):
         col_close = benchmark + "_prev_close"
         col_open = benchmark + "_open"
@@ -205,6 +270,10 @@ class Preprocess:
         end_index = float(self.db.query(query2, index=None)[col_open][0])
         return end_index/start_index
 
+    """retrieve_dividends
+        Description:
+            retrieve dividend data for all stocks
+    """
     def retrieve_dividends(self):
         selection = "SELECT * FROM dividend"
         df = self.db.query(selection, index="symbol")  # type: pd.DataFrame
@@ -213,6 +282,7 @@ class Preprocess:
     ######################################################################################
     ######################################################################################
     ######################################################################################
+    """DEPRECATED METHODS"""
 
     def filter_column(self, df):
         df = df.drop(['index', 'date', 'currency', 'latestadate'], axis=1)
