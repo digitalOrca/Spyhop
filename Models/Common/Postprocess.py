@@ -1,9 +1,21 @@
 #!/usr/bin/python3
 
+"""Postprocess.py
+Description:
+    data post-processing utility methods
+"""
+
 import numpy as np
 import pandas as pd
 
 
+"""drop_sparse_columns
+    Description:
+        drop sparsely populated columns in a dataframe
+    Input:
+        df: sparse dataframe
+        threshold: column drop sparsity threshold
+"""
 def drop_sparse_columns(df, threshold):
     rows_count = len(df)
     weak_columns = []
@@ -16,11 +28,25 @@ def drop_sparse_columns(df, threshold):
     return df
 
 
+"""compute_alpha
+    Description:
+        compute alpha for all stocks
+    Input:
+        index: return of benchmark
+        returns: returns of stocks
+"""
 def compute_alpha(index, returns):
     returns["alpha"] = np.subtract(returns["return"], index)
     return returns["alpha"].to_frame()
 
 
+"""compute_beta
+    Description:
+        compute beta for all stocks
+    Input:
+        index: daily benchmark data
+        daily_price: daily stock open/close price
+"""
 def compute_beta(index, daily_price):
     index_change = np.subtract(np.divide(index["close"], index["open"]), 1).to_frame(name="benchmark")
     stock_change = np.subtract(np.divide(daily_price.xs('close', level='field', axis=1),
@@ -45,16 +71,36 @@ def compute_beta(index, daily_price):
     return volatility
 
 
+"""compute_daily_change
+    Description:
+        compute daily change in percentage
+    Input:
+        daily_price: daily open/close price of stocks
+"""
 def compute_daily_change(daily_price):
     return np.subtract(np.divide(daily_price.xs('close', level='field', axis=1),
                                  daily_price.xs('open', level='field', axis=1)), 1)
 
 
+"""compute_required_return
+    Description:
+        compute required return term in dividend discount model
+    Input:
+        ret_rf: risk free return
+        ret_mkt: portfolio return
+        beta: portfolio beta
+"""
 def compute_required_return(ret_rf, ret_mkt, beta):
     req_ret = np.add(np.multiply(beta, (ret_mkt - ret_rf)), ret_rf)
     return req_ret
 
 
+"""compute_dividend_growth
+    Description:
+        compute dividend growth using recent dividend data
+    Input:
+        dividends_df: dividend dataframe
+"""
 def compute_dividend_growth(dividends_df):
     prev_dividends = dividends_df["past_yr"]
     next_dividends = dividends_df["next_yr"]
@@ -62,6 +108,12 @@ def compute_dividend_growth(dividends_df):
     return dividends_df["growth"].to_frame()
 
 
+"""compute_average_dividend
+    Description:
+        compute average dividend using recent dividend data
+    Input:
+        dividends_df: dividend dataframe
+"""
 def compute_average_dividend(dividends_df):
     dividends_df["dividend"] = dividends_df[["past_yr", "next_yr"]].mean(axis=1)  # type:pd.DataFrame
     return dividends_df["dividend"].to_frame()
