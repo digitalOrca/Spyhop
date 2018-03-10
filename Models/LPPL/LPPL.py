@@ -144,7 +144,6 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
                                 plt.title(title)
                                 plt.ylabel('Benchmark Index')
                                 plt.pause(0.0001)
-
     return fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi
 
 
