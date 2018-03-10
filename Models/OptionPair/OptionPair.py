@@ -14,7 +14,7 @@ class OptionPair:
         daily_change = post.compute_daily_change(daily_price)
         return daily_change.corr(method='pearson', min_periods=30)
 
-    def findPairs(self, corr, threshold=0.9):
+    def findMovementPairs(self, corr, threshold=0.9):
         pairs = []
         for symbol in corr:
             for (i, v) in corr[symbol].iteritems():
@@ -27,8 +27,11 @@ class OptionPair:
             print(p[0], p[1], p[2])
         return pairs
 
+    def findGrowthPairs(self):
+        pass
+
 
 if __name__ == "__main__":
     op = OptionPair()
     covar = op.computeCorrelation()
-    pairs = op.findPairs(covar)
+    pairs = op.findMovementPairs(covar)

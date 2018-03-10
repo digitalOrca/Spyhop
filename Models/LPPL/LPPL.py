@@ -192,8 +192,8 @@ if __name__ == "__main__":
             print(v)
         plt.close()  # close fig1
         # crash likelihood plot
-        kde = KernelDensity(kernel='gaussian', bandwidth=0.2)
-        crash_dist = np.array(crash_vote)[:, np.newaxis]
+        kde = KernelDensity(kernel='gaussian', bandwidth=5)
+        crash_dist = np.array(sorted(crash_vote))[:, np.newaxis]
         kde.fit(crash_dist)
         log_dens = kde.score_samples(crash_dist)
         fig2, ax1 = plt.subplots()
