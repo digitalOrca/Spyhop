@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+"""LPPL.py
+Description:
+    implement log-periodic power law for predicting stock market crash
+    reference: https://arxiv.org/pdf/1003.2920.pdf
+    https://arxiv.org/pdf/1002.1010.pdf
+"""
+
 import sys
 import numpy as np
 import pandas as pd
@@ -7,10 +14,12 @@ from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KernelDensity
 
-# reference: https://arxiv.org/pdf/1003.2920.pdf
-# https://arxiv.org/pdf/1002.1010.pdf
-
-
+"""get_series
+    Description:
+        retrieve historic benchmark index data (read from downloaded data for now)
+    Input:
+        benchmark: name of benchmark for analysis
+"""
 def get_series(benchmark="snp500"):
     #preprocess = Preprocess(lag=360)
     #index_series = preprocess.retrieve_benchmark(benchmark)
@@ -19,6 +28,14 @@ def get_series(benchmark="snp500"):
     return pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
 
 
+"""segment_series
+    Description:
+        segment the historic data set to compute for crash date progression
+    Input:
+        series: complete data series
+        base_frac: starting fraction of the complete series
+        num_segments: the number of segment to proceed to the complete series
+"""
 def segment_series(series, base_frac=0.5, num_segments=100):
     progression = []
     base = int(len(series)*base_frac)
@@ -33,11 +50,20 @@ def segment_series(series, base_frac=0.5, num_segments=100):
     return progression
 
 
-# cache constants for faster computation
+"""cache constants for faster computation"""
 Tc_cache, beta_cache, omega_cache, phi_cache = 0, 0, 0, 0
 dT_cache, p_cache, f_cache = 0, 0, 0
 
-
+"""precompute_constant
+    Description:
+        compute f, g using cached parameters or terms
+    Input:
+        length: length of series
+        Tc: model parameter
+        beta: model parameter
+        omega: model parameter
+        phi: model parameter
+"""
 def precompute_constant(length, Tc, beta, omega, phi):
     global Tc_cache, beta_cache, omega_cache, phi_cache, dT_cache, p_cache, f_cache
 
@@ -73,12 +99,33 @@ def precompute_constant(length, Tc, beta, omega, phi):
     return f, g
 
 
+"""extended_fit
+    Description:
+        compute for fit line till day of predicted crash
+    Input:
+        series: historical benchmark data
+        abc: model parameters
+        Tc: model parameter
+        omega: model parameter
+        beta: model parameter
+        phi: model parameter
+"""
 def extended_fit(series, abc, Tc, omega, beta, phi):
     f, g = precompute_constant(len(series)+Tc, Tc, beta, omega, phi)
     ext_fit = np.add(abc[0], np.add(np.multiply(abc[1], f), np.multiply(abc[2], g)))
     return ext_fit
 
 
+"""optimize_abc
+    Description:
+        compute analytical solution for parameter A, B, C
+    Input:
+        series: historical benchmark data
+        omega: model parameter
+        Tc: model parameter
+        beta: model parameter
+        phi: model parameter
+"""
 def optimize_abc(series, omega, Tc, beta, phi):
     n = series.size  # len(series)
     f, g = precompute_constant(n, Tc, beta, omega, phi)
@@ -104,6 +151,22 @@ def optimize_abc(series, omega, Tc, beta, phi):
     return opt_abc, mse
 
 
+"""optimize_parameters
+    Description:
+        compute optimized parameter for LPPL model
+    Input:
+        series: historical benchmark data
+        Tc_grid: number of Tc parameter steps
+        omega_grid: number of omega parameter steps
+        beta_grid: number of beta parameter steps
+        phi_grid: number of phi parameter steps
+        Tc_range: range of Tc
+        omega_range: range of omega
+        beta_range: range of beta
+        phi_range: range of phi
+        fig: figure
+        ax: figure axis
+"""
 def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_grid=30,
                         Tc_range=[1, 180], omega_range=[4.8, 7.92], beta_range=[0.15, 0.51], phi_range=[0, 6.28],
                         fig=None, ax=None):
@@ -147,6 +210,7 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
     return fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi
 
 
+"""Main"""
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("too few argument")

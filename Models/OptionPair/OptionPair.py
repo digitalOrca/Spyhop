@@ -14,7 +14,7 @@ class OptionPair:
         daily_change = post.compute_daily_change(daily_price)
         return daily_change.corr(method='pearson', min_periods=30)
 
-    def find_movement_pairs(self, corr, threshold=0.9):
+    def find_movement_pairs(self, corr, threshold=0.95):
         pairs = []
         for symbol in corr:
             for (i, v) in corr[symbol].iteritems():
@@ -25,7 +25,7 @@ class OptionPair:
                         pairs.append((symbol, i, v))
         return pairs
 
-    def narrow_growth_pairs(self, pairs, threshold=0.1):
+    def narrow_growth_pairs(self, pairs, threshold=0.05):
         returns = self.preprocess.retrieve_return()
 
         for pair in pairs:
