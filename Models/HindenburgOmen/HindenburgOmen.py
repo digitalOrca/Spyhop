@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+"""HindenburgOmen.py
+Description:
+    Utility for finding Hindenburg Omen
+"""
+
 import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
@@ -7,16 +12,26 @@ from Preprocess import Preprocess
 
 class HindenburgOmen:
 
+    """constructor
+    """
     def __init__(self):
         self.preprocess = Preprocess(lag=80)
         self.daily_price = None
 
+    """benchmarkCriteria
+        Description:
+            test the condition that current benchmark is higher than 50 trade-days ago
+    """
     def benchmarkCriteria(self):
         benchmark = self.preprocess.retrieve_benchmark("snp500")
         latest = benchmark.iloc[-1]["open"]
         prev50 = benchmark.iloc[-50]["open"]
         return latest > prev50
 
+    """benchmarkCriteria
+        Description:
+            get recent and high/low price for all stocks
+    """
     def computePriceHighLow(self):
         if self.daily_price is None:
             self.daily_price = self.preprocess.retrieve_open_close()
@@ -24,6 +39,10 @@ class HindenburgOmen:
         high_low = self.preprocess.retrieve_high_low()
         return recent_average, high_low
 
+    """computeRatio
+        Description:
+            convert current price level to ratio with respect to high/low data
+    """
     def computeRatio(self, recent_average, high_low):
         symbols = pd.concat([recent_average, high_low], axis=1, join='inner')  # type: pd.DataFrame
         ratios = pd.DataFrame(index=symbols.index)  # type: pd.DataFrame
@@ -43,6 +62,10 @@ class HindenburgOmen:
             ratios[column] = ratios[column].fillna(ratios[column].mean())  # fill missing values
         return ratios
 
+    """highLowCriteria
+        Description:
+            test the condition that new high and new low is above threshold, new high is not too dominant
+    """
     def highLowCriteria(self, highlow52ratio=0.028):
         # highlow52ratio: The daily number of new 52-week highs and new 52-week lows are both greater than a threshold
         r, hl = self.computePriceHighLow()
@@ -55,6 +78,10 @@ class HindenburgOmen:
         print("52-week-high:", high52ratio, "52-week-low:", low52ratio)
         return high52ratio > highlow52ratio and low52ratio > highlow52ratio and high52ratio/low52ratio < 2
 
+    """mclCriteria
+        Description:
+            test the condition that 19-day McClellan Oscillator is below the 39-day McClellan Oscillator
+    """
     def mclCriteria(self):  # McClellan Oscillator
         if self.daily_price is None:
             self.daily_price = self.preprocess.retrieve_open_close()
@@ -75,6 +102,7 @@ class HindenburgOmen:
         return mcl < 0
 
 
+"""Main"""
 if __name__ == "__main__":
     rh = HindenburgOmen()
     c1 = rh.highLowCriteria(highlow52ratio=0.028)
