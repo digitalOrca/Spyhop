@@ -75,7 +75,7 @@ class HindenburgOmen:
         low52count = len(ratios[ratios["ratio52"] < 0.001].index)
         high52ratio = high52count / total
         low52ratio = low52count / total
-        print("52-week-high:", high52ratio, "52-week-low:", low52ratio)
+        print(">>>52-week-high:", high52ratio, "52-week-low:", low52ratio)
         return high52ratio > highlow52ratio and low52ratio > highlow52ratio and high52ratio/low52ratio < 2
 
     """mclCriteria
@@ -96,8 +96,8 @@ class HindenburgOmen:
             dif_series.append(upw - dpw)
         ad = sum(dif_series[:19])/19
         bd = sum(dif_series[:39])/39
-        print("AD(19):", ad)
-        print("BD(39)", bd)
+        print(">>>AD(19):", ad)
+        print(">>>BD(39)", bd)
         mcl = ad - bd
         return mcl < 0
 
@@ -108,9 +108,9 @@ if __name__ == "__main__":
     c1 = rh.highLowCriteria(highlow52ratio=0.028)
     c2 = rh.benchmarkCriteria()
     c3 = rh.mclCriteria()
-    print("New High, New Low Criteria (>2.8%, new_high<2*new_low)", c1)
-    print("Benchmark 50-day Criteria (rising)", c2)
-    print("McClellan Oscillator (<0)", c3)
+    print("*New High, New Low Criteria (>2.8%, new_high<2*new_low)", c1)
+    print("*Benchmark 50-day Criteria (rising)", c2)
+    print("*McClellan Oscillator (<0)", c3)
 
 
 

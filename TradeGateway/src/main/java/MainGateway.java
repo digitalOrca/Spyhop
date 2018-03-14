@@ -4,10 +4,7 @@ import enums.Currency;
 import enums.Exchange;
 import enums.Log;
 import enums.SecType;
-import utils.DatabaseConn;
-import utils.Helper;
-import utils.Logger;
-import utils.SocketComm;
+import utils.*;
 
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
@@ -178,7 +175,8 @@ public class MainGateway{
         System.out.println("============Updating Benchmarks============");
         UpdateAction.updateBenchmark();
         Logger.getInstance().close();
-        System.out.println("============Main Gateway Disconnected============");
+        System.out.println("============Post-trade Analysis============");
+        Analyzer.HindenburgOmen();
         System.exit(0);
     }
 

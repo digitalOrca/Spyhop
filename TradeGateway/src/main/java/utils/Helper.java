@@ -2,7 +2,10 @@ package utils;
 
 import com.ib.client.EReader;
 import com.ib.client.EWrapper;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -58,6 +61,26 @@ public class Helper {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String runCmd(String[] command) {
+        Runtime runtime = Runtime.getRuntime();
+        StringBuilder result = new StringBuilder();
+        try {
+            Process p = runtime.exec(command);
+            String s = null;
+            BufferedReader stdin = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while ((s = stdin.readLine()) != null) {
+                result.append(s + "\n");
+            }
+            while ((s = stderr.readLine()) != null) {
+                result.append(s + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result.toString();
     }
 
     public static LinkedList<String> resultToList(ResultSet resultSet, String column) {
