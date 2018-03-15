@@ -116,7 +116,8 @@ class GARCH:
 
     def optimize_parameters_benchmark(self, benchmark="snp500", risk_level=0.95):
         #benchmark_change = self.preprocess.retrieve_benchmark(benchmark=benchmark).mean(axis=1).pct_change(periods=1).fillna(0)
-        benchmark_change = pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"].pct_change(periods=1).fillna(0)
+        benchmark_series = pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
+        benchmark_change = benchmark_series.pct_change(periods=1).fillna(0)  # TODO: INSPECT FORWARD/BACKWARD SHIFT!
         mu = benchmark_change.mean()
         residual = benchmark_change.subtract(mu)
         paramSize = self.p + self.q + 1
@@ -125,12 +126,18 @@ class GARCH:
             xopt = optimize.fmin(func=self.maximum_likelihood, x0=theta0, args=(residual.values,),
                                     xtol=0.0001, disp=False)
             VaR = np.multiply(np.sqrt(self.garch(xopt, residual.values)), stats.norm.ppf(risk_level))
-            # plot VaR boundary
             fig = plt.figure()
             ax1 = fig.add_subplot(111)
-            ax1.plot(range(len(VaR)), VaR, 'r--')
-            ax1.plot(range(len(VaR)), -VaR, 'r--')
-            ax1.plot(range(len(residual.values)), residual.values, 'b-')
+
+            # plot centered VaR boundary
+            #ax1.plot(range(len(VaR)), VaR, 'r--')
+            #ax1.plot(range(len(VaR)), -VaR, 'r--')
+            #ax1.plot(range(len(residual.values)), residual.values, 'b-')
+
+            # plot actual VaR boundary
+            ax1.plot(range(len(VaR)), benchmark_series.values+np.multiply(benchmark_series.values, VaR), 'r--')
+            ax1.plot(range(len(VaR)), benchmark_series.values-np.multiply(benchmark_series.values, VaR), 'r--')
+            ax1.plot(range(len(benchmark_series.values)), benchmark_series.values, 'b-')
             plt.show()
         except Exception as e:
             traceback.print_exc()
