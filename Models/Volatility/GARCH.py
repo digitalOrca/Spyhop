@@ -7,6 +7,7 @@ Description:
 """
 
 import numpy as np
+import pandas as pd
 import traceback
 import matplotlib.pyplot as plt
 from scipy import optimize
@@ -33,7 +34,7 @@ class GARCH:
         Output:
             formatedData: the DataFrame with processed residual data
     """
-    def prepData(self):
+    def prep_data(self):
         daily_price = self.preprocess.retrieve_open_close()
         daily_change = post.compute_daily_change(daily_price).fillna(0)
         mu = daily_change.mean()
@@ -49,7 +50,7 @@ class GARCH:
         Output:
             cost of model
     """
-    def maximumLikelihood(self, theta, resi):
+    def maximum_likelihood(self, theta, resi):
         vari = self.garch(theta, resi)
         negative_likelihood = np.log(2*np.pi*vari)+np.divide(np.power(resi, 2), vari)
         return np.sum(negative_likelihood)
@@ -89,14 +90,14 @@ class GARCH:
         Input:
             formatedData: the DataFrame with processed(compute variance and mean) and organized bar data
     """
-    def optimizeParameters(self, residuals):
+    def optimize_parameters_batch(self, residuals):
         paramSize = self.p+self.q+1
         theta0 = [0.05 for x in range(paramSize)]
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         for symbol in residuals.keys():
             try:
-                xopt = optimize.fmin(func=self.maximumLikelihood, x0=theta0, args=(residuals[symbol].values,),
+                xopt = optimize.fmin(func=self.maximum_likelihood, x0=theta0, args=(residuals[symbol].values,),
                                      xtol=0.0001, disp=False)
                 VaR = np.multiply(np.sqrt(self.garch(xopt, residuals[symbol].values)), stats.norm.ppf(0.95))
                 ax1.clear()
@@ -113,11 +114,34 @@ class GARCH:
                 traceback.print_exc()
                 print(str(e))
 
+    def optimize_parameters_benchmark(self, benchmark="snp500", risk_level=0.95):
+        #benchmark_change = self.preprocess.retrieve_benchmark(benchmark=benchmark).mean(axis=1).pct_change(periods=1).fillna(0)
+        benchmark_change = pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"].pct_change(periods=1).fillna(0)
+        mu = benchmark_change.mean()
+        residual = benchmark_change.subtract(mu)
+        paramSize = self.p + self.q + 1
+        theta0 = [0.05 for x in range(paramSize)]
+        try:
+            xopt = optimize.fmin(func=self.maximum_likelihood, x0=theta0, args=(residual.values,),
+                                    xtol=0.0001, disp=False)
+            VaR = np.multiply(np.sqrt(self.garch(xopt, residual.values)), stats.norm.ppf(risk_level))
+            # plot VaR boundary
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111)
+            ax1.plot(range(len(VaR)), VaR, 'r--')
+            ax1.plot(range(len(VaR)), -VaR, 'r--')
+            ax1.plot(range(len(residual.values)), residual.values, 'b-')
+            plt.show()
+        except Exception as e:
+            traceback.print_exc()
+            print(str(e))
+
 
 if __name__ == "__main__":
-    garch = GARCH(1, 1)
-    data = garch.prepData()
-    garch.optimizeParameters(data)
-    plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
-    plt.show()
+    garch = GARCH(2, 2)
+    #data = garch.prep_data()
+    #garch.optimize_parameters_batch(data)
+    #plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
+    #plt.show()
+    garch.optimize_parameters_benchmark(benchmark="snp500", risk_level=0.95)
 
