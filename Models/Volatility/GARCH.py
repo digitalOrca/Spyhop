@@ -114,7 +114,7 @@ class GARCH:
                 traceback.print_exc()
                 print(str(e))
 
-    def optimize_parameters_benchmark(self, benchmark="snp500", risk_level=0.95):
+    def optimize_parameters_benchmark(self, benchmark="snp500", risk_level=0.9):
         #benchmark_change = self.preprocess.retrieve_benchmark(benchmark=benchmark).mean(axis=1).pct_change(periods=1).fillna(0)
         benchmark_series = pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
         benchmark_change = benchmark_series.pct_change(periods=1).fillna(0)  # TODO: INSPECT FORWARD/BACKWARD SHIFT!
@@ -135,8 +135,8 @@ class GARCH:
             #ax1.plot(range(len(residual.values)), residual.values, 'b-')
 
             # plot actual VaR boundary
-            ax1.plot(range(len(VaR)), benchmark_series.values+np.multiply(benchmark_series.values, VaR), 'r--')
-            ax1.plot(range(len(VaR)), benchmark_series.values-np.multiply(benchmark_series.values, VaR), 'r--')
+            ax1.plot(range(len(VaR)), benchmark_series.shift(periods=1).values+np.multiply(benchmark_series.values, VaR), 'r--')
+            ax1.plot(range(len(VaR)), benchmark_series.shift(periods=1).values-np.multiply(benchmark_series.values, VaR), 'r--')
             ax1.plot(range(len(benchmark_series.values)), benchmark_series.values, 'b-')
             plt.show()
         except Exception as e:
@@ -145,7 +145,7 @@ class GARCH:
 
 
 if __name__ == "__main__":
-    garch = GARCH(2, 2)
+    garch = GARCH(1, 1)
     #data = garch.prep_data()
     #garch.optimize_parameters_batch(data)
     #plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
