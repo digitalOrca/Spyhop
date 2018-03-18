@@ -63,9 +63,6 @@ public class MainGateway{
         boolean subscription = false;
         boolean updated = false;
 
-        /* Update benchmark indices */
-        UpdateAction.updateIndices();
-
         /* initialization */
         System.out.println("============Initialization Started============");
         client = new EWrapperImpl();

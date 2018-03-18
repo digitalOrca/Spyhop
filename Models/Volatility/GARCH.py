@@ -117,7 +117,7 @@ class GARCH:
     def optimize_parameters_benchmark(self, benchmark="snp500", risk_level=0.9):
         #benchmark_change = self.preprocess.retrieve_benchmark(benchmark=benchmark).mean(axis=1).pct_change(periods=1).fillna(0)
         benchmark_series = pd.read_csv("/home/meng/Downloads/SP500.csv")["Close"]
-        benchmark_change = benchmark_series.pct_change(periods=1).fillna(0)  # TODO: INSPECT FORWARD/BACKWARD SHIFT!
+        benchmark_change = benchmark_series.pct_change(periods=1).fillna(0)
         mu = benchmark_change.mean()
         residual = benchmark_change.subtract(mu)
         paramSize = self.p + self.q + 1
@@ -150,5 +150,5 @@ if __name__ == "__main__":
     #garch.optimize_parameters_batch(data)
     #plt.plot(garch.alpha[:, 0], garch.beta[:, 0], 'b.', label="1st order")
     #plt.show()
-    garch.optimize_parameters_benchmark(benchmark="snp500", risk_level=0.95)
+    garch.optimize_parameters_benchmark(benchmark="snp500", risk_level=0.9)
 

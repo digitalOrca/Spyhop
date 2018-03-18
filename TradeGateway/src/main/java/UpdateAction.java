@@ -51,18 +51,6 @@ class UpdateAction {
         Logger.getInstance().log(Log.ACTION, "[Cancel]," + prevSymbol);
     }
 
-    static void updateIndices() {
-        try {
-            Document doc = Jsoup.connect("https://finance.google.com/finance?q=INDEXSP:.INX").get();
-            double indices = Double.parseDouble(doc.getElementsByAttributeValue("id", "ref_626307_l").text().replace(",", ""));
-            String update = "INSERT INTO benchmark (date, snp500) VALUES ('%s',%s)";
-            String query = String.format(update, Helper.today(), indices);
-            DatabaseConn.getInstance().execUpdate(query);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     static void updateBenchmark() {
         try {
             Document doc = Jsoup.connect("https://finance.yahoo.com/quote/%5EGSPC?p=%5EGSPC").get();
