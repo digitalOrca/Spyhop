@@ -5,6 +5,8 @@ Description:
     Utility for finding Hindenburg Omen
 """
 
+import json
+import datetime
 import numpy as np
 import pandas as pd
 from Preprocess import Preprocess
@@ -108,9 +110,43 @@ if __name__ == "__main__":
     c1 = rh.high_low_criteria(highlow52ratio=0.028)
     c2 = rh.benchmark_criteria()
     c3 = rh.mcl_criteria()
+
     print("*New High, New Low Criteria (>2.8%, new_high<2*new_low)", c1)
     print("*Benchmark 50-day Criteria (rising)", c2)
     print("*McClellan Oscillator (<0)", c3)
 
+    f = open("/home/meng/Projects/ResultArchive/HindenburgOmen.json", "r")
+    cache = json.load(f)
+    today = datetime.datetime.today()
+    today_str = datetime.datetime.today().strftime('%Y-%m-%d')
+    c1_date_diff = datetime.datetime.strptime(cache["New High/Low"]["last activation"], '%Y-%m-%d')
+    c2_date_diff = datetime.datetime.strptime(cache["50-Day Change"]["last activation"], '%Y-%m-%d')
+    c3_date_diff = datetime.datetime.strptime(cache["McClellan Oscillator"]["last activation"], '%Y-%m-%d')
 
+    if c1:
+        cache["New High/Low"]["status"] = True
+        cache["New High/Low"]["last activation"] = today_str
+    elif today - c1_date_diff < datetime.timedelta(days=30):
+        cache["New High/Low"]["status"] = True
+    else:
+        cache["New High/Low"]["status"] = False
+
+    if c2:
+        cache["50-Day Change"]["status"] = True
+        cache["50-Day Change"]["last activation"] = today_str
+    elif today - c2_date_diff < datetime.timedelta(days=30):
+        cache["50-Day Change"]["status"] = True
+    else:
+        cache["50-Day Change"]["status"] = False
+
+    if c3:
+        cache["McClellan Oscillator"]["status"] = True
+        cache["McClellan Oscillator"]["last activation"] = today_str
+    elif today - c3_date_diff < datetime.timedelta(days=30):
+        cache["McClellan Oscillator"]["status"] = True
+    else:
+        cache["McClellan Oscillator"]["status"] = False
+
+    json.dump(cache, open("/home/meng/Projects/ResultArchive/HindenburgOmen.json", "w"), indent=4)
+    f.close()
 

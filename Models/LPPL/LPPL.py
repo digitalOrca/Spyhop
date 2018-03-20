@@ -21,7 +21,7 @@ from sklearn.neighbors import KernelDensity
         benchmark: name of benchmark for analysis
 """
 def get_series(benchmark="snp500"):
-    preprocess = Preprocess(lag=500)
+    preprocess = Preprocess(lag=2800)
     index_series = preprocess.retrieve_benchmark(benchmark)
     return index_series["close"]
 
