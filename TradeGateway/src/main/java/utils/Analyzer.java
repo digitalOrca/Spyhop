@@ -13,4 +13,8 @@ public class Analyzer {
         String result = Helper.runCmd(new String[] {"python", "/home/meng/Projects/NeuroTrader/Models/HindenburgOmen/HindenburgOmen.py"});
         System.out.println(result);
     }
+
+    public static void LPPL() {
+        Helper.runCmd(new String[] {"python", "/home/meng/Projects/NeuroTrader/Models/LPPL/LPPL.py", "direct"}, false);
+    }
 }

@@ -13,4 +13,9 @@ class AnalyzerTest {
         Analyzer.HindenburgOmen();
     }
 
+    @Test
+    void lppl() {
+        Analyzer.LPPL();
+    }
+
 }
