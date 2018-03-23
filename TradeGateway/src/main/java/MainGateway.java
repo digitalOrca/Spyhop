@@ -173,7 +173,9 @@ public class MainGateway{
         UpdateAction.updateBenchmark();
         Logger.getInstance().close();
         System.out.println("============Post-trade Analysis============");
+        Analyzer.LPPL();
         Analyzer.HindenburgOmen();
+        Analyzer.Alpha_Beta_Movement();
         System.exit(0);
     }
 

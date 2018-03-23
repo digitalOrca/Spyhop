@@ -18,4 +18,9 @@ class AnalyzerTest {
         Analyzer.LPPL();
     }
 
+    @Test
+    void alpha_beta_movement() {
+        Analyzer.Alpha_Beta_Movement();
+    }
+
 }
