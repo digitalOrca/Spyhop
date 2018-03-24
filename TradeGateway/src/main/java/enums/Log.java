@@ -1,7 +1,9 @@
 package enums;
 
 /**
- * Created by meng on 10/1/17.
+ * ACTION: requests to IB server
+ * CALLBACK: callback from server
+ * ERROR: execution error
  */
 public enum Log {
     ACTION, CALLBACK, ERROR

@@ -1,7 +1,7 @@
 package enums;
 
 /**
- * Created by meng on 10/1/17.
+ * Current gateway only supports STK(stock) trading
  */
 public enum SecType {
     STK, OPT, FUT, IND, FOP, CASH,

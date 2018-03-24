@@ -1,7 +1,7 @@
 package enums;
 
 /**
- * Created by meng on 10/1/17.
+ * Trade action enum
  */
 public enum Action {
     BUY, SELL

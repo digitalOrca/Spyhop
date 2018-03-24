@@ -1,7 +1,7 @@
 package enums;
 
 /**
- * Created by meng on 10/1/17.
+ * Order type are for advance trading strategies, not currently used
  */
 public enum OrderType {
     LMT("LMT"),

@@ -1,7 +1,7 @@
 package enums;
 
 /**
- * Created by meng on 10/1/17.
+ * Exchange enum
  */
 public enum Exchange {
     SMART, IDEALPRO, CHX, NASDAQ, NYSE
