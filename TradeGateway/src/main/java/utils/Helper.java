@@ -16,10 +16,11 @@ import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by meng on 9/21/17.
+ * Helper class with static members
  */
 public class Helper {
 
+    /*wait for seconds*/
     public static void pauseSec(int seconds) {
         try {
             TimeUnit.SECONDS.sleep(seconds);
@@ -28,6 +29,7 @@ public class Helper {
         }
     }
 
+    /*wait for milliseconds*/
     public static void pauseMilli(int milliseconds) {
         try {
             TimeUnit.MILLISECONDS.sleep(milliseconds);
@@ -36,21 +38,25 @@ public class Helper {
         }
     }
 
+    /*return today's date as string*/
     public static String today() {
         Date today = Calendar.getInstance().getTime();
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         return formatter.format(today);
     }
 
+    /*convert timestamp to formatted string*/
     public static String timestampToString(Timestamp timestamp) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyy-MM-dd HH:mm:ss.SSS");
         return dateFormat.format(timestamp);
     }
 
+    /*get timestamp of current time*/
     public static String timestampNow() {
         return timestampToString(new Timestamp(new Date().getTime()));
     }
 
+    /*execute command without return*/
     public static void runCmd(String[] command, boolean wait) {
         Runtime runtime = Runtime.getRuntime();
         try {
@@ -63,6 +69,7 @@ public class Helper {
         }
     }
 
+    /*execute command with return as string*/
     public static String runCmd(String[] command) {
         Runtime runtime = Runtime.getRuntime();
         StringBuilder result = new StringBuilder();
@@ -83,6 +90,7 @@ public class Helper {
         return result.toString();
     }
 
+    /*convert resultset from database query to linkedlist*/
     public static LinkedList<String> resultToList(ResultSet resultSet, String column) {
         LinkedList<String> list = new LinkedList<>();
         try {

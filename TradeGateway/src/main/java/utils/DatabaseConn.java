@@ -2,7 +2,7 @@ package utils;
 import java.sql.*;
 
 /**
- * Created by meng on 10/1/17.
+ * databse utility singleton class
  */
 public class DatabaseConn {
     private static DatabaseConn ourInstance = new DatabaseConn();
@@ -39,6 +39,7 @@ public class DatabaseConn {
         }
     }
 
+    /*update databse content*/
     public void execUpdate(String query) {
         System.out.println("[U] " + query);
         if (simulated) return; // if doing simulated trading
@@ -51,6 +52,7 @@ public class DatabaseConn {
         }
     }
 
+    /*update database content and return*/
     public ResultSet execSync(String query) {  // an update statement with return
         System.out.println("[S] " + query);
         if (simulated) return null; // if doing simulated trading
@@ -63,6 +65,7 @@ public class DatabaseConn {
         return null;
     }
 
+    /*query to database*/
     public ResultSet execQuery(String query) {
         System.out.println("[Q] " + query);
         try {

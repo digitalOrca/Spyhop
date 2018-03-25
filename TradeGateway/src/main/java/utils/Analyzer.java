@@ -1,7 +1,7 @@
 package utils;
 
 /**
- * Created by meng on 3/13/18.
+ * Triggers for python analysis model after market closing
  */
 public class Analyzer {
 
