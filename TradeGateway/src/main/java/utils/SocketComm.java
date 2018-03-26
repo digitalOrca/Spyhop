@@ -6,7 +6,7 @@ import java.net.ServerSocket;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 /**
- * Created by meng on 5/31/17.
+ * Socket communication utility class, not currently used
  */
 public class SocketComm {
     private static SocketComm ourInstance = new SocketComm();

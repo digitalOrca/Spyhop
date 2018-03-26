@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Created by meng on 5/21/17.
+ * log utility singleton class
  */
 public class Logger {
 
@@ -46,10 +46,12 @@ public class Logger {
         this.bufferedWriter = new BufferedWriter(fileWriter);
     }
 
+    /*set log filename prefix*/
     public void setLogMode(String mode) {
         ourInstance = new Logger(mode);
     }
 
+    /*append log entry*/
     public void log(Log type, String entry) {
         String timestamp = this.timeFormat.format(new Date());
         try {
@@ -61,6 +63,7 @@ public class Logger {
         }
     }
 
+    /*close file buffer*/
     public void close() {
         try {
             if (this.bufferedWriter != null) {

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * Created by meng on 9/10/17.
+ * XML parsing utility, not currently used
  */
 public class XmlParser {
 
