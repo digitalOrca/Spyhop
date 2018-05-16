@@ -8,7 +8,9 @@ Description:
 """
 
 import sys
+import datetime
 import numpy as np
+import pandas as pd
 from Preprocess import Preprocess
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KernelDensity
@@ -198,13 +200,32 @@ def optimize_parameters(series, Tc_grid=179, omega_grid=30, beta_grid=100, phi_g
                                 ax.plot(x, series, 'b--')
                                 ax.plot(range(len(best_fit)), best_fit, 'r--')
                                 #ax.set_ylim([np.min(series)-100, np.max(series)+100])
-                                title = "Best fit: [error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
-                                        % (std_err, fit_Tc, fit_omega, fit_beta, fit_phi)
+                                crash_date_str = singularity_Date(fit_Tc)
+                                title = "Best fit: [error:%s, Tc:%s(%s), omega:%s, beta:%s, phi:%s]" \
+                                        % (std_err, fit_Tc, crash_date_str, fit_omega, fit_beta, fit_phi)
                                 plt.xlabel('Time (Trading-days)')
                                 plt.title(title)
                                 plt.ylabel('Benchmark Index')
                                 plt.pause(0.0001)
     return fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi
+
+
+"""singularity_Date
+    Description:
+        Compute the project date of crash from Tc
+    Input:
+        Tc: optimized number of trading days till crash
+"""
+def singularity_Date(Tc):
+    c_day = datetime.datetime.now()
+    holidays = pd.read_csv("/home/meng/Projects/NeuroTrader/Models/Config/TradingHoliday.csv")\
+        .Date.apply(lambda x: str(x).strip()).tolist()
+    incr = datetime.timedelta(days=1)
+    while Tc > 0:
+        if (c_day + incr).weekday() <= 4 and (c_day + incr).strftime("%Y-%m-%d") not in holidays:  # weekday
+            Tc -= 1
+        c_day += incr
+    return c_day.strftime("%Y-%m-%d")
 
 
 """Main"""
@@ -216,6 +237,7 @@ if __name__ == "__main__":
         fig1 = plt.figure()
         ax1 = fig1.add_subplot(111)
         fit_mse, fit_abc, fit_Tc, fit_omega, fit_beta, fit_phi = optimize_parameters(series=series, fig=fig1, ax=ax1)
+        crash_date_str = singularity_Date(fit_Tc)
         print("MSE:", fit_mse)
         print("A:", fit_abc[0])
         print("B:", fit_abc[1])
@@ -230,8 +252,8 @@ if __name__ == "__main__":
         ax1.plot(range(len(series)), series, 'b--')
         ax1.plot(range(len(opt_fit)), opt_fit, 'r--')
         err = np.sqrt(np.divide(fit_mse, len(series)))
-        title = "Best fit[error:%s, Tc:%s, omega:%s, beta:%s, phi:%s]" \
-                % (err, fit_Tc, fit_omega, fit_beta, fit_phi)
+        title = "Best fit[error:%s, Tc:%s(%s), omega:%s, beta:%s, phi:%s]" \
+                % (err, fit_Tc, crash_date_str, fit_omega, fit_beta, fit_phi)
         plt.xlabel('Time (Trading-days)')
         plt.title(title)
         plt.ylabel('Benchmark Index')

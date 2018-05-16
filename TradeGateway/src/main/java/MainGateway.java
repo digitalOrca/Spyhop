@@ -103,7 +103,6 @@ public class MainGateway{
 
             // wait for market open
             waitForMarketOpen();
-
             /* Subscription request */
             if (!subscription) {
                 Logger.getInstance().log(Log.ACTION, "REQUEST,reqPosition");
